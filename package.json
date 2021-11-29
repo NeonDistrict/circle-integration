@@ -1,0 +1,25 @@
+{
+  "name": "circle-integration",
+  "version": "1.0.0",
+  "description": "Contains documentation, demo, and back/front end components required to integrate circle payments into a project.",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeonDistrict/circle-integration.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NeonDistrict/circle-integration/issues"
+  },
+  "homepage": "https://github.com/NeonDistrict/circle-integration#readme",
+  "dependencies": {
+    "axios": "^0.24.0"
+  }
+}
