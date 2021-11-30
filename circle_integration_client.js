@@ -78,6 +78,7 @@ const circle_integration = {
         // todo maybe we need more than the card id here? but i think it should just be basically an "okay cool" response then we use a list to get cards
         const card_id = await circle_integration.call_circle_api('create_card', {
             idempotency_key: idempotency_key,
+            key_id: circle_integration.public_key.keyId,
             hashed_card_number: hashed_card_number,
             encrypted_card_information: encrypted_card_information,
             name_on_card: name_on_card,

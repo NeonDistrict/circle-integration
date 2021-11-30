@@ -41,5 +41,4 @@ Once installed OpenPgP can be imported using:
 
 1. At page load time client gets public key from server using `await circle_integration.get_public_key()`, the client api will handle the key for you, you just need to handle any errors from the call.
 
-actually we do this internal itnegrator doenst need to
-2. At payment time the client will call `await circle_integration.encrypt_card_information(card_number, card_cvv)` to encrypt the player's card info on the frontend.
+1. Before a player can make a purchase they need to create a card which can be done using `await circle_integration.create_card(idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year)`.
