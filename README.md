@@ -23,6 +23,21 @@ If the player tries to send the exact same request more than once, it better hav
 
 You now know everything you need to know about idempotent requests, but if you are even vaguely unsure ask Adrian and he will clarify.
 
+## Understanding Sale Item Keys
+
+A `sale_item_key` and it's associated `sale_item_information` are a way to describe items that Neon District has for sale. When a player goes to the store the client will request a list of sale items from the server, literally a list of items that can be purchased. Each of these items has a key: `sale_item_key` that is then used by the client to signify to the server what purchase the player wants to make. This key will also show up on the credit card statement as an indicator to the player what they purchased to help reduce unexplained charges and therefore chargebacks. This key further shows up in our internal tracking and analytics to answer questions like "how many players purchased 1000 neon packs, vs 500 neon packs?". An example sale item is shown below
+
+```
+{
+    "sale_item_key": "NEON_1000",
+    "currency": "USD",
+    "amount": "1.00",
+    "statement_description": "NEON DISTRICT: 1000 NEON",
+    "store_description": "Adds 1000 NEON to your account.",
+    "store_image": "https://images/NEON_1000.png"
+}
+```
+
 ## Frontend Integration
 
 ### Install OpenPgP
