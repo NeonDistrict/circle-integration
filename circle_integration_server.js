@@ -1,62 +1,14 @@
 const axios = require('axios').default;
 const risk_categories = require('./risk_categories.js');
-
+const payment_status_enum = require('./payment_status_enum.js');
+const payment_error_enum = require('./payment_error_enum.js');
+const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
+const three_d_secure_verification_status_enum = requir('./three_d_secure_verification_status_enum.js');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
 module.exports = circle_integration = {
-    PAYMENT_STATUS: {
-        PENDING: 'pending',
-        CONFIRMED: 'confirmed',
-        PAID: 'paid',
-        FAILED: 'failed',
-        ACTION_REQUIRED: 'action_required'
-    },
-    CVV_VERIFICACTION_STATUS: {
-        NOT_REQUESTED: 'not_requested',
-        PASS: 'pass',
-        FAIL: 'fail',
-        UNAVAILABLE: 'unavailable',
-        PENDING: 'pending'
-    },
-    THREE_D_SECURE_VERIFICATION_STATUS: {
-        PASS: 'pass',
-        FAIL: 'fail'
-    },
-    PAYMENT_ERROR_CODES: {
-        PAYMENT_FAILED: 'payment_failed', 
-        PAYMENT_FRAUD_DETECTED: 'payment_fraud_detected', 
-        PAYMENT_DENIED: 'payment_denied', 
-        PAYMENT_NOT_SUPPORTED_BY_ISSUER: 'payment_not_supported_by_issuer', 
-        PAYMENT_NOT_FUNDED: 'payment_not_funded', 
-        PAYMENT_UNPROCESSABLE: 'payment_unprocessable', 
-        PAYMENT_STOPPED_BY_ISSUER: 'payment_stopped_by_issuer', 
-        PAYMENT_CANCELED: 'payment_canceled', 
-        PAYMENT_RETURNED: 'payment_returned', 
-        PAYMENT_FAILED_BALANCE_CHECK: 'payment_failed_balance_check', 
-        CARD_FAILED: 'card_failed', 
-        CARD_INVALID: 'card_invalid', 
-        CARD_ADDRESS_MISMATCH: 'card_address_mismatch', 
-        CARD_ZIP_MISMATCH: 'card_zip_mismatch', 
-        CARD_CVV_INVALID: 'card_cvv_invalid', 
-        CARD_EXPIRED: 'card_expired', 
-        CARD_LIMIT_VIOLATED: 'card_limit_violated', 
-        CARD_NOT_HONORED: 'card_not_honored', 
-        CARD_CVV_REQUIRED: 'card_cvv_required', 
-        CREDIT_CARD_NOT_ALLOWED: 'credit_card_not_allowed', 
-        CARD_ACCOUNT_INELIGIBLE: 'card_account_ineligible', 
-        CARD_NETWORK_UNSUPPORTED: 'card_network_unsupported', 
-        CHANNEL_INVALID: 'channel_invalid', 
-        UNAUTHORIZED_TRANSACTION: 'unauthorized_transaction', 
-        BANK_ACCOUNT_INELIGIBLE: 'bank_account_ineligible', 
-        BANK_TRANSACTION_ERROR: 'bank_transaction_error', 
-        INVALID_ACCOUNT_NUMBER: 'invalid_account_number', 
-        INVALID_WIRE_RTN: 'invalid_wire_rtn', 
-        INVALID_ACH_RTN: 'invalid_ach_rtn'
-    },
-
-
     TEST_CARDS: [
         {
             card_number: '4007400000000007',
@@ -536,23 +488,23 @@ module.exports = circle_integration = {
         switch (result.status) {
 
             // confirmed and paid are equivalent for considering the payment a success, paid just implies its in our wallet now
-            case circle_integration.PAYMENT_STATUS.CONFIRMED:
-            case circle_integration.PAYMENT_STATUS.PAID:
+            case payment_status_enum.CONFIRMED:
+            case payment_status_enum.PAID:
                 return {
                     ok: 1
                 };
 
             // failed implies that the the payment is complete and will never be successful, figure out what the reason was to
             // determine what we tell the player and if they should retry the payment or not (with a new payment)
-            case circle_integration.PAYMENT_STATUS.FAILED:
+            case payment_status_enum.FAILED:
                 return circle_integration._assess_purchase_failure(result);
             
             // pending means we just need to wait, and continue polling for the result - null here implies pending
-            case circle_integration.PAYMENT_STATUS.PENDING:
+            case payment_status_enum.PENDING:
                 return null;
             
             // action required means the player will need to be redirected to verify payment
-            case circle_integration.PAYMENT_STATUS.ACTION_REQUIRED:
+            case payment_status_enum.ACTION_REQUIRED:
                 return {
                     status: 'redirect_required',
                     redirect_url: result.requiredAction.redirectUrl,
@@ -626,9 +578,9 @@ module.exports = circle_integration = {
     },
 
     _assess_purchase_failure: async (result) => {
+        // todo this whole clusterfuck should probably illicit a bunch of different responses
         switch (result.errorCode) {
-
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_FAILED:
+            case payment_error_enum.PAYMENT_FAILED:
                 return {
                     status: 'failed_retry',
                     reason: 'player',
@@ -636,7 +588,7 @@ module.exports = circle_integration = {
                     payload: response
                 };
 
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_FRAUD_DETECTED:
+            case payment_error_enum.PAYMENT_FRAUD_DETECTED:
                 return {
                     status: 'fraud',
                     reason: 'player',
@@ -644,33 +596,33 @@ module.exports = circle_integration = {
                     payload: response
                 };
 
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_DENIED:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_NOT_SUPPORTED_BY_ISSUER:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_NOT_FUNDED:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_UNPROCESSABLE:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_STOPPED_BY_ISSUER:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_CANCELED:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_RETURNED:
-            case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_FAILED_BALANCE_CHECK:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_FAILED:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_INVALID:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_ADDRESS_MISMATCH:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_ZIP_MISMATCH:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_CVV_INVALID:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_EXPIRED:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_LIMIT_VIOLATED:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_NOT_HONORED:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_CVV_REQUIRED:
-            case circle_integration.PAYMENT_ERROR_CODES.CREDIT_CARD_NOT_ALLOWED:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_ACCOUNT_INELIGIBLE:
-            case circle_integration.PAYMENT_ERROR_CODES.CARD_NETWORK_UNSUPPORTED:
-            case circle_integration.PAYMENT_ERROR_CODES.CHANNEL_INVALID:
-            case circle_integration.PAYMENT_ERROR_CODES.UNAUTHORIZED_TRANSACTION:
-            case circle_integration.PAYMENT_ERROR_CODES.BANK_ACCOUNT_INELIGIBLE:
-            case circle_integration.PAYMENT_ERROR_CODES.BANK_TRANSACTION_ERROR:
-            case circle_integration.PAYMENT_ERROR_CODES.INVALID_ACCOUNT_NUMBER:
-            case circle_integration.PAYMENT_ERROR_CODES.INVALID_WIRE_RTN:
-            case circle_integration.PAYMENT_ERROR_CODES.INVALID_ACH_RTN:
+            case payment_error_enum.PAYMENT_DENIED:
+            case payment_error_enum.PAYMENT_NOT_SUPPORTED_BY_ISSUER:
+            case payment_error_enum.PAYMENT_NOT_FUNDED:
+            case payment_error_enum.PAYMENT_UNPROCESSABLE:
+            case payment_error_enum.PAYMENT_STOPPED_BY_ISSUER:
+            case payment_error_enum.PAYMENT_CANCELED:
+            case payment_error_enum.PAYMENT_RETURNED:
+            case payment_error_enum.PAYMENT_FAILED_BALANCE_CHECK:
+            case payment_error_enum.CARD_FAILED:
+            case payment_error_enum.CARD_INVALID:
+            case payment_error_enum.CARD_ADDRESS_MISMATCH:
+            case payment_error_enum.CARD_ZIP_MISMATCH:
+            case payment_error_enum.CARD_CVV_INVALID:
+            case payment_error_enum.CARD_EXPIRED:
+            case payment_error_enum.CARD_LIMIT_VIOLATED:
+            case payment_error_enum.CARD_NOT_HONORED:
+            case payment_error_enum.CARD_CVV_REQUIRED:
+            case payment_error_enum.CREDIT_CARD_NOT_ALLOWED:
+            case payment_error_enum.CARD_ACCOUNT_INELIGIBLE:
+            case payment_error_enum.CARD_NETWORK_UNSUPPORTED:
+            case payment_error_enum.CHANNEL_INVALID:
+            case payment_error_enum.UNAUTHORIZED_TRANSACTION:
+            case payment_error_enum.BANK_ACCOUNT_INELIGIBLE:
+            case payment_error_enum.BANK_TRANSACTION_ERROR:
+            case payment_error_enum.INVALID_ACCOUNT_NUMBER:
+            case payment_error_enum.INVALID_WIRE_RTN:
+            case payment_error_enum.INVALID_ACH_RTN:
                 return {
                     status: 'failed_no_retry',
                     reason: 'player',
