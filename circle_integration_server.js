@@ -1,4 +1,7 @@
 const axios = require('axios').default;
+const risk_categories = require('./risk_categories.js');
+
+
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
@@ -52,325 +55,6 @@ module.exports = circle_integration = {
         INVALID_WIRE_RTN: 'invalid_wire_rtn', 
         INVALID_ACH_RTN: 'invalid_ach_rtn'
     },
-    RISK_ERROR_CODES: [
-        {
-            category: 'Circle Unsupported',
-            description: 'Fiat Account / Payment contains criteria that Circle is unable to support at this time. E.g. Prohibited Country.',
-            range: {
-                lower_inclusive: 3000,
-                upper_inclusive: 3099
-            },
-            codes: [
-                {
-                    code: 3000,
-                    description: 'Default',
-                },
-                {
-                    code: 3001,
-                    description: 'Prohibited Issuer (Bank) Country',
-                },
-                {
-                    code: 3002,
-                    description: 'Prohibited Billing Address Country',
-                },
-                {
-                    code: 3020,
-                    description: 'Fiat Account Denied (See Fiat Account for Reason)',
-                },
-                {
-                    code: 3021,
-                    description: 'Fiat Account Failed (See Fiat Account for Reason)',
-                },
-                {
-                    code: 3022,
-                    description: 'Fiat Account (Card) Evaluation Timeout. We recommend retrying.',
-                },
-                {
-                    code: 3023,
-                    description: 'Fiat Account (Bank Account) Evaluation Timeout. We recommend retrying.',
-                },
-                {
-                    code: 3024,
-                    description: 'Fiat Account Evaluation Suspended. Information has been requested or fiat is awaiting review.',
-                },
-                {
-                    code: 3030,
-                    description: 'Unsupported Bank Account Routing Number (rtn)',
-                },
-                {
-                    code: 3050,
-                    description: 'Customer suspended from Payment Processing',
-                },
-                {
-                    code: 3070,
-                    description: 'Limit for Transaction exceeded',
-                },
-                {
-                    code: 3071,
-                    description: 'Limit for Daily Aggregate exceeded (email)',
-                },
-                {
-                    code: 3072,
-                    description: 'Limit for Daily Aggregate exceeded (fiat)',
-                },
-                {
-                    code: 3075,
-                    description: 'Limit for Weekly Aggregate exceeded (email)',
-                },
-                {
-                    code: 3076,
-                    description: 'Limit for Weekly Aggregate exceeded (fiat)',
-                }
-            ]
-        },
-        {
-            category: 'Processor / Issuing Bank',
-            description: 'Fiat Account / Payment creation contains criteria that Circles processor partner or Issuing Bank are unable to accept. E.g. unsupported issuer country, authorization failure.',
-            range: {
-                lower_inclusive: 3100,
-                upper_inclusive: 3199
-            },
-            codes: [
-                {
-                    code: 3100,
-                    description: 'Unsupported Return Code Response from Processor / Issuing Bank - Default'
-                },
-                {
-                    code: 3101,
-                    description: 'Invalid Return Code Response from Issuing Bank E.g Invalid Card'
-                },
-                {
-                    code: 3102,
-                    description: 'Fraudulent Return Code Response from Issuing Bank E.g Pickup Card'
-                },
-                {
-                    code: 3103,
-                    description: 'Redlisted Entity Return Code Response from Processor E.g Card Redlisted'
-                },
-                {
-                    code: 3104,
-                    description: 'Account associated with an invalid ACH RTN'
-                },
-                {
-                    code: 3150,
-                    description: 'Administrative return from ODFI / RDFI'
-                },
-                {
-                    code: 3151,
-                    description: 'Return indicating ineligible account from customer / RDFI'
-                },
-                {
-                    code: 3152,
-                    description: 'Unsupported transaction type return from customer / RDFI'
-                }
-            ]
-        },
-        {
-            category: 'Regulatory Compliance Intervention',
-            description: 'Interventions by Circle Risk Service due to legal & regulatory compliance requirements. E.g. KYC verification limits.',
-            range: {
-                lower_inclusive: 3200,
-                upper_inclusive: 3299
-            },
-            codes: [
-                {
-                    code: 3200,
-                    description: 'Unsupported Criteria'
-                },
-                {
-                    code: 3201,
-                    description: 'Unsupported Criteria'
-                },
-                {
-                    code: 3202,
-                    description: 'Unsupported Criteria'
-                },
-                {
-                    code: 3210,
-                    description: 'Withdrawal Limit Exceeded (7 Day Default Payout Limit)'
-                },
-                {
-                    code: 3211,
-                    description: 'Withdrawal Limit Exceeded (7 Day Custom Payout Limit)'
-                },
-                {
-                    code: 3220,
-                    description: 'Compliance Limit Exceeded'
-                }
-            ]
-        },
-        {
-            category: 'Fraud Risk Intervention',
-            description: 'Fiat Account / Payment creation was actioned by Circles Risk Service due to identified fraud management issues. E.g. Excessive Chargeback Rates, Immediate Fraud Pressure.',
-            range: {
-                lower_inclusive: 3300,
-                upper_inclusive: 3499
-            },
-            codes: [
-                {
-                    code: 3300,
-                    description: 'Transaction Declined by Circle Risk Service'
-                },
-                {
-                    code: 3310,
-                    description: 'Fiat Account directly associated with fraudulent activity'
-                },
-                {
-                    code: 3311,
-                    description: 'Email Address directly associated with fraudulent activity'
-                },
-                {
-                    code: 3320,
-                    description: 'Fiat Account associated with network fraud notification'
-                },
-                {
-                    code: 3321,
-                    description: 'Email Account associated with network fraud notification'
-                },
-                {
-                    code: 3330,
-                    description: 'Fiat Account flagged by Risk Team'
-                },
-                {
-                    code: 3331,
-                    description: 'Email Account flagged by Risk team'
-                },
-                {
-                    code: 3340,
-                    description: 'Fiat Account linked to previous fraudulent activity'
-                },
-                {
-                    code: 3341,
-                    description: 'Email Address linked to previous fraudulent activity'
-                }
-            ]
-        },
-        {
-            category: 'Customer Unsupported Configurations',
-            description: 'Fiat Account / Payment creation was actioned by Circles Risk Service due to customer configuration on block list where associated entity was labelled "unsupported". E.g. Block Issuer Country, Block Card Type, etc.',
-            range: {
-                lower_inclusive: 3500,
-                upper_inclusive: 3599
-            },
-            codes: [
-                {
-                    code: 3500,
-                    description: 'Blocked Issuer (Bank) Country'
-                },
-                {
-                    code: 3501,
-                    description: 'Blocked Billing Address Country'
-                },
-                {
-                    code: 3520,
-                    description: 'Blocked Card Type E.g. Credit'
-                },
-                {
-                    code: 3530,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3531,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3532,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3533,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3534,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3535,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3536,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3537,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3538,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3539,
-                    description: 'Chargeback History on Circle Platform'
-                },
-                {
-                    code: 3540,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3541,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3542,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3543,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3544,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3545,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3546,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3547,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3548,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3549,
-                    description: 'Chargeback History on Customer Platform'
-                },
-                {
-                    code: 3550,
-                    description: 'Blocked Fiat (Card)'
-                },
-                {
-                    code: 3551,
-                    description: 'Blocked Email Address'
-                },
-                {
-                    code: 3552,
-                    description: 'Blocked Phone Number'
-                }
-            ]
-        },
-        {
-            category: 'Customer Fraud Configurations',
-            description: 'Fiat Account / Payment creation was actioned by Circles Risk Service due to customer configuration on block list where associated entity was labelled "fraud". E.g. Block Issuer Country, Block Card Type, etc.',
-            range: {
-                lower_inclusive: 3600,
-                upper_inclusive: 3699
-            },
-            codes: [
-                // all codes are just described as 'Blocked by fraud watchlist'
-            ]
-        }
-    ],
 
 
     TEST_CARDS: [
@@ -603,6 +287,27 @@ module.exports = circle_integration = {
         return null;
     },
 
+    _get_response_response_body: (response) => {
+        // handle malformed response
+        if (!response.data.hasOwnProperty('data')) {
+            return {
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Unexpected response data',
+                    payload: response
+                }
+            };
+        }
+
+        // get the response_body from the response
+        const response_response_body = response.data.data;
+
+        return {
+            response_response_body: response_response_body
+        };
+    },
+
     cached_public_key: null,
     cached_public_key_timestamp: null,
     get_public_key: async () => {
@@ -619,26 +324,24 @@ module.exports = circle_integration = {
             url: `${api_uri_base}encryption/public`
         });
         
-        // confirm status code 200
-        if (response.status !== 200) {
-            console.log('response:', response);
-            throw new Error('Expected status code 200 from circle');
+        // check the response code, null means ok
+        const check_response_code_result = circle_integration._check_response_code([200], response);
+        if (check_response_code_result !== null) {
+            return check_response_code_result;
         }
         
-        // confirm response has a data parent object
-        if (!response.data.hasOwnProperty('data')) {
-            console.log('response:', response);
-            throw new Error('Expected data in response from circle');
+        // get the response response_body
+        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        if (error) {
+            return error;
         }
 
-        // unpack data parent object
-        const public_key = response.data.data;
-
         // cache new key and record time of cache
-        circle_integration.cached_public_key = public_key;
+        circle_integration.cached_public_key = response_response_body;
         circle_integration.cached_public_key_timestamp = new Date().getTime();
 
-        return public_key;
+        // return public key
+        return response_response_body;
     },
 
     create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
@@ -676,23 +379,19 @@ module.exports = circle_integration = {
             }
         });
         
-        // confirm status code of 201 created
-        if (response.status !== 201) {
-            console.log('response:', response);
-            throw new Error('Expected status code 201 from circle');
+        // check the response code, null means ok
+        const check_response_code_result = circle_integration._check_response_code([201], response);
+        if (check_response_code_result !== null) {
+            return check_response_code_result;
         }
         
-        // confirm response has a data parent object
-        if (!response.data.hasOwnProperty('data')) {
-            console.log('response:', response);
-            throw new Error('Expected data in response from circle');
+        // get the response response_body
+        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        if (error) {
+            return error;
         }
 
-        // unpack data parent object
-        const created_card = response.data.data;
-
-        // we just need to acknowledge that the card was created, a call will be made to list for details
-        
+        // reaching here implies card was created, return ok
         return {ok: 1};
     },
 
@@ -708,24 +407,20 @@ module.exports = circle_integration = {
                 expYear: expiry_year
             }
         });
-        
-        // confirm status code of 200 
-        if (response.status !== 200) {
-            console.log('response:', response);
-            throw new Error('Expected status code 200 from circle');
-        }
-        
-        // confirm response has a data parent object
-        if (!response.data.hasOwnProperty('data')) {
-            console.log('response:', response);
-            throw new Error('Expected data in response from circle');
+
+        // check the response code, null means ok
+        const check_response_code_result = circle_integration._check_response_code([200], response);
+        if (check_response_code_result !== null) {
+            return check_response_code_result;
         }
 
-        // unpack data parent object
-        const updated_card = response.data.data;
-
-        // we just need to acknowledge that the card was updated, a call will be made to list for details
+        // get the response response_body
+        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        if (error) {
+            return error;
+        }
         
+        // reaching here implies the card was updated, return ok
         return {ok: 1};
     },
 
@@ -806,26 +501,19 @@ module.exports = circle_integration = {
         });
 
         // check the response code, null means ok
-        const response_code_check_result = circle_integration._check_response_code([201], response);
-        if (response_code_check_result !== null) {
-            return response_code_check_result;
+        const check_response_code_result = circle_integration._check_response_code([201], response);
+        if (check_response_code_result !== null) {
+            return check_response_code_result;
         }
 
-        // handle malformed response
-        if (!response.data.hasOwnProperty('data')) {
-            return {
-                status: 'error',
-                reason: 'server',
-                message: 'Unexpected response data',
-                response_data: response.data
-            };
+        // get the response response_body
+        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        if (error) {
+            return error;
         }
-
-        // get the result from the response
-        const result = response.data.data;
 
         // assess the purchase result, null means pending and will require further polling
-        const assessed_result = await circle_integration._assess_purchase_result(result);
+        const assessed_result = await circle_integration._assess_purchase_result(response_response_body);
         if (assessed_result !== null) {
             return assessed_result;
         }
@@ -833,35 +521,33 @@ module.exports = circle_integration = {
         // get the payment id which we will use to poll for its completion
         const payment_id = result.id;
 
+        // poll until we get a result
+        circle_integration.poll_for_purchase_result(payment_id);
+    },
+
+    poll_for_purchase_result: async (payment_id) => {
         // poll until we can resolve the payment as either success or failure
         while (1) {
             // call to request the payment
-            const poll_response =  await axios({
+            const response =  await axios({
                 method: 'get',
                 url: `${api_uri_base}payments/${payment_id}`
             });
 
             // check the response code, null means ok
-            const poll_response_code_check_result = circle_integration._check_response_code([201], poll_response);
-            if (poll_response_code_check_result !== null) {
-                return poll_response_code_check_result;
+            const check_response_code_result = circle_integration._check_response_code([201], response);
+            if (check_response_code_result !== null) {
+                return check_response_code_result;
             }
 
-            // handle malformed response
-            if (!poll_response.data.hasOwnProperty('data')) {
-                return {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected response data',
-                    response_data: poll_response.data
-                };
+            // get the response response_body
+            ({ error, response_body } = circle_integration._get_response_response_body(response));
+            if (error) {
+                return error;
             }
-
-            // get the result from the response
-            const poll_result = poll_response.data.data;
 
             // assess the purchase poll result, null means pending and will require further polling
-            const assessed_poll_result = await circle_integration._assess_purchase_result(poll_result);
+            const assessed_poll_result = await circle_integration._assess_purchase_result(response_body);
             if (assessed_poll_result !== null) {
                 return assessed_poll_result;
             }
@@ -875,8 +561,11 @@ module.exports = circle_integration = {
     },
 
     _assess_purchase_result: async (result) => {
-        // todo we need to assess the purchase risk here too
-        
+        // assess the purchase risk
+        const assessed_risk_result = circle_integration._assess_purchase_risk(result);
+        if (assessed_risk_result !== null) {
+            return assessed_risk_result;
+        }
         
         // check the status
         switch (result.status) {
@@ -912,8 +601,62 @@ module.exports = circle_integration = {
                     status: 'error',
                     reason: 'server',
                     message: 'Unexpected result status: ' + result.status,
-                    response_data: response.data
+                    payload: response.data
                 };
+        }
+    },
+
+    _assess_purchase_risk: async (result) => {
+        // if a risk evaluation is present, along with a decision, and that decision is denied we have failed the payment from risk, determine why
+        if (result.hasOwnProperty('riskEvaluation') && result.riskEvalutaion.hasOwnProperty('decision') && result.riskEvalutaion.decision === 'denied') {
+            // get the reason code from the result
+            const reason_code = result.riskEvalutaion.reason;
+
+            // attempt to find the risk category
+            let found_risk_category = null;
+            for (const risk_category in risk_categories) {
+                
+                // if the reason code is in the range for this category we found the category
+                if (reason_code >= risk_category.range.lower_inclusive && reason_code <= risk_category.range.upper_inclusive) {
+                    found_risk_category = risk_category;
+                    break;
+                }
+            }
+
+            // if we did not find the risk category we have an unexpected risk code, crash
+            if (found_risk_category === null) {
+                return {
+                    status: 'failed_no_retry',
+                    reason: 'server',
+                    message: 'Unexpected risk result: ' + reason_code,
+                    payload: result
+                }; 
+            }
+
+            // reaching here implies we have a found_risk_category, attempt to find a specific reason
+            let found_specific_reason = null;
+            for (const specific_reason in found_risk_category.specific_reasons) {
+                
+                // if the specific reason code matches we found the specific reason
+                if (specific_reason.code === reson_code) {
+                    found_specific_reason = specific_reason;
+                    break;
+                }
+            }
+
+            // we may or may not have found a specific reason, but the category is all that is gauranteed
+            // return whatever we have
+            return {
+                status: 'fraud',
+                reason: 'player',
+                message: `code: ${reason_code}: ${found_risk_category.category}: ${found_risk_category.description} (${found_specific_reason === null ? 'no specific reason found' : found_specific_reason.description})`,
+                payload: result
+            };
+
+        // reaching here implies there was no risk evaluation, or nested decision, or the decision was not denied, meaning no risk, return null to inidicate no risk
+        } else {
+            
+            return null;
         }
     },
 
@@ -925,7 +668,7 @@ module.exports = circle_integration = {
                     status: 'failed_retry',
                     reason: 'player',
                     message: result.errorCode,
-                    response_data: response.data
+                    payload: response
                 };
 
             case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_FRAUD_DETECTED:
@@ -933,7 +676,7 @@ module.exports = circle_integration = {
                     status: 'fraud',
                     reason: 'player',
                     message: result.errorCode,
-                    response_data: response.data
+                    payload: response
                 };
 
             case circle_integration.PAYMENT_ERROR_CODES.PAYMENT_DENIED:
@@ -967,7 +710,7 @@ module.exports = circle_integration = {
                     status: 'failed_no_retry',
                     reason: 'player',
                     message: result.errorCode,
-                    response_data: response.data
+                    payload: response
                 };
 
             // handle unexpected error code
@@ -976,7 +719,7 @@ module.exports = circle_integration = {
                     status: 'error',
                     reason: 'server',
                     message: 'Unexpected result errorCode: ' + result.errorCode,
-                    response_data: response.data
+                    payload: response
                 };
         }
     }
