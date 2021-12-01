@@ -252,43 +252,69 @@ module.exports = circle_integration = {
         }
     ],
 
-    _check_response_code: (accept_codes, response) => {
-        // handle unauthorized response
+    _call_circle: async (accepted_response_codes, method, url, data = null) => {
+        // form request
+        const request = {
+            method: method,
+            url: url
+        };
+        if (data !== null) {
+            request.data = data;
+        }
+        
+        // make request and catch any weird axios crashes
+        let response;
+        try {
+            response = await axios(request);
+        } catch (request_error) {
+            return {
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Unexpected request failure: ' + request_error.toString(),
+                    payload: request_error
+                }
+            };
+        }
+
+        // handle unauthorized response which may be an http code or a code in the response body json
         if (response.status === 401 || (response.data.hasOwnProperty('code') && response.data.code === 401)) {
             return {
-                status: 'error',
-                reason: 'server',
-                message: 'Unauthorized',
-                response_data: response.data
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Unauthorized',
+                    response_data: response.data
+                }
             };
         }
 
-        // handle not found response
+        // handle not found response which may be an http code or a code in the response body json
         if (response.status === 404 || (response.data.hasOwnProperty('code') && response.data.code === 404)) {
             return {
-                status: 'error',
-                reason: 'server',
-                message: 'Not Found',
-                response_data: response.data
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Not Found',
+                    response_data: response.data
+                }
             };
         }
 
-        // handle any non accept_codes status code
-        if (!accept_codes.includes(response.status)) {
+        // handle any non accepted_response_codes status code which is http codes only
+        if (!accepted_response_codes.includes(response.status)) {
             return {
-                status: 'error',
-                reason: 'server',
-                message: 'Unexpected status code: ' + response.status,
-                response_data: response.data
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Unexpected status code: ' + response.status,
+                    response_data: response.data
+                }
             };
         }
 
-        // null implies accepted code
-        return null;
-    },
-
-    _get_response_response_body: (response) => {
-        // handle malformed response
+        // handle malformed response body, all good respones are in the form {data: body}
+        // note that axios responses have a field 'data' containing the response body, then circle has a parent json object with the field 'data', hence data.data
         if (!response.data.hasOwnProperty('data')) {
             return {
                 error: {
@@ -300,12 +326,14 @@ module.exports = circle_integration = {
             };
         }
 
-        // get the response_body from the response
-        const response_response_body = response.data.data;
+        // get the response body from the response
+        const response_body = response.data.data;
 
+        // return just the response body
         return {
-            response_response_body: response_response_body
+            response_body: response_body
         };
+
     },
 
     cached_public_key: null,
@@ -319,29 +347,17 @@ module.exports = circle_integration = {
         }
 
         // if we have no cached key, or the cache has reached expiry, get a new public key from circle
-        const response = await axios({
-            method: 'get',
-            url: `${api_uri_base}encryption/public`
-        });
-        
-        // check the response code, null means ok
-        const check_response_code_result = circle_integration._check_response_code([200], response);
-        if (check_response_code_result !== null) {
-            return check_response_code_result;
-        }
-        
-        // get the response response_body
-        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}encryption/public`));
         if (error) {
             return error;
         }
 
         // cache new key and record time of cache
-        circle_integration.cached_public_key = response_response_body;
+        circle_integration.cached_public_key = response_body;
         circle_integration.cached_public_key_timestamp = new Date().getTime();
 
         // return public key
-        return response_response_body;
+        return response_body;
     },
 
     create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
@@ -352,41 +368,28 @@ module.exports = circle_integration = {
         // todo more than X cards on an account should be a fraud indicator
 
         // call api to create card
-        const response = await axios({
-            method: 'post',
-            url: `${api_uri_base}cards`,
-            data: {
-                idempotencyKey: idempotency_key,
-                keyId: key_id,
-                encryptedData: encrypted_card_information,
-                billingDetails: {
-                    name: name_on_card,
-                    city: city,
-                    country: country,
-                    line1: address_line_1,
-                    line2: address_line_2,
-                    district: district,
-                    postalCode: postal_zip_code
-                },
-                expMonth: expiry_month,
-                expYear: expiry_year,
-                metadata: {
-                    email: 'todo',
-                    phoneNumber: 'todo',
-                    sessionId: 'todo',
-                    ipAddress: 'todo'
-                }
+        ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}cards`, {
+            idempotencyKey: idempotency_key,
+            keyId: key_id,
+            encryptedData: encrypted_card_information,
+            billingDetails: {
+                name: name_on_card,
+                city: city,
+                country: country,
+                line1: address_line_1,
+                line2: address_line_2,
+                district: district,
+                postalCode: postal_zip_code
+            },
+            expMonth: expiry_month,
+            expYear: expiry_year,
+            metadata: {
+                email: 'todo',
+                phoneNumber: 'todo',
+                sessionId: 'todo',
+                ipAddress: 'todo'
             }
-        });
-        
-        // check the response code, null means ok
-        const check_response_code_result = circle_integration._check_response_code([201], response);
-        if (check_response_code_result !== null) {
-            return check_response_code_result;
-        }
-        
-        // get the response response_body
-        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        }));
         if (error) {
             return error;
         }
@@ -397,25 +400,12 @@ module.exports = circle_integration = {
 
     update_card: async (key_id, card_id, encrypted_card_cvv, expiry_month, expiry_year) => {
         // call api to update card
-        const response = await axios({
-            method: 'put',
-            url: `${api_uri_base}cards/${card_id}`,
-            data: {
-                keyId: key_id,
-                encryptedData: encrypted_card_cvv,
-                expMonth: expiry_month,
-                expYear: expiry_year
-            }
-        });
-
-        // check the response code, null means ok
-        const check_response_code_result = circle_integration._check_response_code([200], response);
-        if (check_response_code_result !== null) {
-            return check_response_code_result;
-        }
-
-        // get the response response_body
-        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        ({ error, response_body } = await circle_integration._call_circle([200], 'put', `${api_uri_base}cards/${card_id}`, {
+            keyId: key_id,
+            encryptedData: encrypted_card_cvv,
+            expMonth: expiry_month,
+            expYear: expiry_year
+        }));
         if (error) {
             return error;
         }
@@ -470,50 +460,37 @@ module.exports = circle_integration = {
         };
 
         // create a payment
-        const response =  await axios({
-            method: 'post',
-            url: `${api_uri_base}payments`,
-            data: {
-                idempotencyKey: idempotency_key,
-                keyId: key_id,
-                metadata: {
-                    email: 'todo',
-                    phoneNumber: 'todo',
-                    sessionId: 'todo',
-                    ipAddress: 'todo',
-                },
-                amount: {
-                    amount: sale_item.amount,
-                    currency: sale_item.currency
-                },
-                autoCapture: true,
-                verification: 'three_d_secure',
-                verificationSuccessUrl: 'todo',
-                verificationFailureUrl: 'todo',
-                source: {
-                    id: card_id,
-                    type: 'card'
-                },
-                description: sale_item.statement_description,
-                encryptedData: encrypted_card_cvv,
-                channel: 'todo, what is a channel in this context?'
-            }
-        });
-
-        // check the response code, null means ok
-        const check_response_code_result = circle_integration._check_response_code([201], response);
-        if (check_response_code_result !== null) {
-            return check_response_code_result;
-        }
-
-        // get the response response_body
-        ({ error, response_response_body } = circle_integration._get_response_response_body(response));
+        ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}payments`, {
+            idempotencyKey: idempotency_key,
+            keyId: key_id,
+            metadata: {
+                email: 'todo',
+                phoneNumber: 'todo',
+                sessionId: 'todo',
+                ipAddress: 'todo',
+            },
+            amount: {
+                amount: sale_item.amount,
+                currency: sale_item.currency
+            },
+            autoCapture: true,
+            verification: 'three_d_secure',
+            verificationSuccessUrl: 'todo',
+            verificationFailureUrl: 'todo',
+            source: {
+                id: card_id,
+                type: 'card'
+            },
+            description: sale_item.statement_description,
+            encryptedData: encrypted_card_cvv,
+            channel: 'todo, what is a channel in this context?'
+        }));
         if (error) {
             return error;
         }
 
         // assess the purchase result, null means pending and will require further polling
-        const assessed_result = await circle_integration._assess_purchase_result(response_response_body);
+        const assessed_result = await circle_integration._assess_purchase_result(response_body);
         if (assessed_result !== null) {
             return assessed_result;
         }
@@ -529,19 +506,7 @@ module.exports = circle_integration = {
         // poll until we can resolve the payment as either success or failure
         while (1) {
             // call to request the payment
-            const response =  await axios({
-                method: 'get',
-                url: `${api_uri_base}payments/${payment_id}`
-            });
-
-            // check the response code, null means ok
-            const check_response_code_result = circle_integration._check_response_code([201], response);
-            if (check_response_code_result !== null) {
-                return check_response_code_result;
-            }
-
-            // get the response response_body
-            ({ error, response_body } = circle_integration._get_response_response_body(response));
+            ({ error, response_body } = await circle_integration._call_circle([20], 'get', `${api_uri_base}payments/${payment_id}`,));
             if (error) {
                 return error;
             }
