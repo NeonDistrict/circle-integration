@@ -3,207 +3,17 @@ const risk_categories = require('./risk_categories.js');
 const payment_status_enum = require('./payment_status_enum.js');
 const payment_error_enum = require('./payment_error_enum.js');
 const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
-const three_d_secure_verification_status_enum = requir('./three_d_secure_verification_status_enum.js');
+const three_d_secure_verification_status_enum = requestAnimationFrame('./three_d_secure_verification_status_enum.js');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
+// todo, okay for subs when we startup we need to get a list of subs, remove all of them, create them again, then start serving requests
+// oh okay allll subs come through one endpoint
+// todo how the fuck do we security sandbox the payment gateway to receive posts from aws sns and only our server, actually wait thats
+// probably not too bad since we are on aws
+
 module.exports = circle_integration = {
-    TEST_CARDS: [
-        {
-            card_number: '4007400000000007',
-            card_provider: 'Visa'
-        },
-        {
-            card_number: '4007410000000006',
-            card_provider: 'Visa'
-        },
-        {
-            card_number: '4200000000000000',
-            card_provider: 'Visa'
-        },
-        {
-            card_number: '4757140000000001',
-            card_provider: 'Visa'
-        },
-        {
-            card_number: '5102420000000006',
-            card_provider: 'Mastercard'
-        },
-        {
-            card_number: '5173375000000006',
-            card_provider: 'Mastercard'
-        },
-        {
-            card_number: '5555555555554444',
-            card_provider: 'Mastercard'
-        },
-    ],
-    TEST_AMOUNTS_FOR_FAILURE_RESPONSES: {
-        PAYMENT_FAILED: {
-            amount: '5.01',
-            description: 'Payment failed due to unspecified error'
-        },
-        CARD_NOT_HONORED: {
-            amount: '5.04',
-            description: 'Contact card issuer to query why payment failed'
-        },
-        PAYMENT_NOT_SUPPORTED_BY_ISSUER: {
-            amount: '5.05',
-            description: 'Issuer did not support the payment'
-        },
-        PAYMENT_NOT_FUNDED: {
-            amount: '5.07',
-            description: 'Insufficient funds in account to fund payment'
-        },
-        CARD_INVALID: {
-            amount: '5.19',
-            description: 'Invalid card number'
-        },
-        CARD_LIMIT_VIOLATED: {
-            amount: '5.41',
-            description: 'Exceeded amount or frequency limits'
-        },
-        PAYMENT_DENIED: {
-            amount: '5.43',
-            description: 'Payment denied by Circle Risk Service or card processor risk controls'
-        },
-        PAYMENT_FRAUD_DETECTED: {
-            amount: '5.51',
-            description: 'Payment suspected of being associated with fraud'
-        },
-        CREDIT_CARD_NOT_ALLOWED: {
-            amount: '5.54',
-            description: 'Issuer did not support using a credit card for payment'
-        },
-        PAYMENT_STOPPED_BY_ISSUER: {
-            amount: '5.57',
-            description: 'A stop has been placed on the payment or card'
-        },
-        CARD_ACCOUNT_INELIGIBLE: {
-            amount: '5.84',
-            description: 'Ineligible account associated with card'
-        }
-    },
-    TEST_CVV_FOR_FAILURE_RESPONSES: [
-        '000',
-        '999'
-    ],
-
-    // by setting the address value for line 1 to the test value the described error will occur
-    TEST_AVS_FOR_FAILURE_REPONSES: [
-        {
-            value: 'Test_A',
-            result: 'Partial match',
-            description: 'Street address matches, but both 5-digit and 9-digit ZIP Code do not match.'
-        },
-        {
-            value: 'Test_B',
-            result: 'Partial match',
-            description: 'Street Address Match for International Transaction. Postal Code not verified due to incompatible formats.'
-        },
-        {
-            value: 'Test_C',
-            result: 'Verification unavailable',
-            description: 'Address and Postal Code not verified for International Transaction due to incompatible formats.'
-        },
-        {
-            value: 'Test_D',
-            result: 'Full Match (International Transaction)',
-            description: 'Address and Postal Code match for International Transaction.'
-        },
-        {
-            value: 'Test_E',
-            result: 'Data invalid',
-            description: 'AVS data is invalid or AVS is not allowed for this card type.'
-        },
-        {
-            value: 'Test_F',
-            result: 'Full Match (UK only)',
-            description: 'Street address and postal code match. Applies to U.K. only.'
-        },
-        {
-            value: 'Test_G',
-            result: 'Verification unavailable',
-            description: 'Non-US Issuer does not participate.'
-        },
-        {
-            value: 'Test_I',
-            result: 'Verification unavailable',
-            description: 'Address information not verified for international transaction.'
-        },
-        {
-            value: 'Test_K',
-            result: 'Address mismatch',
-            description: 'Card member’s name matches but billing address and billing postal code do not match.'
-        },
-        {
-            value: 'Test_L',
-            result: 'Partial match',
-            description: 'Card member’s name and billing postal code match, but billing address does not match.'
-        },
-        {
-            value: 'Test_M',
-            result: 'Full match (International Transaction)',
-            description: 'Street Address match for international transaction. Address and Postal Code match.'
-        },
-        {
-            value: 'Test_N',
-            result: 'No match',
-            description: 'No match for address or ZIP/postal code.'
-        },
-        {
-            value: 'Test_O',
-            result: 'Partial match',
-            description: 'Card member’s name and billing address match, but billing postal code does not match.'
-        },
-        {
-            value: 'Test_P',
-            result: 'Partial match (International Transaction)',
-            description: 'Postal code match. Acquirer sent both postal code and street address, but street address not verified due to incompatible formats.'
-        },
-        {
-            value: 'Test_R',
-            result: 'Verification unavailable',
-            description: 'Issuer system unavailable, retry.'
-        },
-        {
-            value: 'Test_S',
-            result: 'Verification unavailable',
-            description: 'AVS not supported'
-        },
-        {
-            value: 'Test_U',
-            result: 'Verification unavailable',
-            description: 'Address unavailable'
-        },
-        {
-            value: 'Test_W',
-            result: 'Partial match',
-            description: 'Postal code matches but address does not match'
-        },
-        {
-            value: 'Test_X',
-            result: 'Full match',
-            description: 'Street address and postal code match'
-        },
-        {
-            value: 'Test_Y',
-            result: 'Full match',
-            description: 'Street address and postal code match'
-        },
-        {
-            value: 'Test_Z',
-            result: 'Partial match',
-            description: '5 digit zip code match only'
-        },
-        {
-            value: 'Test_-',
-            result: 'Verification unavailable',
-            description: 'An error occurred attempting AVS check'
-        }
-    ],
-
     _call_circle: async (accepted_response_codes, method, url, data = null) => {
         // form request
         const request = {
@@ -230,13 +40,25 @@ module.exports = circle_integration = {
         }
 
         // handle unauthorized response which may be an http code or a code in the response body json
+        if (response.status === 400 || (response.data.hasOwnProperty('code') && response.data.code === 400)) {
+            return {
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Bad Request',
+                    payload: response
+                }
+            };
+        }
+
+        // handle unauthorized response which may be an http code or a code in the response body json
         if (response.status === 401 || (response.data.hasOwnProperty('code') && response.data.code === 401)) {
             return {
                 error: {
                     status: 'error',
                     reason: 'server',
                     message: 'Unauthorized',
-                    response_data: response.data
+                    payload: response
                 }
             };
         }
@@ -248,7 +70,19 @@ module.exports = circle_integration = {
                     status: 'error',
                     reason: 'server',
                     message: 'Not Found',
-                    response_data: response.data
+                    payload: response
+                }
+            };
+        }
+
+        // handle too many requests which may be an http code or a code in the response body json
+        if (response.status === 429 || (response.data.hasOwnProperty('code') && response.data.code === 429)) {
+            return {
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Too Many Requests',
+                    payload: response
                 }
             };
         }
@@ -260,7 +94,7 @@ module.exports = circle_integration = {
                     status: 'error',
                     reason: 'server',
                     message: 'Unexpected status code: ' + response.status,
-                    response_data: response.data
+                    payload: response
                 }
             };
         }
@@ -287,6 +121,67 @@ module.exports = circle_integration = {
         };
 
     },
+    
+    setup_notifications_subscription: async () => {
+        // many calls to circle such as adding a card, or creating a payment can take time to process
+        // rather than hammering circle with polling requests they provide an aws sns hook that we can
+        // use to listen for all responses when they complete so that we dont need to poll
+
+        // this notifications subscription must be cleaned up, then recreated at boot time prior to the
+        // circle integration server becoming available for requests, otherwise notifications may be missed
+
+        // first we list any existing subscriptions
+        ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}notifications/subscriptions`));
+        if (error) {
+            return {
+                error: error
+            };
+        }
+        const existing_subscriptions = response_body;
+
+        // if any subscriptions exist remove them
+        for (const existing_subscription of existing_subscriptions) {
+            const existing_subscription_id = existing_subscription.id;
+
+            // delete this subscription
+            ({ error, response_body } = await circle_integration._call_circle([200], 'delete', `${api_uri_base}notifications/subscriptions/${existing_subscription_id}`));
+            if (error) {
+                return {
+                    error: error
+                };
+            }
+
+            // response_body here is empty, the 200 response signifies the operation was a success
+        }
+
+        // create or recreate the notification subscription
+        // note that its a 200 that comes back, not a 201 created, the errata has been reported but is unlikely to be changed
+        ({ error, response_body } = await circle_integration._call_circle([200], 'post', `${api_uri_base}notifications/subscriptions`, {
+            endpoint: 'todo'
+            // todo this endpoint must be https, and must be available before this call is made
+        }));
+        if (error) {
+            return {
+                error: error
+            };
+        }
+
+        // response_body here has subscription details, but we dont store them as we recreate every boot, 200 is good to go
+        return {};
+    },
+
+    on_notification: async (notification) => {
+        // so first we get a subscription confirmation notification with a url to get to confirm our subscription
+        // upon receiveing this, and confirming we return a special notification_confirmed that the router will then
+        // use to activate the rest of the routes, opening the server for use
+
+        // todo all of that shit
+        return {
+            notification_confirmed: 1
+        };
+    },
+
+    
 
     cached_public_key: null,
     cached_public_key_timestamp: null,
@@ -301,18 +196,25 @@ module.exports = circle_integration = {
         // if we have no cached key, or the cache has reached expiry, get a new public key from circle
         ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}encryption/public`));
         if (error) {
-            return error;
+            return {
+                error: error
+            };
         }
 
+        // public key is response body
+        const public_key = response_body;
+
         // cache new key and record time of cache
-        circle_integration.cached_public_key = response_body;
+        circle_integration.cached_public_key = public_key;
         circle_integration.cached_public_key_timestamp = new Date().getTime();
 
         // return public key
-        return response_body;
+        return {
+            public_key: public_key
+        };
     },
 
-    create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
+    _create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
         // todo ensure this card isnt already on this account, flow for updating card?
         // todo fraud check to confirm this card hash isnt on any other account
         // todo whats the best way to get metadata into here, including sessioning?
@@ -343,27 +245,19 @@ module.exports = circle_integration = {
             }
         }));
         if (error) {
-            return error;
+            return {
+                error: error
+            };
         }
 
-        // reaching here implies card was created, return ok
-        return {ok: 1};
-    },
+        // todo this is probably an sns callback or some shit
 
-    update_card: async (key_id, card_id, encrypted_card_cvv, expiry_month, expiry_year) => {
-        // call api to update card
-        ({ error, response_body } = await circle_integration._call_circle([200], 'put', `${api_uri_base}cards/${card_id}`, {
-            keyId: key_id,
-            encryptedData: encrypted_card_cvv,
-            expMonth: expiry_month,
-            expYear: expiry_year
-        }));
-        if (error) {
-            return error;
-        }
-        
-        // reaching here implies the card was updated, return ok
-        return {ok: 1};
+        const card_id = response_body.id;
+
+        // reaching here implies we created a card, return card id
+        return {
+            card_id: card_id
+        };
     },
 
     list_sale_items: async () => {
@@ -398,7 +292,15 @@ module.exports = circle_integration = {
         ];
     },
 
-    make_purchase: async (idempotency_key, card_id, key_id, encrypted_card_cvv, sale_item_key) => {
+    purchase: async (idempotency_key, sale_item_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {        
+        // first we need to create the card
+        ({error, card_id} = await circle_integration._create_card(idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year));
+        if (error) {
+            return {
+                error: error
+            };
+        }
+
         // todo we should have a hashset of sale items by sale_item_key
 
         // grab a fake demo item regardless of sale_item_Key for now
@@ -411,9 +313,12 @@ module.exports = circle_integration = {
             "store_image": "https://images/NEON_1000.png"
         };
 
+        // we need a second idempotency key for the purchase, which we can generate here
+        const purchase_idempotency_key = 'todo';
+
         // create a payment
         ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}payments`, {
-            idempotencyKey: idempotency_key,
+            idempotencyKey: purchase_idempotency_key,
             keyId: key_id,
             metadata: {
                 email: 'todo',
@@ -438,7 +343,9 @@ module.exports = circle_integration = {
             channel: 'todo, what is a channel in this context?'
         }));
         if (error) {
-            return error;
+            return {
+                error: error
+            };
         }
 
         // assess the purchase result, null means pending and will require further polling
@@ -451,6 +358,7 @@ module.exports = circle_integration = {
         const payment_id = result.id;
 
         // poll until we get a result
+        // todo this will be a sub
         circle_integration.poll_for_purchase_result(payment_id);
     },
 
@@ -639,5 +547,9 @@ module.exports = circle_integration = {
                     payload: response
                 };
         }
+    },
+
+    purchase_history: async (user_id) => {
+
     }
 };
