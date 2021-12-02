@@ -4,6 +4,7 @@ const payment_status_enum = require('./payment_status_enum.js');
 const payment_error_enum = require('./payment_error_enum.js');
 const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
 const three_d_secure_verification_status_enum = requestAnimationFrame('./three_d_secure_verification_status_enum.js');
+const sale_items = require('./sale_items.js');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
@@ -12,6 +13,9 @@ const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 // oh okay allll subs come through one endpoint
 // todo how the fuck do we security sandbox the payment gateway to receive posts from aws sns and only our server, actually wait thats
 // probably not too bad since we are on aws
+
+// todo, it looks liekw e need to be looking at the status pending to go to sub parking
+// todo really need to unify these errors and return formats
 
 module.exports = circle_integration = {
     _call_circle: async (accepted_response_codes, method, url, data = null) => {
@@ -175,10 +179,14 @@ module.exports = circle_integration = {
         // upon receiveing this, and confirming we return a special notification_confirmed that the router will then
         // use to activate the rest of the routes, opening the server for use
 
-        // todo all of that shit
+        // todo all of that shit no idea what that response looks like?
         return {
             notification_confirmed: 1
         };
+
+        // todo other responses need to go into some kind of a local queue, stored to the db which can be checked on re request,
+        // and it should trigger parked requests while they remain open, maybe a parked callback with some careful guardrails on 
+        // sending the request in case it has timed out or been disconnected in the interim all of which should be logged
     },
 
     
@@ -264,54 +272,33 @@ module.exports = circle_integration = {
         // todo what if we want sale items per user or something? maybe a delegate to get that from integrator
 
         // return some demo items
-        return [
-            {
-                "sale_item_key": "NEON_1000",
-                "currency": "USD",
-                "amount": "1.00",
-                "statement_description": "NEON DISTRICT: 1000 NEON",
-                "store_description": "Adds 1000 NEON to your account.",
-                "store_image": "https://images/NEON_1000.png"
-            },
-            {
-                "sale_item_key": "NEON_5000",
-                "currency": "USD",
-                "amount": "5.00",
-                "statement_description": "NEON DISTRICT: 5000 NEON",
-                "store_description": "Adds 5000 NEON to your account.",
-                "store_image": "https://images/NEON_5000.png"
-            },
-            {
-                "sale_item_key": "NEON_20000",
-                "currency": "USD",
-                "amount": "20.00",
-                "statement_description": "NEON DISTRICT: 20000 NEON",
-                "store_description": "Adds 20000 NEON to your account.",
-                "store_image": "https://images/NEON_20000.png"
-            }
-        ];
+        return sale_items;
     },
 
     purchase: async (idempotency_key, sale_item_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {        
-        // first we need to create the card
+        // find sale item by sale_item_key
+        const sale_item = sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
+        
+        // if we couldnt find the sale item puke
+        if (sale_item === undefined || sale_item === null) {
+            return {
+                error: {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Sale item not found',
+                    payload: sale_item_key
+                }
+            };
+        }
+        
+        // first we need to create the card before making a payment with it
+        // todo we are going to need to assest the create card result as well
         ({error, card_id} = await circle_integration._create_card(idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year));
         if (error) {
             return {
                 error: error
             };
         }
-
-        // todo we should have a hashset of sale items by sale_item_key
-
-        // grab a fake demo item regardless of sale_item_Key for now
-        const sale_item = {
-            "sale_item_key": "NEON_1000",
-            "currency": "USD",
-            "amount": "1.00",
-            "statement_description": "NEON DISTRICT: 1000 NEON",
-            "store_description": "Adds 1000 NEON to your account.",
-            "store_image": "https://images/NEON_1000.png"
-        };
 
         // we need a second idempotency key for the purchase, which we can generate here
         const purchase_idempotency_key = 'todo';
