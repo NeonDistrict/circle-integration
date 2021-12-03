@@ -28,15 +28,32 @@ const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 // may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also
 // be recorded. this will have to against the db
 
-// todo handle callback timeouts
+// todo handle callback timeouts (like the callback never comes)
+
+// todo handle the request ending before we can callback
 
 module.exports = circle_integration = {
     _parked_callbacks: {},
+    _parked_notifications: {},
     cached_public_key: null,
     cached_public_key_timestamp: null,
 
     _park_callback: (id, callback) => {
+        // whenever we go to park a callback we actually have a race condition where the notification may have already arrived
+        // so first we have to check the parked notifications to see if we have a notification already waiting for this callback
+        if (circle_integration._parked_notifications.hasOwnProperty(id)) {
+            
+            // reaching here implies that a notification was already waiting for us, get that notification and remove it from parking
+            const parked_notification = circle_integration._parked_notifications[id];
+            delete circle_integration._parked_notifications[id];
 
+            // return the notification in the callback
+            return callback(parked_notification);
+        }
+
+        // reaching here implies that no notification was waiting for us already so we go ahead and park this callback
+        // once parked we are done here, the on_notification will pick up the parked callback
+        circle_integration._park_callback[id] = callback;
     },
 
     _call_circle: async (accepted_response_codes, method, url, data = null) => {
@@ -205,9 +222,23 @@ module.exports = circle_integration = {
             notification_confirmed: 1
         };
 
-        // todo other responses need to go into some kind of a local queue, stored to the db which can be checked on re request,
-        // and it should trigger parked requests while they remain open, maybe a parked callback with some careful guardrails on 
-        // sending the request in case it has timed out or been disconnected in the interim all of which should be logged
+        // todo notification.id? format?
+
+        // whenever we receive a normal notification (not the confirmation one) we have a race condition, sometimes a callback
+        // will already be parked and waiting, and sometimes the callback may not be ready yet, first check if a callback is parked
+        if (circle_integration._parked_callbacks.hasOwnProperty(notification.id)) {
+
+            // reaching here implies a callback was parked and already waiting for us, get that callback and remove it from parking
+            const parked_callback = circle_integration._parked_callbacks[notification.id];
+            delete circle_integration._parked_callbacks[notification.id];
+
+            // return the notification in the callback
+            return callback(notification);
+        }
+
+        // reaching here implies that a callback was not already waiting meaning that the notification came before we could park one
+        // in this case we park the notification so that when the callback goes to park with _park_callback it will see it waiting
+        circle_integration._parked_notifications[notification.id] = notification;
     },
 
     get_public_key: async () => {
@@ -380,7 +411,7 @@ module.exports = circle_integration = {
                 // assess the result of the callback, note that true here denotes this is not an aws sns callback,
                 // also note that we never expect a register callback return since that should never happen and
                 // will instead come back as an error here (this is what the true here is for)
-                const resolution = await circle_integration._assess_add_card_result(response_body, true);
+                const resolution = await circle_integration._assess_add_card_result(callback_response_body, true);
                 resolve(resolution);
             });
         }));
