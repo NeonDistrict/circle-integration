@@ -1,5 +1,6 @@
 const axios = require('axios').default;
 const risk_categories = require('./risk_categories.js');
+const add_card_status_enum = require('./add_card_status_enum.js');
 const payment_status_enum = require('./payment_status_enum.js');
 const payment_error_enum = require('./payment_error_enum.js');
 const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
@@ -17,7 +18,27 @@ const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 // todo, it looks liekw e need to be looking at the status pending to go to sub parking
 // todo really need to unify these errors and return formats
 
+// todo adding a card has no id associated with it other than the card id, which maybe we could use as the callback hook?
+// making a payment gives you a payment id to use as a callback hook.
+// perhaps the callback system does a two way check, when we register for a callback we can check if a callback is already waiting
+// and if no callback is already waiting then we can add a callback, there could also be a period check to address any missed connections
+// which would be an extremely rare race condition that should be reported when it happens
+
+// todo need to verify the behaviour if a call returns with success, and if a notification comes in for an already resolved situation which
+// may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also
+// be recorded. this will have to against the db
+
+// todo handle callback timeouts
+
 module.exports = circle_integration = {
+    _parked_callbacks: {},
+    cached_public_key: null,
+    cached_public_key_timestamp: null,
+
+    _park_callback: (id, callback) => {
+
+    },
+
     _call_circle: async (accepted_response_codes, method, url, data = null) => {
         // form request
         const request = {
@@ -189,10 +210,6 @@ module.exports = circle_integration = {
         // sending the request in case it has timed out or been disconnected in the interim all of which should be logged
     },
 
-    
-
-    cached_public_key: null,
-    cached_public_key_timestamp: null,
     get_public_key: async () => {
         // circle reccommends caching our public key which changes infrequently for at least 24 hours as per:
         // https://developers.circle.com/reference#getpublickey
@@ -219,52 +236,6 @@ module.exports = circle_integration = {
         // return public key
         return {
             public_key: public_key
-        };
-    },
-
-    _create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
-        // todo ensure this card isnt already on this account, flow for updating card?
-        // todo fraud check to confirm this card hash isnt on any other account
-        // todo whats the best way to get metadata into here, including sessioning?
-        // todo we need to keep track of which cards belong to which users
-        // todo more than X cards on an account should be a fraud indicator
-
-        // call api to create card
-        ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}cards`, {
-            idempotencyKey: idempotency_key,
-            keyId: key_id,
-            encryptedData: encrypted_card_information,
-            billingDetails: {
-                name: name_on_card,
-                city: city,
-                country: country,
-                line1: address_line_1,
-                line2: address_line_2,
-                district: district,
-                postalCode: postal_zip_code
-            },
-            expMonth: expiry_month,
-            expYear: expiry_year,
-            metadata: {
-                email: 'todo',
-                phoneNumber: 'todo',
-                sessionId: 'todo',
-                ipAddress: 'todo'
-            }
-        }));
-        if (error) {
-            return {
-                error: error
-            };
-        }
-
-        // todo this is probably an sns callback or some shit
-
-        const card_id = response_body.id;
-
-        // reaching here implies we created a card, return card id
-        return {
-            card_id: card_id
         };
     },
 
@@ -349,6 +320,127 @@ module.exports = circle_integration = {
         circle_integration.poll_for_purchase_result(payment_id);
     },
 
+    _create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
+        // todo ensure this card isnt already on this account, flow for updating card?
+        // todo fraud check to confirm this card hash isnt on any other account
+        // todo whats the best way to get metadata into here, including sessioning?
+        // todo we need to keep track of which cards belong to which users
+        // todo more than X cards on an account should be a fraud indicator
+
+        // call api to create card
+        ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}cards`, {
+            idempotencyKey: idempotency_key,
+            keyId: key_id,
+            encryptedData: encrypted_card_information,
+            billingDetails: {
+                name: name_on_card,
+                city: city,
+                country: country,
+                line1: address_line_1,
+                line2: address_line_2,
+                district: district,
+                postalCode: postal_zip_code
+            },
+            expMonth: expiry_month,
+            expYear: expiry_year,
+            metadata: {
+                email: 'todo',
+                phoneNumber: 'todo',
+                sessionId: 'todo',
+                ipAddress: 'todo'
+            }
+        }));
+        if (error) {
+            return {
+                error: error
+            };
+        }
+
+        // assess the result of the original call, note that false here denotes this is not an aws sns callback
+        ({error, register_callback, card_id} = await circle_integration._assess_add_card_result(response_body, false));
+        if (error) {
+            return {
+                error: error
+            };
+        }
+
+        // if we do not need to register a callback and have a result already return that
+        if (register_callback !== 1) {
+            return {
+                card_id: card_id
+            };
+        }
+
+        // reaching here implies we need to register a callback, register one
+        // note that we wrap the callback in a promise here so we can keep our execution context despite waiting
+        // on an event from another execution context
+        ({error, card_id} = await new Promise((resolve) => {
+            circle_integration._park_callback(response_body.id, (callback_response_body) => {
+
+                // assess the result of the callback, note that true here denotes this is not an aws sns callback,
+                // also note that we never expect a register callback return since that should never happen and
+                // will instead come back as an error here (this is what the true here is for)
+                const resolution = await circle_integration._assess_add_card_result(response_body, true);
+                resolve(resolution);
+            });
+        }));
+        if (error) {
+            return {
+                error: error
+            };
+        }
+
+        // reaching here implies we succeeded in creating a card
+        return {
+            card_id: card_id
+        };
+    },
+
+    _assess_add_card_result: async (response_body, is_aws_sns_callback) => {
+        // todo risk/fraud/errors?
+        
+        // check the status of the response
+        switch (response_body.status) {
+
+            // complete implies that the card was created successfully, we can now return the card id
+            case add_card_status_enum.COMPLETE:
+                return {
+                    card_id: response_body.id
+                };
+
+            // failed implies
+            case add_card_status_enum.FAILED:
+                // todo
+            
+            // pending implies we will need to wait for an aws sns callback when the add card action resolves
+            case add_card_status_enum.PENDING:
+                // if for some reason the aws sns callback sends as a pending status circle fucked up, catch it
+                if (is_aws_sns_callback) {
+                    return {
+                        status: 'error',
+                        reason: 'server',
+                        message: 'An aws sns callback returned a pending result, this should never happen',
+                        payload: response_body
+                    };
+                }
+                // otherwise respond that we need to register a callback and wait for aws sns to callback
+                return {
+                    register_callback: 1
+                };
+            
+            // guardrail against unexpected responses or changing api
+            default:
+                return {
+                    status: 'error',
+                    reason: 'server',
+                    message: 'Unexpected response status: ' + response_body.status,
+                    payload: response_body
+                };
+        }
+    },
+
+
+
     poll_for_purchase_result: async (payment_id) => {
         // poll until we can resolve the payment as either success or failure
         while (1) {
@@ -413,7 +505,7 @@ module.exports = circle_integration = {
                     status: 'error',
                     reason: 'server',
                     message: 'Unexpected result status: ' + result.status,
-                    payload: response.data
+                    payload: response
                 };
         }
     },
