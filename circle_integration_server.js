@@ -4,10 +4,11 @@ const add_card_status_enum = require('./add_card_status_enum.js');
 const payment_status_enum = require('./payment_status_enum.js');
 const payment_error_enum = require('./payment_error_enum.js');
 const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
-const three_d_secure_verification_status_enum = requestAnimationFrame('./three_d_secure_verification_status_enum.js');
+const three_d_secure_verification_status_enum = require('./three_d_secure_verification_status_enum.js');
 const sale_items = require('./sale_items.js');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
+const api_sandbox_key = 'QVBJX0tFWTo1NDg3YWQzMzgzNGZiMzgzN2Y3ZjFjNzQ4ZWU3OWU4OTo1NDkwYWQ3N2NiYTk3ODg1ZTlmOTcxMDA1MTRjMDM2NQ';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
 // todo, okay for subs when we startup we need to get a list of subs, remove all of them, create them again, then start serving requests
@@ -60,7 +61,10 @@ module.exports = circle_integration = {
         // form request
         const request = {
             method: method,
-            url: url
+            url: url,
+            headers: {
+                'Authorization': `Bearer ${api_sandbox_key}`
+            }
         };
         if (data !== null) {
             request.data = data;
@@ -406,7 +410,7 @@ module.exports = circle_integration = {
         // note that we wrap the callback in a promise here so we can keep our execution context despite waiting
         // on an event from another execution context
         ({error, card_id} = await new Promise((resolve) => {
-            circle_integration._park_callback(response_body.id, (callback_response_body) => {
+            circle_integration._park_callback(response_body.id, async (callback_response_body) => {
 
                 // assess the result of the callback, note that true here denotes this is not an aws sns callback,
                 // also note that we never expect a register callback return since that should never happen and

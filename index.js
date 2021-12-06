@@ -2,13 +2,14 @@ const express = require('express');
 const body_parser = require('body-parser')
 const app = express();
 const port = 3000;
-const circle_integration = require('../circle_integration_server.js');
+const circle_integration = require('./circle_integration_server.js');
 
-app.use(express.static('static'));
 app.use(body_parser.json());
 
 // todo there should be some json schema validation here, and error responses, logging etc
 // todo generic responders
+
+console.log(circle_integration);
 
 
 // when the server boots only the aws_sns endpoint is activated, since without the sns callbacks
@@ -60,11 +61,11 @@ app.post('/aws_sns', async (req, res) => {
 });
 
 // start the server
-app.listen(port, () => {
-    console.log(`circle-integration-example listening at http://localhost:${port}`);
+app.listen(port, async () => {
+    console.log(`circle-integration-server listening at http://localhost:${port}`);
 
     // setup the aws sns subscription now that the route for confirmation has activated
     console.log('setting up notifications subscription');
-    ({error} = await circle_integration.setup_notifications_subscription());
+    ({ error } = await circle_integration.setup_notifications_subscription());
     // todo error
 });
