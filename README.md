@@ -16,4 +16,5 @@ Contains documentation, demo, and back/front end components required to integrat
 sudo yum groupinstall 'Development Tools' -y
 sudo curl --silent --location https://rpm.nodesource.com/setup_14.x | sudo bash -
 sudo yum install nodejs -y
+sudo npm install pm2 -g
 ```
