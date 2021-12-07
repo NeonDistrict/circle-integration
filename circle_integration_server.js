@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const axios = require('axios').default;
 const risk_categories = require('./risk_categories.js');
 const add_card_status_enum = require('./add_card_status_enum.js');
@@ -6,6 +7,7 @@ const payment_error_enum = require('./payment_error_enum.js');
 const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
 const three_d_secure_verification_status_enum = require('./three_d_secure_verification_status_enum.js');
 const sale_items = require('./sale_items.js');
+const journal = require('./journal.js');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const api_sandbox_key = 'QVBJX0tFWTo1NDg3YWQzMzgzNGZiMzgzN2Y3ZjFjNzQ4ZWU3OWU4OTo1NDkwYWQ3N2NiYTk3ODg1ZTlmOTcxMDA1MTRjMDM2NQ';
@@ -33,6 +35,8 @@ const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
 // todo handle the request ending before we can callback
 
+// todo we should have a park notification similar to park callback
+
 module.exports = circle_integration = {
     _parked_callbacks: {},
     _parked_notifications: {},
@@ -58,6 +62,9 @@ module.exports = circle_integration = {
     },
 
     _call_circle: async (accepted_response_codes, method, url, data = null) => {
+        // create a uuid to identify this request
+        const uuid = uuidv4();
+
         // form request
         const request = {
             method: method,
@@ -69,72 +76,86 @@ module.exports = circle_integration = {
         if (data !== null) {
             request.data = data;
         }
+
+        // journal the request before it goes out
+        await journal(uuid, 'request to circle', request);
         
         // make request and catch any weird axios crashes
         let response;
         try {
             response = await axios(request);
         } catch (request_error) {
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected request failure: ' + request_error.toString(),
-                    payload: request_error
-                }
-            };
+            // axios wont return the response normally on error codes, associate it here
+            response = request_error.response;
+
+            // clean up response junk for logging
+            delete response.request;
+            delete response.headers;
+            delete response.config;
+
+            // journal the error response from circle
+            await journal(uuid, 'error response from circle', response);
+
+            // handle unauthorized response which may be an http code or a code in the response body json
+            if (response.status === 400 || (response.data.hasOwnProperty('code') && response.data.code === 400)) {
+                return {
+                    error: {
+                        status: 'error',
+                        reason: 'server',
+                        message: 'Bad Request',
+                        payload: response
+                    }
+                };
+            }
+
+            // handle unauthorized response which may be an http code or a code in the response body json
+            if (response.status === 401 || (response.data.hasOwnProperty('code') && response.data.code === 401)) {
+                return {
+                    error: {
+                        status: 'error',
+                        reason: 'server',
+                        message: 'Unauthorized',
+                        payload: response
+                    }
+                };
+            }
+
+            // handle not found response which may be an http code or a code in the response body json
+            if (response.status === 404 || (response.data.hasOwnProperty('code') && response.data.code === 404)) {
+                return {
+                    error: {
+                        status: 'error',
+                        reason: 'server',
+                        message: 'Not Found',
+                        payload: response
+                    }
+                };
+            }
+
+            // handle too many requests which may be an http code or a code in the response body json
+            if (response.status === 429 || (response.data.hasOwnProperty('code') && response.data.code === 429)) {
+                return {
+                    error: {
+                        status: 'error',
+                        reason: 'server',
+                        message: 'Too Many Requests',
+                        payload: response
+                    }
+                };
+            }
         }
 
-        // handle unauthorized response which may be an http code or a code in the response body json
-        if (response.status === 400 || (response.data.hasOwnProperty('code') && response.data.code === 400)) {
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Bad Request',
-                    payload: response
-                }
-            };
-        }
-
-        // handle unauthorized response which may be an http code or a code in the response body json
-        if (response.status === 401 || (response.data.hasOwnProperty('code') && response.data.code === 401)) {
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unauthorized',
-                    payload: response
-                }
-            };
-        }
-
-        // handle not found response which may be an http code or a code in the response body json
-        if (response.status === 404 || (response.data.hasOwnProperty('code') && response.data.code === 404)) {
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Not Found',
-                    payload: response
-                }
-            };
-        }
-
-        // handle too many requests which may be an http code or a code in the response body json
-        if (response.status === 429 || (response.data.hasOwnProperty('code') && response.data.code === 429)) {
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Too Many Requests',
-                    payload: response
-                }
-            };
-        }
+        // clean up response junk for logging
+        delete response.request;
+        delete response.headers;
+        delete response.config;
 
         // handle any non accepted_response_codes status code which is http codes only
         if (!accepted_response_codes.includes(response.status)) {
+
+            // journal unexpected response 
+            journal(uuid, 'unexpected circle response code', response);
+
             return {
                 error: {
                     status: 'error',
@@ -148,6 +169,10 @@ module.exports = circle_integration = {
         // handle malformed response body, all good respones are in the form {data: body}
         // note that axios responses have a field 'data' containing the response body, then circle has a parent json object with the field 'data', hence data.data
         if (!response.data.hasOwnProperty('data')) {
+
+            // journal malformed response body
+            journal(uuid, 'malformed circle response body', response);
+
             return {
                 error: {
                     status: 'error',
@@ -157,6 +182,9 @@ module.exports = circle_integration = {
                 }
             };
         }
+
+        // journal success response
+        journal(uuid, 'okay circle response', response);
 
         // get the response body from the response
         const response_body = response.data.data;
@@ -168,7 +196,7 @@ module.exports = circle_integration = {
 
     },
     
-    setup_notifications_subscription: async () => {
+    setup_notifications_subscription: async (aws_sns_endpoint) => {
         // many calls to circle such as adding a card, or creating a payment can take time to process
         // rather than hammering circle with polling requests they provide an aws sns hook that we can
         // use to listen for all responses when they complete so that we dont need to poll
@@ -184,7 +212,10 @@ module.exports = circle_integration = {
             };
         }
         const existing_subscriptions = response_body;
+        console.log('existing');
+        console.log(JSON.stringify(existing_subscriptions, null, 2));
 
+        /*
         // if any subscriptions exist remove them
         for (const existing_subscription of existing_subscriptions) {
             const existing_subscription_id = existing_subscription.id;
@@ -199,12 +230,12 @@ module.exports = circle_integration = {
 
             // response_body here is empty, the 200 response signifies the operation was a success
         }
+        */
 
         // create or recreate the notification subscription
         // note that its a 200 that comes back, not a 201 created, the errata has been reported but is unlikely to be changed
         ({ error, response_body } = await circle_integration._call_circle([200], 'post', `${api_uri_base}notifications/subscriptions`, {
-            endpoint: 'todo'
-            // todo this endpoint must be https, and must be available before this call is made
+            endpoint: aws_sns_endpoint
         }));
         if (error) {
             return {

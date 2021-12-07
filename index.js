@@ -1,16 +1,20 @@
+const journal = require('./journal.js');
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
 const body_parser = require('body-parser')
 const app = express();
-const port = 3000;
+const elastic_ip = '54.211.86.53';
+const port = 8443;
+const server_url = `https://${elastic_ip}:${port}`;
 const circle_integration = require('./circle_integration_server.js');
+
+journal(null, 'booting', null);
 
 app.use(body_parser.json());
 
 // todo there should be some json schema validation here, and error responses, logging etc
 // todo generic responders
-
-console.log(circle_integration);
-
 
 // when the server boots only the aws_sns endpoint is activated, since without the sns callbacks
 // from circle we cant confirm cards or payments are working, and thus allowing transactions without
@@ -60,12 +64,24 @@ app.post('/aws_sns', async (req, res) => {
     res.end();
 });
 
-// start the server
-app.listen(port, async () => {
-    console.log(`circle-integration-server listening at http://localhost:${port}`);
+const https_server = https.createServer({
+    key: fs.readFileSync('./circle-integration/keys/server-key.pem'),
+    cert: fs.readFileSync('./circle-integration/keys/server-cert.pem'),
+}, app);
 
-    // setup the aws sns subscription now that the route for confirmation has activated
-    console.log('setting up notifications subscription');
-    ({ error } = await circle_integration.setup_notifications_subscription());
-    // todo error
+
+// start the server
+https_server.listen(port, async () => {
+    journal(null, 'listening', {server_url: server_url});
+    
+    return;
+    
+    const aws_sns_endpoint = `${server_url}/aws_sns`;
+    journal(null, 'setting up aws sns subscription', {aws_sns_endpoint: aws_sns_endpoint});
+
+    ({ error } = await circle_integration.setup_notifications_subscription(aws_sns_endpoint));
+    if (error) {
+        journal(null, 'failed to setup aws sns subscription', error);
+        throw new Error('failed to setup aws sns subscription crashing');
+    }
 });
