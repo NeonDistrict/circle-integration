@@ -1,0 +1,122 @@
+{
+    "version": "2.0.0",
+    "tasks": 
+    [
+        {
+            "label": "make-logs-dir",
+            "command": "mkdir -p ./logs",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "rsync",
+            "command": "rsync -arP -e \"ssh -i ~/keys/neon-district-circle-integration-dev.pem\" ./ ec2-user@54.211.86.53:/home/ec2-user/circle-integration/",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "mocha-start",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 stop /home/ec2-user/circle-integration/src/index.js || true\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-stop",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 stop /home/ec2-user/circle-integration/src/index.js || true\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-start",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 start /home/ec2-user/circle-integration/src/index.js --node-args \\\"--inspect-brk=0.0.0.0:9229\\\"\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 logs --raw --nostream index\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-out-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/index-out.log ./logs/pm2-out.log",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-error-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/index-error.log ./logs/pm2-error.log",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-delete",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 flush index\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "express-logs",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"tail -n 50 /home/ec2-user/circle-integration/src/express.log\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "express-logs-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/circle-integration/src/express.log ./logs/express.log",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "express-logs-delete",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"rm -f /home/ec2-user/circle-integration/src/express.log\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "axios-logs",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"tail -n 50 /home/ec2-user/circle-integration/src/axios.log\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "axios-logs-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/circle-integration/src/axios.log ./logs/axios.log",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "axios-logs-delete",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"rm -f /home/ec2-user/circle-integration/src/axios.log\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "delete-logs",
+            "dependsOn": ["pm2-logs-delete", "express-logs-delete", "axios-logs-delete"],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "start-server",
+            "dependsOn": ["make-logs-dir", "delete-logs", "pm2-stop", "rsync", "pm2-start"],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "stop-server",
+            "dependsOn": ["pm2-stop", "express-logs-download", "axios-logs-download", "pm2-logs-out-download", "pm2-logs-error-download"],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "start-tests",
+            "dependsOn": ["make-logs-dir", "delete-logs", "pm2-stop", "rsync", "pm2-start"],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "stop-tests",
+            "dependsOn": ["pm2-stop", "express-logs-download", "axios-logs-download", "pm2-logs-out-download", "pm2-logs-error-download"],
+            "dependsOrder": "sequence"
+        }
+    ]
+}
+//delete logs on boot step

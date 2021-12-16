@@ -1,17 +1,34 @@
+const fs = require('fs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const axios = require('axios').default;
-const risk_categories = require('./risk_categories.js');
-const add_card_status_enum = require('./add_card_status_enum.js');
-const payment_status_enum = require('./payment_status_enum.js');
-const payment_error_enum = require('./payment_error_enum.js');
-const cvv_verification_status_enum = require('./cvv_verification_status_enum.js');
-const three_d_secure_verification_status_enum = require('./three_d_secure_verification_status_enum.js');
+const axios = require('axios').default.create();
+const axios_logger = require('axios-logger');
+const risk_categories = require('./enum/risk_categories.js');
+const add_card_status_enum = require('./enum/add_card_status_enum.js');
+const payment_status_enum = require('./enum/payment_status_enum.js');
+const payment_error_enum = require('./enum/payment_error_enum.js');
+const cvv_verification_status_enum = require('./enum/cvv_verification_status_enum.js');
+const three_d_secure_verification_status_enum = require('./enum/three_d_secure_verification_status_enum.js');
 const sale_items = require('./sale_items.js');
-const journal = require('./journal.js');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
-const api_sandbox_key = 'QVBJX0tFWTo1NDg3YWQzMzgzNGZiMzgzN2Y3ZjFjNzQ4ZWU3OWU4OTo1NDkwYWQ3N2NiYTk3ODg1ZTlmOTcxMDA1MTRjMDM2NQ';
+const api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
+
+// setup axios logging
+const axios_log_stream = fs.createWriteStream(path.join(__dirname, 'axios.log'), { flags: 'a' });
+const logging_config = {
+    logger: (str) => axios_log_stream.write(str + '\n'),
+    headers: true,
+    status: true,
+    data: true,
+    params: true,
+    url: true,
+    method: true,
+    prefixText: false,
+};
+axios.interceptors.request.use((request) => axios_logger.requestLogger(request, logging_config));
+axios.interceptors.response.use((response) => axios_logger.responseLogger(response, logging_config));
 
 // todo, okay for subs when we startup we need to get a list of subs, remove all of them, create them again, then start serving requests
 // oh okay allll subs come through one endpoint
@@ -76,10 +93,7 @@ module.exports = circle_integration = {
         if (data !== null) {
             request.data = data;
         }
-
-        // journal the request before it goes out
-        await journal(uuid, 'request to circle', request);
-        
+  
         // make request and catch any weird axios crashes
         let response;
         try {
@@ -87,124 +101,88 @@ module.exports = circle_integration = {
         } catch (request_error) {
             // axios wont return the response normally on error codes, associate it here
             response = request_error.response;
-
-            // clean up response junk for logging
-            delete response.request;
-            delete response.headers;
-            delete response.config;
-
-            // journal the error response from circle
-            await journal(uuid, 'error response from circle', response);
-
-            // handle unauthorized response which may be an http code or a code in the response body json
-            if (response.status === 400 || (response.data.hasOwnProperty('code') && response.data.code === 400)) {
-                return {
-                    error: {
-                        status: 'error',
-                        reason: 'server',
-                        message: 'Bad Request',
-                        payload: response
-                    }
-                };
-            }
-
-            // handle unauthorized response which may be an http code or a code in the response body json
-            if (response.status === 401 || (response.data.hasOwnProperty('code') && response.data.code === 401)) {
-                return {
-                    error: {
-                        status: 'error',
-                        reason: 'server',
-                        message: 'Unauthorized',
-                        payload: response
-                    }
-                };
-            }
-
-            // handle not found response which may be an http code or a code in the response body json
-            if (response.status === 404 || (response.data.hasOwnProperty('code') && response.data.code === 404)) {
-                return {
-                    error: {
-                        status: 'error',
-                        reason: 'server',
-                        message: 'Not Found',
-                        payload: response
-                    }
-                };
-            }
-
-            // handle too many requests which may be an http code or a code in the response body json
-            if (response.status === 429 || (response.data.hasOwnProperty('code') && response.data.code === 429)) {
-                return {
-                    error: {
-                        status: 'error',
-                        reason: 'server',
-                        message: 'Too Many Requests',
-                        payload: response
-                    }
-                };
-            }
         }
 
-        // clean up response junk for logging
-        delete response.request;
-        delete response.headers;
-        delete response.config;
+        // get status code
+        const status_code = response.status || (response.data.hasOwnProperty('code') ? response.data.code : 999);
 
-        // handle any non accepted_response_codes status code which is http codes only
-        if (!accepted_response_codes.includes(response.status)) {
+        // if our request has an accepted response code
+        if (accepted_response_codes.includes(status_code)) {
 
-            // journal unexpected response 
-            journal(uuid, 'unexpected circle response code', response);
-
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected status code: ' + response.status,
-                    payload: response
+            // if the body is malformed, return a malformed error
+            if (!response.data.hasOwnProperty('data')) {
+                return {
+                    error: {
+                        status: 'error',
+                        message: 'Malformed Response'
+                    }
                 }
+            }
+
+            // get the response body from the response
+            const response_body = response.data.data;
+
+            // return just the response body
+            return {
+                response_body: response_body
             };
         }
 
-        // handle malformed response body, all good respones are in the form {data: body}
-        // note that axios responses have a field 'data' containing the response body, then circle has a parent json object with the field 'data', hence data.data
-        if (!response.data.hasOwnProperty('data')) {
-
-            // journal malformed response body
-            journal(uuid, 'malformed circle response body', response);
-
-            return {
-                error: {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected response data',
-                    payload: response
-                }
-            };
-        }
-
-        // journal success response
-        journal(uuid, 'okay circle response', response);
-
-        // get the response body from the response
-        const response_body = response.data.data;
-
-        // return just the response body
-        return {
-            response_body: response_body
+        // define failure codes
+        const failure_codes = {
+            '400': {
+                reason: 'server',
+                message: 'Bad Request'
+            },
+            '401': {
+                reason: 'server',
+                message: 'Unauthorized'
+            },
+            '404': {
+                reason: 'server',
+                message: 'Not Found'
+            },
+            '429': {
+                reason: 'server',
+                message: 'Too Many Requests'
+            },
+            '500': {
+                reason: 'server',
+                message: 'Unexpected Server Error'
+            }
         };
 
+        // reaching here implies we had a bad response
+
+        // check if its an expected error code
+        if (failure_codes.hasOwnProperty(status_code)) {
+
+            const failure = failure_codes[status_code];
+
+            // return the relevant error
+            return {
+                error: {
+                    reason: failure.reason,
+                    message: failure.message
+                }
+            };
+        }
+
+        // reaching here implies it was an unexpected error code
+        return {
+            error: {
+                reason: 'server',
+                message: 'Unknown Server Error'
+            }
+        };
     },
     
-    setup_notifications_subscription: async (aws_sns_endpoint) => {
+    setup_notifications_subscription: async (sns_endpoint_url) => {
         // many calls to circle such as adding a card, or creating a payment can take time to process
         // rather than hammering circle with polling requests they provide an aws sns hook that we can
         // use to listen for all responses when they complete so that we dont need to poll
 
-        // this notifications subscription must be cleaned up, then recreated at boot time prior to the
-        // circle integration server becoming available for requests, otherwise notifications may be missed
-
-        // first we list any existing subscriptions
+        // list any existing subscriptions to see if one needs to be created
         ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}notifications/subscriptions`));
         if (error) {
             return {
@@ -212,30 +190,32 @@ module.exports = circle_integration = {
             };
         }
         const existing_subscriptions = response_body;
-        console.log('existing');
-        console.log(JSON.stringify(existing_subscriptions, null, 2));
 
-        /*
-        // if any subscriptions exist remove them
+        // look through subscriptions to see if we have a fully confirmed one
         for (const existing_subscription of existing_subscriptions) {
-            const existing_subscription_id = existing_subscription.id;
 
-            // delete this subscription
-            ({ error, response_body } = await circle_integration._call_circle([200], 'delete', `${api_uri_base}notifications/subscriptions/${existing_subscription_id}`));
-            if (error) {
-                return {
-                    error: error
-                };
+            // each subscription is made up of 2 subscriptions, one for east one for west, both need to be good
+            let subscription_good = true;
+            for (const subscription_detail of existing_subscription.subscriptionDetails) {
+                
+                // if this subscription region is not good move to next subscription
+                if (subscription_detail.status !== 'confirmed') {
+                    subscription_good = false;
+                    break;
+                }
             }
 
-            // response_body here is empty, the 200 response signifies the operation was a success
+            // if we got a good subscription we can return without creating one
+            if (subscription_good) {
+                return {};
+            }
         }
-        */
 
-        // create or recreate the notification subscription
-        // note that its a 200 that comes back, not a 201 created, the errata has been reported but is unlikely to be changed
-        ({ error, response_body } = await circle_integration._call_circle([200], 'post', `${api_uri_base}notifications/subscriptions`, {
-            endpoint: aws_sns_endpoint
+        // reaching here implies we do not have an existing, confirmed, subscription and it must be created
+
+        // create the notification subscription
+        ({ error, response_body } = await circle_integration._call_circle([200, 201], 'post', `${api_uri_base}notifications/subscriptions`, {
+            endpoint: sns_endpoint_url
         }));
         if (error) {
             return {
@@ -243,19 +223,32 @@ module.exports = circle_integration = {
             };
         }
 
-        // response_body here has subscription details, but we dont store them as we recreate every boot, 200 is good to go
+        // return okay and wait for confirmation notification
         return {};
     },
 
     on_notification: async (notification) => {
-        // so first we get a subscription confirmation notification with a url to get to confirm our subscription
-        // upon receiveing this, and confirming we return a special notification_confirmed that the router will then
-        // use to activate the rest of the routes, opening the server for use
 
-        // todo all of that shit no idea what that response looks like?
-        return {
-            notification_confirmed: 1
-        };
+        // if this is a subscription confirmation
+        if (notification.Type === 'SubscriptionConfirmation') {
+            const subscribe_url = notification.SubscribeURL;
+            const request = {
+                method: 'get',
+                url: subscribe_url
+            };
+            try {
+                await axios(request);
+            } catch (request_error) {
+                return {
+                    error: request_error
+                };
+            }
+
+            return {};
+        }
+
+        console.log('notification:', notification);
+        return {};
 
         // todo notification.id? format?
 
