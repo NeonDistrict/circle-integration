@@ -8,6 +8,7 @@ const app = express();
 const circle_integration = require('./circle_integration_server.js');
 
 module.exports = server = {
+    https_server: null,
     initialize: (config, callback) => {
         app.use(body_parser.json({
             type (req) {
@@ -59,16 +60,19 @@ module.exports = server = {
             res.send(purchase_history_page);
         });
         
-        const https_server = https.createServer({
-            key: fs.readFileSync('./circle-integration/keys/privkey.pem'),
-            cert: fs.readFileSync('./circle-integration/keys/fullchain.pem'),
+        server.https_server = https.createServer({
+            key: fs.readFileSync(path.join(__dirname, '../keys/privkey.pem')),
+            cert: fs.readFileSync(path.join(__dirname, '../keys/fullchain.pem')),
         }, app);
 
         // start the server
-        https_server.listen(config.port, async () => {
+        server.https_server.listen(config.port, async () => {
             const sns_endpoint_url = `${config.server_url}${config.sns_endpoint}`;
             ({ error } = await circle_integration.setup_notifications_subscription(sns_endpoint_url));
             callback(error);
         });
+    },
+    shutdown: () => {
+        server.https_server.close();
     }
 };

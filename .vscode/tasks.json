@@ -2,121 +2,193 @@
     "version": "2.0.0",
     "tasks": 
     [
+        // note that many tasks contain " || true" at the end of them to prevent them from returning an error code
+        // there are many tasks expected to fail, ie if you run the server then try to download the test logs
+        // that dont exist the whole pipeline fails. unfortunately tasks have no easy "continue on failure" options
+
+        // create a local directory to hold logs, -p wont return an error code if it already exists
         {
             "label": "make-logs-dir",
             "command": "mkdir -p ./logs",
             "args": [],
             "type": "shell",
         },
+
+        // synchronize the local directory to the remote directory
         {
             "label": "rsync",
             "command": "rsync -arP -e \"ssh -i ~/keys/neon-district-circle-integration-dev.pem\" ./ ec2-user@54.211.86.53:/home/ec2-user/circle-integration/",
             "args": [],
             "type": "shell",
         },
+
+        // pm2 for tests
         {
-            "label": "mocha-start",
+            "label": "pm2-stop-tests",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 stop /home/ec2-user/circle-integration/node_modules/mocha/mocha.js || true\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-start-tests",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 start /home/ec2-user/circle-integration/pm2-tests.json\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-tests",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 logs --raw --nostream mocha || true\"",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-tests-out-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/mocha-out.log ./logs/pm2-tests-out.log || true",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-tests-error-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/mocha-error.log ./logs/pm2-tests-error.log || true",
+            "args": [],
+            "type": "shell",
+        },
+        {
+            "label": "pm2-logs-tests-delete",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 flush mocha || true\"",
+            "args": [],
+            "type": "shell",
+        },
+
+        // pm2 for server
+        {
+            "label": "pm2-stop-server",
             "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 stop /home/ec2-user/circle-integration/src/index.js || true\"",
             "args": [],
             "type": "shell",
         },
         {
-            "label": "pm2-stop",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 stop /home/ec2-user/circle-integration/src/index.js || true\"",
-            "args": [],
-            "type": "shell",
-        },
-        {
-            "label": "pm2-start",
+            "label": "pm2-start-server",
             "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 start /home/ec2-user/circle-integration/src/index.js --node-args \\\"--inspect-brk=0.0.0.0:9229\\\"\"",
             "args": [],
             "type": "shell",
         },
         {
-            "label": "pm2-logs",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 logs --raw --nostream index\"",
+            "label": "pm2-logs-server",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 logs --raw --nostream index || true\"",
             "args": [],
             "type": "shell",
         },
         {
-            "label": "pm2-logs-out-download",
-            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/index-out.log ./logs/pm2-out.log",
+            "label": "pm2-logs-server-out-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/index-out.log ./logs/pm2-server-out.log || true",
             "args": [],
             "type": "shell",
         },
         {
-            "label": "pm2-logs-error-download",
-            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/index-error.log ./logs/pm2-error.log",
+            "label": "pm2-logs-server-error-download",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/index-error.log ./logs/pm2-server-error.log",
             "args": [],
             "type": "shell",
         },
         {
-            "label": "pm2-logs-delete",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 flush index\"",
+            "label": "pm2-logs-server-delete",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 flush index || true\"",
             "args": [],
             "type": "shell",
         },
+
+        // express logs
         {
             "label": "express-logs",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"tail -n 50 /home/ec2-user/circle-integration/src/express.log\"",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"tail -n 50 /home/ec2-user/circle-integration/src/express.log || true\"",
             "args": [],
             "type": "shell",
         },
         {
             "label": "express-logs-download",
-            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/circle-integration/src/express.log ./logs/express.log",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/circle-integration/src/express.log ./logs/express.log || true",
             "args": [],
             "type": "shell",
         },
         {
             "label": "express-logs-delete",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"rm -f /home/ec2-user/circle-integration/src/express.log\"",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"rm -f /home/ec2-user/circle-integration/src/express.log || true\"",
             "args": [],
             "type": "shell",
         },
+
+        // axios logs
         {
             "label": "axios-logs",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"tail -n 50 /home/ec2-user/circle-integration/src/axios.log\"",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"tail -n 50 /home/ec2-user/circle-integration/src/axios.log || true\"",
             "args": [],
             "type": "shell",
         },
         {
             "label": "axios-logs-download",
-            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/circle-integration/src/axios.log ./logs/axios.log",
+            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/circle-integration/src/axios.log ./logs/axios.log || true",
             "args": [],
             "type": "shell",
         },
         {
             "label": "axios-logs-delete",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"rm -f /home/ec2-user/circle-integration/src/axios.log\"",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"rm -f /home/ec2-user/circle-integration/src/axios.log || true\"",
             "args": [],
             "type": "shell",
         },
+
+        // delete all logs on remote machine
         {
-            "label": "delete-logs",
-            "dependsOn": ["pm2-logs-delete", "express-logs-delete", "axios-logs-delete"],
+            "label": "delete-all-remote-logs",
+            "dependsOn": ["pm2-logs-server-delete", "pm2-logs-tests-delete", "express-logs-delete", "axios-logs-delete"],
             "dependsOrder": "sequence"
         },
+
+        // delete all logs on local machine
+        {
+            "label": "delete-all-local-logs",
+            "command": "rm -rf ./logs/* || true",
+            "args": [],
+            "type": "shell",
+        },
+
+        // neutralize environment
+        {
+            "label": "neutralize-environment",
+            "dependsOn": ["make-logs-dir", "delete-all-local-logs", "delete-all-remote-logs", "pm2-stop-server", "pm2-stop-tests", "rsync"],
+            "dependsOrder": "sequence"
+        },
+
+        // collect all logs from remote machine
+        {
+            "label": "collect-all-remote-logs",
+            "dependsOn": ["express-logs-download", "axios-logs-download", "pm2-logs-server-out-download", "pm2-logs-server-error-download", "pm2-logs-tests-out-download", "pm2-logs-tests-error-download"],
+            "dependsOrder": "sequence"
+        },
+
+        // start/stop server on remote machine
         {
             "label": "start-server",
-            "dependsOn": ["make-logs-dir", "delete-logs", "pm2-stop", "rsync", "pm2-start"],
+            "dependsOn": ["neutralize-environment", "pm2-start-server"],
             "dependsOrder": "sequence"
         },
         {
             "label": "stop-server",
-            "dependsOn": ["pm2-stop", "express-logs-download", "axios-logs-download", "pm2-logs-out-download", "pm2-logs-error-download"],
+            "dependsOn": ["pm2-stop-server", "collect-all-remote-logs"],
             "dependsOrder": "sequence"
         },
+
+        // start/stop tests on remote machine
         {
             "label": "start-tests",
-            "dependsOn": ["make-logs-dir", "delete-logs", "pm2-stop", "rsync", "pm2-start"],
+            "dependsOn": ["neutralize-environment", "pm2-start-tests"],
             "dependsOrder": "sequence"
         },
         {
             "label": "stop-tests",
-            "dependsOn": ["pm2-stop", "express-logs-download", "axios-logs-download", "pm2-logs-out-download", "pm2-logs-error-download"],
+            "dependsOn": ["pm2-stop-tests", "collect-all-remote-logs"],
             "dependsOrder": "sequence"
         }
     ]
 }
-//delete logs on boot step

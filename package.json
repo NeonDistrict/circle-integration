@@ -6,8 +6,7 @@
   "directories": {
     "example": "example"
   },
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NeonDistrict/circle-integration.git"
