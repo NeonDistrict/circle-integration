@@ -18,20 +18,6 @@
             "type": "pwa-node",
             "preLaunchTask": "start-server",
             "postDebugTask": "stop-server"
-        },
-        {
-            "address": "54.211.86.53",
-            "localRoot": "${workspaceFolder}/",
-            "name": "Test on EC2",
-            "port": 9229,
-            "remoteRoot": "/home/ec2-user/circle-integration/",
-            "request": "attach",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "pwa-node",
-            "preLaunchTask": "start-tests",
-            "postDebugTask": "stop-tests"
         }
     ]
 }

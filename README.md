@@ -3,7 +3,7 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ## Todo
 
-+ need to get mocha running via tasks
++ omg vscode remote ssh
 
 ## Useful Links
 
@@ -23,6 +23,16 @@ sudo curl --silent --location https://rpm.nodesource.com/setup_14.x | sudo bash 
 sudo yum install nodejs -y
 sudo npm install pm2 -g
 ```
+
+## Running Tests
+
+From Visual Studio Code press `ctrl+shift+p` to open the command palette, select `Tasks: Run Task`, then `test`. Live logs will appear in the console, and axios/express logs will be downloaded to the the local `/logs` folder. Unfortunately PM2 and Mocha don't work together so there is no debugging mocha tests at this time _womp womp_.
+
+## Remote Debugging
+
+1. From Visual Studio Code go to the `Debug` tab and select `Run on EC2`, then press play.
+2. The debugger will pause on the first line of node execution before hitting any of your breakpoints, this is just a way to ensure the debugger is ready when the server is. Press `debug continue` to move onto normal running.
+3. When you are finished with the run press `debug disconnect` which will stop the server, download the logs and clean up.
 
 ## Risk Mitigation
 

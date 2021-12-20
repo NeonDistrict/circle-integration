@@ -25,7 +25,7 @@ const logging_config = {
     params: true,
     url: true,
     method: true,
-    prefixText: false,
+    prefixText: false
 };
 axios.interceptors.request.use((request) => axios_logger.requestLogger(request, logging_config));
 axios.interceptors.response.use((response) => axios_logger.responseLogger(response, logging_config));
@@ -278,6 +278,7 @@ module.exports = circle_integration = {
         }
 
         // if we have no cached key, or the cache has reached expiry, get a new public key from circle
+        // todo here, why isnt this api call returning tot he test
         ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}encryption/public`));
         if (error) {
             return {
@@ -287,6 +288,8 @@ module.exports = circle_integration = {
 
         // public key is response body
         const public_key = response_body;
+
+        console.log('response body', response_body);
 
         // cache new key and record time of cache
         circle_integration.cached_public_key = public_key;

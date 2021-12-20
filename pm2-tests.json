@@ -1,13 +1,11 @@
 {
-    "apps" : [{
-        "name"        : "mocha",
-        "script"      : "/home/ec2-user/circle-integration/node_modules/mocha/.bin/mocha",
-        "args"        : ["--config", "/home/ec2-user/circle-integration/.mocharc.json", "--exit"],
-        "node_args"   : ["--harmony", "--inspect-brk=0.0.0.0:9229"],
-        "merge_logs"  : true,
-        "cwd"         : "/home/ec2-user/circle-integration/",
-        "env": {
-            "NODE_ENV": "development"
-        }
+    "apps": [{
+        "name": "mocha",
+        "script": "/home/ec2-user/circle-integration/node_modules/mocha/bin/mocha",
+        "args": [
+            "/home/ec2-user/circle-integration/src/test/test.js",
+            "--exit"
+        ],
+        "cwd": "/home/ec2-user/circle-integration/"
     }]
 }

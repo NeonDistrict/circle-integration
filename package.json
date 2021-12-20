@@ -2,7 +2,7 @@
   "name": "circle-integration",
   "version": "1.0.0",
   "description": "Contains documentation, demo, and back/front end components required to integrate circle payments into a project.",
-  "main": "index.js",
+  "main": "src/index.js",
   "directories": {
     "example": "example"
   },

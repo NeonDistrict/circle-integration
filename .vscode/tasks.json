@@ -22,40 +22,10 @@
             "type": "shell",
         },
 
-        // pm2 for tests
+        // test runner
         {
-            "label": "pm2-stop-tests",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 stop /home/ec2-user/circle-integration/node_modules/mocha/mocha.js || true\"",
-            "args": [],
-            "type": "shell",
-        },
-        {
-            "label": "pm2-start-tests",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 start /home/ec2-user/circle-integration/pm2-tests.json\"",
-            "args": [],
-            "type": "shell",
-        },
-        {
-            "label": "pm2-logs-tests",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 logs --raw --nostream mocha || true\"",
-            "args": [],
-            "type": "shell",
-        },
-        {
-            "label": "pm2-logs-tests-out-download",
-            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/mocha-out.log ./logs/pm2-tests-out.log || true",
-            "args": [],
-            "type": "shell",
-        },
-        {
-            "label": "pm2-logs-tests-error-download",
-            "command": "scp -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53:/home/ec2-user/.pm2/logs/mocha-error.log ./logs/pm2-tests-error.log || true",
-            "args": [],
-            "type": "shell",
-        },
-        {
-            "label": "pm2-logs-tests-delete",
-            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"pm2 flush mocha || true\"",
+            "label": "run-mocha",
+            "command": "ssh -t -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@54.211.86.53 \"node /home/ec2-user/circle-integration/node_modules/mocha/bin/mocha /home/ec2-user/circle-integration/src/test/test.js || true\"",
             "args": [],
             "type": "shell",
         },
@@ -141,7 +111,7 @@
         // delete all logs on remote machine
         {
             "label": "delete-all-remote-logs",
-            "dependsOn": ["pm2-logs-server-delete", "pm2-logs-tests-delete", "express-logs-delete", "axios-logs-delete"],
+            "dependsOn": ["pm2-logs-server-delete", "express-logs-delete", "axios-logs-delete"],
             "dependsOrder": "sequence"
         },
 
@@ -156,14 +126,14 @@
         // neutralize environment
         {
             "label": "neutralize-environment",
-            "dependsOn": ["make-logs-dir", "delete-all-local-logs", "delete-all-remote-logs", "pm2-stop-server", "pm2-stop-tests", "rsync"],
+            "dependsOn": ["make-logs-dir", "delete-all-local-logs", "delete-all-remote-logs", "pm2-stop-server", "rsync"],
             "dependsOrder": "sequence"
         },
 
         // collect all logs from remote machine
         {
             "label": "collect-all-remote-logs",
-            "dependsOn": ["express-logs-download", "axios-logs-download", "pm2-logs-server-out-download", "pm2-logs-server-error-download", "pm2-logs-tests-out-download", "pm2-logs-tests-error-download"],
+            "dependsOn": ["express-logs-download", "axios-logs-download", "pm2-logs-server-out-download", "pm2-logs-server-error-download"],
             "dependsOrder": "sequence"
         },
 
@@ -179,15 +149,10 @@
             "dependsOrder": "sequence"
         },
 
-        // start/stop tests on remote machine
+        // run tests on remote machine
         {
-            "label": "start-tests",
-            "dependsOn": ["neutralize-environment", "pm2-start-tests"],
-            "dependsOrder": "sequence"
-        },
-        {
-            "label": "stop-tests",
-            "dependsOn": ["pm2-stop-tests", "collect-all-remote-logs"],
+            "label": "test",
+            "dependsOn": ["neutralize-environment", "run-mocha", "collect-all-remote-logs"],
             "dependsOrder": "sequence"
         }
     ]
