@@ -1,11 +1,11 @@
 const cofig = require('./config.dev.js');
+const { v4: uuidv4 } = require('uuid');
 const axios = require('axios').default.create();
 
 module.exports = circle_integration_client = {
 
     generate_idempotency_key: () => {
-        // todo, i dunno udid or someshit, suitable pseudo random chars is prol fine though
-        return new Math.random().toString();
+        return uuidv4();
     },
 
     call_circle_api: async (endpoint, data) => {
@@ -21,8 +21,8 @@ module.exports = circle_integration_client = {
         if (data !== null) {
             request.data = data;
         }
-  
-        // make request, catching bad error codes or other axios errors
+        
+        // make request
         let response;
         try {
             response = await axios(request);
@@ -31,16 +31,26 @@ module.exports = circle_integration_client = {
             response = request_error.response;
         }
 
-        if (response.status !== 200 || response.error) {
-            throw new Error(`${response.status}: (${response.error.status}) ${response.error.reason}`)
-        }
+        // get the response body from the response
+        const response_body = response.data;
 
-        return response;
+        // if our request has an accepted response code
+        if (response.status === 200) {
+
+            // return response
+            return response_body;
+        
+        // otherwise we received an error response
+        } else {
+
+            // throw the error
+            throw new Error(`${response_body.reason}: ${response_body.message}`)
+        }
     },
 
-    get_public_key: async () => {
+    get_public_key: async (force_refresh) => {
         // we handle the public key on behalf of the client but they still need to make the call to handle any errors
-        return await circle_integration_client.call_circle_api('/get_public_key');
+        return await circle_integration_client.call_circle_api('/get_public_key', {force_refresh: force_refresh});
     },
 
     hash_card_number: (card_number) => {

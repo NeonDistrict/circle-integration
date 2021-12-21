@@ -18,8 +18,21 @@ describe('circle-integration-server', function () {
         server.shutdown();
     });
     
-    it('make a payment successfully', async function () {
-        const response = await circle_integration_client.get_public_key();
-        console.log('res', response.data);
+    it('generate idempotency key', async function () {
+        const idempotency_key = circle_integration_client.generate_idempotency_key();
+        
+    });
+
+    it('get a public key', async function () {
+        const public_key = await circle_integration_client.get_public_key();
+        console.log((public_key));
+        assert(public_key.hasOwnProperty('keyId'));
+        assert(public_key.hasOwnProperty('publicKey'));
+    });
+
+    it('get a public key (force refresh)', async function () {
+        const public_key = await circle_integration_client.get_public_key(true);
+        assert(public_key.hasOwnProperty('keyId'));
+        assert(public_key.hasOwnProperty('publicKey'));
     });
 });

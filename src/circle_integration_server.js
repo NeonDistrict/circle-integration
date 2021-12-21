@@ -90,8 +90,10 @@ module.exports = circle_integration = {
             // if the body is malformed, return a malformed error
             if (!response.data.hasOwnProperty('data')) {
                 return cb({
-                    status: 'error',
-                    message: 'Malformed Response'
+                    error: {
+                        reason: 'server',
+                        message: 'Malformed Circle Response'
+                    }
                 });
             }
 
@@ -132,15 +134,19 @@ module.exports = circle_integration = {
         if (failure_codes.hasOwnProperty(status_code)) {
             const failure = failure_codes[status_code];
             return cb({
-                reason: failure.reason,
-                message: failure.message
+                error: {
+                    reason: failure.reason,
+                    message: failure.message
+                }
             });
         }
 
         // reaching here implies it was an unexpected error code
         return cb({
-            reason: 'server',
-            message: 'Unknown Server Error'
+            error: {
+                reason: 'server',
+                message: 'Unknown Server Error'
+            }
         });
     },
     

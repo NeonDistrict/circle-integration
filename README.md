@@ -1,6 +1,11 @@
 # Circle Integration
 Contains documentation, demo, and back/front end components required to integrate circle payments into a project.
 
+## Todo
+
++ ensure all error responses from server are of the same form
++ json schema validation
+
 ## Useful Links
 
 + [Circle Homepage](https://www.circle.com/en/)

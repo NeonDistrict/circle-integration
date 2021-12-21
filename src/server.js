@@ -33,8 +33,10 @@ module.exports = server = {
             let force_refresh = false;
             circle_integration_server.get_public_key(force_refresh, (error, public_key) => {
                 if (error) {
+                    res.status(500);
                     return res.send(error);
                 }
+                res.status(200);
                 return res.send(public_key);
             });
         });
