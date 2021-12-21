@@ -6,18 +6,31 @@
     "configurations": 
     [
         {
-            "address": "54.211.86.53",
-            "localRoot": "${workspaceFolder}/",
-            "name": "Run on EC2",
-            "port": 9229,
-            "remoteRoot": "/home/ec2-user/circle-integration/",
-            "request": "attach",
+            "args": [
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/src/test/test.js"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "name": "Mocha Tests",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "pwa-node",
-            "preLaunchTask": "start-server",
-            "postDebugTask": "stop-server"
-        }
+            "type": "pwa-node"
+        },
+        {
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/src/index.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
     ]
 }

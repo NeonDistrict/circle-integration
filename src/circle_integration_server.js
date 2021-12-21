@@ -1,8 +1,5 @@
-const fs = require('fs');
-const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios').default.create();
-const axios_logger = require('axios-logger');
 const risk_categories = require('./enum/risk_categories.js');
 const add_card_status_enum = require('./enum/add_card_status_enum.js');
 const payment_status_enum = require('./enum/payment_status_enum.js');
@@ -14,21 +11,6 @@ const sale_items = require('./sale_items.js');
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
-
-// setup axios logging
-const axios_log_stream = fs.createWriteStream(path.join(__dirname, 'axios.log'), { flags: 'a' });
-const logging_config = {
-    logger: (str) => axios_log_stream.write(str + '\n'),
-    headers: true,
-    status: true,
-    data: true,
-    params: true,
-    url: true,
-    method: true,
-    prefixText: false
-};
-axios.interceptors.request.use((request) => axios_logger.requestLogger(request, logging_config));
-axios.interceptors.response.use((response) => axios_logger.responseLogger(response, logging_config));
 
 // todo, okay for subs when we startup we need to get a list of subs, remove all of them, create them again, then start serving requests
 // oh okay allll subs come through one endpoint
@@ -168,7 +150,7 @@ module.exports = circle_integration = {
         // use to listen for all responses when they complete so that we dont need to poll
 
         // list any existing subscriptions to see if one needs to be created
-        ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}notifications/subscriptions`));
+        ({ error, response_body } = await circle_integration.call_circle([200], 'get', `${api_uri_base}notifications/subscriptions`));
         if (error) {
             return {
                 error: error
@@ -199,7 +181,7 @@ module.exports = circle_integration = {
         // reaching here implies we do not have an existing, confirmed, subscription and it must be created
 
         // create the notification subscription
-        ({ error, response_body } = await circle_integration._call_circle([200, 201], 'post', `${api_uri_base}notifications/subscriptions`, {
+        ({ error, response_body } = await circle_integration.call_circle([200, 201], 'post', `${api_uri_base}notifications/subscriptions`, {
             endpoint: sns_endpoint_url
         }));
         if (error) {
@@ -265,7 +247,7 @@ module.exports = circle_integration = {
         }
 
         // if we have no cached key, or the cache has reached expiry, get a new public key from circle
-        circle_integration._call_circle([200], 'get', `${api_uri_base}encryption/public`, null, (error, public_key) => {
+        circle_integration.call_circle([200], 'get', `${api_uri_base}encryption/public`, null, (error, public_key) => {
             if (error) {
                 return cb(error);
             }
@@ -315,7 +297,7 @@ module.exports = circle_integration = {
         const purchase_idempotency_key = 'todo';
 
         // create a payment
-        ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}payments`, {
+        ({ error, response_body } = await circle_integration.call_circle([201], 'post', `${api_uri_base}payments`, {
             idempotencyKey: purchase_idempotency_key,
             keyId: key_id,
             metadata: {
@@ -368,7 +350,7 @@ module.exports = circle_integration = {
         // todo more than X cards on an account should be a fraud indicator
 
         // call api to create card
-        ({ error, response_body } = await circle_integration._call_circle([201], 'post', `${api_uri_base}cards`, {
+        ({ error, response_body } = await circle_integration.call_circle([201], 'post', `${api_uri_base}cards`, {
             idempotencyKey: idempotency_key,
             keyId: key_id,
             encryptedData: encrypted_card_information,
@@ -485,7 +467,7 @@ module.exports = circle_integration = {
         // poll until we can resolve the payment as either success or failure
         while (1) {
             // call to request the payment
-            ({ error, response_body } = await circle_integration._call_circle([20], 'get', `${api_uri_base}payments/${payment_id}`,));
+            ({ error, response_body } = await circle_integration.call_circle([20], 'get', `${api_uri_base}payments/${payment_id}`,));
             if (error) {
                 return error;
             }

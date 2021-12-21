@@ -2,7 +2,6 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const morgan_body = require('morgan-body');
 const body_parser = require('body-parser')
 const app = express();
 const circle_integration_server = require('./circle_integration_server.js');
@@ -15,9 +14,6 @@ module.exports = server = {
                 return true;
             }
         }));
-        
-        const express_log_stream = fs.createWriteStream(path.join(__dirname, 'express.log'), { flags: 'a' });
-        morgan_body(app, { stream: express_log_stream, noColors: true });
         
         // todo there should be some json schema validation here, and error responses, logging etc
         // todo generic responders
