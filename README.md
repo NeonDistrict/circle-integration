@@ -24,6 +24,18 @@ sudo yum install nodejs -y
 sudo npm install pm2 -g
 ```
 
+## Configuring deployment
+
+1. Create an elastic IP and point it at the ec2 instance
+1. In Route53 setup a subdomain and point it at the elastic IP
+1. Use let's encrypt to acquire an ssl certificate for the subdomain using manual DNS verification
+1. Place `fullchain.pem` and `privkey.pem` in a directory `keys` in the root of project
+
+## Setting up your local workspace
+
+1. Install VS Code
+1. Install the `Remote - SSH` extension for VS Code
+
 ## Running Tests
 
 From Visual Studio Code press `ctrl+shift+p` to open the command palette, select `Tasks: Run Task`, then `test`. Live logs will appear in the console, and axios/express logs will be downloaded to the the local `/logs` folder. Unfortunately PM2 and Mocha don't work together so there is no debugging mocha tests at this time _womp womp_.

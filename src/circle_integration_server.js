@@ -78,10 +78,7 @@ module.exports = circle_integration = {
         circle_integration._park_callback[id] = callback;
     },
 
-    _call_circle: async (accepted_response_codes, method, url, data = null) => {
-        // create a uuid to identify this request
-        const uuid = uuidv4();
-
+    call_circle: async (accepted_response_codes, method, url, data, cb) => {
         // form request
         const request = {
             method: method,
@@ -93,8 +90,7 @@ module.exports = circle_integration = {
         if (data !== null) {
             request.data = data;
         }
-  
-        // make request and catch any weird axios crashes
+
         let response;
         try {
             response = await axios(request);
@@ -111,22 +107,20 @@ module.exports = circle_integration = {
 
             // if the body is malformed, return a malformed error
             if (!response.data.hasOwnProperty('data')) {
-                return {
-                    error: {
-                        status: 'error',
-                        message: 'Malformed Response'
-                    }
-                }
+                return cb({
+                    status: 'error',
+                    message: 'Malformed Response'
+                });
             }
 
             // get the response body from the response
             const response_body = response.data.data;
 
             // return just the response body
-            return {
-                response_body: response_body
-            };
+            return cb(null, response_body);
         }
+
+        // reaching here implies we had a bad response, attempt to identify why
 
         // define failure codes
         const failure_codes = {
@@ -152,29 +146,20 @@ module.exports = circle_integration = {
             }
         };
 
-        // reaching here implies we had a bad response
-
-        // check if its an expected error code
+        // check if its an expected error code, returning the relevant error
         if (failure_codes.hasOwnProperty(status_code)) {
-
             const failure = failure_codes[status_code];
-
-            // return the relevant error
-            return {
-                error: {
-                    reason: failure.reason,
-                    message: failure.message
-                }
-            };
+            return cb({
+                reason: failure.reason,
+                message: failure.message
+            });
         }
 
         // reaching here implies it was an unexpected error code
-        return {
-            error: {
-                reason: 'server',
-                message: 'Unknown Server Error'
-            }
-        };
+        return cb({
+            reason: 'server',
+            message: 'Unknown Server Error'
+        });
     },
     
     setup_notifications_subscription: async (sns_endpoint_url) => {
@@ -269,36 +254,29 @@ module.exports = circle_integration = {
         circle_integration._parked_notifications[notification.id] = notification;
     },
 
-    get_public_key: async () => {
+    get_public_key: (force_refresh, cb) => {
         // circle reccommends caching our public key which changes infrequently for at least 24 hours as per:
         // https://developers.circle.com/reference#getpublickey
-        // check if we have a cached copy, and use it if cache is still good
-        if (circle_integration.cached_public_key_timestamp === null || new Date().getTime() - circle_integration.cached_public_key_timestamp <= public_key_cache_duration) {
-            return circle_integration.cached_public_key;
+        // check if we have a cached copy, and use it if cache is still valid
+        // if a public key fails the client can use force refresh, todo or maybe the server detects this, invalidates it and the client calls again?
+        const cache_valid = circle_integration.cached_public_key_timestamp !== null && new Date().getTime() - circle_integration.cached_public_key_timestamp <= public_key_cache_duration;
+        if (!force_refresh && cache_valid) {
+            return cb(null, circle_integration.cached_public_key);
         }
 
         // if we have no cached key, or the cache has reached expiry, get a new public key from circle
-        // todo here, why isnt this api call returning tot he test
-        ({ error, response_body } = await circle_integration._call_circle([200], 'get', `${api_uri_base}encryption/public`));
-        if (error) {
-            return {
-                error: error
-            };
-        }
+        circle_integration._call_circle([200], 'get', `${api_uri_base}encryption/public`, null, (error, public_key) => {
+            if (error) {
+                return cb(error);
+            }
 
-        // public key is response body
-        const public_key = response_body;
+            // cache new key and record time of cache
+            circle_integration.cached_public_key = public_key;
+            circle_integration.cached_public_key_timestamp = new Date().getTime();
 
-        console.log('response body', response_body);
-
-        // cache new key and record time of cache
-        circle_integration.cached_public_key = public_key;
-        circle_integration.cached_public_key_timestamp = new Date().getTime();
-
-        // return public key
-        return {
-            public_key: public_key
-        };
+            // return public key
+            return cb(null, public_key);
+        });
     },
 
     list_sale_items: async () => {
