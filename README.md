@@ -35,6 +35,20 @@ sudo npm install pm2 -g
 
 1. Install VS Code
 1. Install the `Remote - SSH` extension for VS Code
+1. In the bottom left corner of VS Code is a small green icon, click on this icon
+1. Select `Connect to host`
+1. Select `Add new SSH Host`
+1. Enter the SSH connection string for the ec2 instance, such as: `ssh -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@69.69.69.69`
+1. Select your user's SSH config to be updated, such as `/home/adrian/.ssh/config`
+1. You are now setup for SSH remote working via VS Code, click the small green icon in the bottom left again to connect to the ec2 instance
+
+## Connecting Git
+
+1. While connected to the ec2 instance, run `ssh-keygen -t rsa -b 4096 -C "your@email.com"` to generate an SSH keypair
+1. Ensure that you add a passphrase to this keypair, otherwise if the machine is comprimised so will your git access
+1. Run `cat ~/.ssh/id_rsa.pub` to output the public key to the terminal, which can then be copied to the clipboard
+1. Add this public key to your github SSH keys
+1. You can now interact with git from the ec2 instance
 
 ## Running Tests
 
