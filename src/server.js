@@ -8,7 +8,7 @@ const circle_integration_server = require('./circle_integration_server.js');
 
 module.exports = server = {
     https_server: null,
-    initialize: async (config, callback) => {
+    initialize: async (config, cb) => {
         app.use(body_parser.json({
             type (req) {
                 return true;
@@ -66,10 +66,9 @@ module.exports = server = {
         }, app);
 
         // start the server
-        server.https_server.listen(config.port, async () => {
+        server.https_server.listen(config.port, () => {
             const sns_endpoint_url = `${config.server_url}${config.sns_endpoint}`;
-            ({ error } = await circle_integration_server.setup_notifications_subscription(sns_endpoint_url));
-            callback(error);
+            circle_integration_server.setup_notifications_subscription(sns_endpoint_url, cb);
         });
     },
     shutdown: () => {
