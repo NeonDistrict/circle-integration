@@ -1,5 +1,6 @@
-const cofig = require('./config.dev.js');
+const config = require('./config.dev.js');
 const { v4: uuidv4 } = require('uuid');
+const openpgp = require('openpgp');
 const axios = require('axios').default.create();
 
 module.exports = circle_integration_client = {
@@ -49,20 +50,14 @@ module.exports = circle_integration_client = {
     },
 
     get_public_key: async (force_refresh) => {
-        // we handle the public key on behalf of the client but they still need to make the call to handle any errors
         return await circle_integration_client.call_circle_api('/get_public_key', {force_refresh: force_refresh});
     },
 
-    hash_card_number: (card_number) => {
+    hash_card_details: (card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key) => {
         // todo, sha?
     },
 
-    encrypt_card_information: async (card_number, card_cvv) => {
-        // ensure the user followed the readme and called get public key first
-        if (circle_integration_client.public_key === null) {
-            throw new Error('You must call circle_integration_client.get_public_key() before calling this function');
-        }
-        
+    encrypt_card_information: async (public_key, card_number, card_cvv) => {
         // package the card details to be encrypted
         const card_details = {
             number: card_number,
@@ -70,7 +65,7 @@ module.exports = circle_integration_client = {
         };
 
         // use openpgp to read and decode the public key
-        const decoded_public_key = await readKey({armoredKey: atob(circle_integration_client.public_key.publicKey)});
+        const decoded_public_key = await openpgp.readKey({armoredKey: atob(public_key.publicKey)});
         
         // use openpgp to create the message (of the card details) for encryption
         const message = await createMessage({text: JSON.stringify(card_details)});
@@ -88,39 +83,38 @@ module.exports = circle_integration_client = {
         };
     },
 
-    encrypt_card_cvv: async (card_cvv) => {
-        // ensure the user followed the readme and called get public key first
-        if (circle_integration_client.public_key === null) {
-            throw new Error('You must call circle_integration_client.get_public_key() before calling this function');
+    purchase: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key) => {
+        const hashed_card_details = circle_integration_client.hash_card_details(card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key);
+        const encrypted_card_information = circle_integration_client.encrypt_card_information(card_number, card_cvv);
+        
+        const request_body = {
+            idempotency_key: idempotency_key,
+            key_id: circle_integration_client.public_key.keyId,
+            encrypted_card_information: encrypted_card_information,
+            hashed_card_details: hashed_card_details,
+            name_on_card: name_on_card,
+            city: city,
+            country: country,
+            address_line_1: address_line_1,
+            address_line_2: address_line_2,
+            district: district,
+            postal_zip_code: postal_zip_code,
+            expiry_month: expiry_month,
+            expiry_year: expiry_year,
+            email: email,
+            phone_number: phone_number,
+            sale_item_key: sale_item_key
         }
-        
-        // package the card cvv to be encrypted
-        const card_details = {
-            cvv: card_cvv
-        };
 
-        // use openpgp to read and decode the public key
-        const decoded_public_key = await readKey({armoredKey: atob(circle_integration_client.public_key.publicKey)});
-        
-        // use openpgp to create the message (of the card details) for encryption
-        const message = await createMessage({text: JSON.stringify(card_details)});
-        
-        // use openpgp to encrypt
-        const cipher_text = await encrypt({
-            message: message,
-            encryptionKeys: decoded_public_key,
-        });
+        // there may be redirects required here
+        const result = await circle_integration_client.call_circle_api('/purchase', request_body);
 
-        // return the encrypted card cvv and key id which will be used to help decrypt it later
-        return {
-            encryptedMessage: btoa(cipher_text),
-            keyId: circle_integration_client.public_key.keyId
-        };
+        return result;
     },
 
     create_card: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
-        // hash card number
-        const hashed_card_number = circle_integration_client.hash_card_number(card_number);
+        // hash card details
+        const hashed_card_number = circle_integration_client.hash_card_details(card_number);
         
         // encrypt card information
         const encrypted_card_information = circle_integration_client.encrypt_card_information(card_number, card_cvv);

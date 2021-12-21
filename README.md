@@ -5,6 +5,8 @@ Contains documentation, demo, and back/front end components required to integrat
 
 + ensure all error responses from server are of the same form
 + json schema validation
++ does adding card have redirect validation?
++ hash details on backend, client cant be trusted to make their own hashes against themselves.. but we do need to hash card numbers soo?
 
 ## Useful Links
 
@@ -42,7 +44,7 @@ sudo npm install pm2 -g
 1. Enter the SSH connection string for the ec2 instance, such as: `ssh -i ~/keys/neon-district-circle-integration-dev.pem ec2-user@69.69.69.69`
 1. Select your user's SSH config to be updated, such as `/home/adrian/.ssh/config`
 1. You are now setup for SSH remote working via VS Code, click the small green icon in the bottom left again to connect to the ec2 instance
-1. Sometimes the SSH connection can get _droppy_ you can restart the SSH daemon on the ec2 instance with `systemctl restart sshd` which allegedly helps
+1. Sometimes the SSH connection can get _droppy_ you can restart the SSH daemon on the ec2 instance with `sudo systemctl restart sshd` which allegedly helps
 
 ## Connecting Git
 

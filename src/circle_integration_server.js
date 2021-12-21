@@ -271,81 +271,40 @@ module.exports = circle_integration = {
         return sale_items;
     },
 
-    purchase: async (idempotency_key, sale_item_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {        
-        // find sale item by sale_item_key
+    purchase: (idempotency_key, key_id, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+        // find sale item
         const sale_item = sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
-        
-        // if we couldnt find the sale item puke
         if (sale_item === undefined || sale_item === null) {
-            return {
+            return cb({
                 error: {
-                    status: 'error',
                     reason: 'server',
-                    message: 'Sale item not found',
-                    payload: sale_item_key
+                    message: 'Sale Item Not Found',
                 }
-            };
+            });
         }
         
-        // first we need to create the card before making a payment with it
-        // todo we are going to need to assest the create card result as well
-        ({error, card_id} = await circle_integration._create_card(idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year));
-        if (error) {
-            return {
-                error: error
-            };
-        }
+        // create a card for the transaction
+        circle_integration.create_card(idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, (error, card_id) => {
+            if (error) {
+                return cb(error);
+            }
 
-        // we need a second idempotency key for the purchase, which we can generate here
-        const purchase_idempotency_key = 'todo';
+            // todo do we get card id here? or can we get redirects?
 
-        // create a payment
-        ({ error, response_body } = await circle_integration.call_circle([201], 'post', `${api_uri_base}payments`, {
-            idempotencyKey: purchase_idempotency_key,
-            keyId: key_id,
-            metadata: {
-                email: 'todo',
-                phoneNumber: 'todo',
-                sessionId: 'todo',
-                ipAddress: 'todo',
-            },
-            amount: {
-                amount: sale_item.amount,
-                currency: sale_item.currency
-            },
-            autoCapture: true,
-            verification: 'three_d_secure',
-            verificationSuccessUrl: 'todo',
-            verificationFailureUrl: 'todo',
-            source: {
-                id: card_id,
-                type: 'card'
-            },
-            description: sale_item.statement_description,
-            encryptedData: encrypted_card_cvv,
-            channel: 'todo, what is a channel in this context?'
-        }));
-        if (error) {
-            return {
-                error: error
-            };
-        }
+            // the user provides an idempotency key for adding the card and we create another here for the payment
+            const payment_idempotency_key = uuidv4();
 
-        // assess the purchase result, null means pending and will require further polling
-        const assessed_result = await circle_integration._assess_purchase_result(response_body);
-        if (assessed_result !== null) {
-            return assessed_result;
-        }
-
-        // get the payment id which we will use to poll for its completion
-        const payment_id = result.id;
-
-        // poll until we get a result
-        // todo this will be a sub
-        circle_integration.poll_for_purchase_result(payment_id);
+            // create a payment for the transaction
+            circle_integration.create_payment(payment_idempotency_key, key_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, payment_result) => {
+                if (error) {
+                    return cb(error);
+                }
+                return cb(null, payment_result);
+            });
+        });
     },
 
-    _create_card: async (idempotency_key, key_id, hashed_card_number, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
+    create_card: async (idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
         // todo ensure this card isnt already on this account, flow for updating card?
         // todo fraud check to confirm this card hash isnt on any other account
         // todo whats the best way to get metadata into here, including sessioning?
@@ -421,7 +380,7 @@ module.exports = circle_integration = {
         };
     },
 
-    _assess_add_card_result: async (response_body, is_aws_sns_callback) => {
+    assess_create_card_result: async (response_body, is_aws_sns_callback) => {
         // todo risk/fraud/errors?
         
         // check the status of the response
@@ -464,65 +423,84 @@ module.exports = circle_integration = {
         }
     },
 
+    create_payment: (payment_idempotency_key, key_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
+        const request_body = {
+            idempotencyKey: payment_idempotency_key,
+            keyId: key_id,
+            metadata: {
+                email: email,
+                phoneNumber: phone_number,
+                sessionId: session_id,
+                ipAddress: ip_address,
+            },
+            amount: {
+                amount: sale_item.amount,
+                currency: sale_item.currency
+            },
+            autoCapture: true,
+            verification: 'three_d_secure',
+            verificationSuccessUrl: 'todo',
+            verificationFailureUrl: 'todo',
+            source: {
+                id: card_id,
+                type: 'card'
+            },
+            description: sale_item.statement_description,
+            encryptedData: encrypted_card_information,
+            channel: 'todo, what is a channel in this context?'
+        };
 
-
-    poll_for_purchase_result: async (payment_id) => {
-        // poll until we can resolve the payment as either success or failure
-        while (1) {
-            // call to request the payment
-            ({ error, response_body } = await circle_integration.call_circle([20], 'get', `${api_uri_base}payments/${payment_id}`,));
+        // create the payment
+        circle_integration.call_circle([201], 'post', `${api_uri_base}payments`, request_body, (error, payment_result) => {
             if (error) {
-                return error;
+                return cb(error);
             }
 
-            // assess the purchase poll result, null means pending and will require further polling
-            const assessed_poll_result = await circle_integration._assess_purchase_result(response_body);
-            if (assessed_poll_result !== null) {
-                return assessed_poll_result;
-            }
-
-            // pause between polls
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            
-            // poll again
-            continue;
-        }
+            // determine if the payment outcome, waiting on sns if needed
+            circle_integration.assess_payment_result(payment_result, (error, assessed_payment_result) => {
+                if (error) {
+                    return cb(error);
+                }
+                // todo record success or failure here for fraud
+                return cb(null, assessed_payment_result);
+            });
+        });
     },
 
-    _assess_purchase_result: async (result) => {
+    assess_payment_result: (payment_result, cb) => {
         // assess the purchase risk
-        const assessed_risk_result = circle_integration._assess_purchase_risk(result);
-        if (assessed_risk_result !== null) {
-            return assessed_risk_result;
+        const risk_error = circle_integration.assess_payment_risk(payment_result);
+        if (risk_error) {
+            return cb(risk_error);
         }
-        
+
         // check the status
         switch (result.status) {
 
             // confirmed and paid are equivalent for considering the payment a success, paid just implies its in our wallet now
             case payment_status_enum.CONFIRMED:
             case payment_status_enum.PAID:
-                return {
-                    ok: 1
-                };
+                return cb(null, 'todo receipt id?');
 
             // failed implies that the the payment is complete and will never be successful, figure out what the reason was to
             // determine what we tell the player and if they should retry the payment or not (with a new payment)
             case payment_status_enum.FAILED:
-                return circle_integration._assess_purchase_failure(result);
+                return circle_integration.assess_payment_failure(payment_result);
             
             // pending means we just need to wait, and continue polling for the result - null here implies pending
             case payment_status_enum.PENDING:
+                // todo park here id guess?
                 return null;
             
             // action required means the player will need to be redirected to verify payment
             case payment_status_enum.ACTION_REQUIRED:
-                return {
-                    status: 'redirect_required',
-                    redirect_url: result.requiredAction.redirectUrl,
-                    success_url: 'todo',
-                    failure_url: 'todo'
-                };
+                return cb(null, {
+                    redirect: {
+                        redirect_url: result.requiredAction.redirectUrl,
+                        success_url: 'todo',
+                        failure_url: 'todo'
+                    }
+                });
             
             // handle unexpected status
             default:

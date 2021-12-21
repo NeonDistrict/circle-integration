@@ -8,6 +8,14 @@ const circle_integration_server = require('./circle_integration_server.js');
 
 module.exports = server = {
     https_server: null,
+    respond: (error, body) => {
+        if (error) {
+            res.status(500);
+            return res.send(error);
+        }
+        res.status(200);
+        return res.send(body);
+    },
     initialize: async (config, cb) => {
         app.use(body_parser.json({
             type (req) {
@@ -31,30 +39,36 @@ module.exports = server = {
         
         app.post('/get_public_key', (req, res) => {
             let force_refresh = false;
-            circle_integration_server.get_public_key(force_refresh, (error, public_key) => {
-                if (error) {
-                    res.status(500);
-                    return res.send(error);
-                }
-                res.status(200);
-                return res.send(public_key);
-            });
+            circle_integration_server.get_public_key(force_refresh, server.respond);
         });
-        
-        app.post('/check_purchase_limit', async (req, res) => {
-            const purchase_limit = await circle_integration_server.check_purchase_limit(req.user_id);
-            res.send(purchase_limit);
-        });
-        
+
         app.post('/get_sale_items', async (req, res) => {
             const sale_items = await circle_integration_server.get_sale_items(req.user_id);
             res.send(sale_items);
         });
         
         app.post('/purchase', async (req, res) => {
-            // todo this card packet needs a lot of detail
-            const receipt = await circle_integration_server.purchase(req.user_id, req.sale_item_id, req.card);
-            res.send(receipt);
+            circle_integration_server.purchase(
+                req.body.idempotency_key,
+                req.body.key_id,
+                req.body.encrypted_card_information,
+                req.body.hashed_card_details,
+                req.body.name_on_card,
+                req.body.city,
+                req.body.country,
+                req.body.address_line_1,
+                req.body.address_line_2,
+                req.body.district,
+                req.body.postal_zip_code,
+                req.body.expiry_month,
+                req.body.expiry_year,
+                req.body.sale_item_key,
+                req.body.email, 
+                req.body.phone_number, 
+                'todo session id',
+                'todo ip address',
+                server.respond
+            );
         });
         
         app.post('/purchase_history', async (req, res) => {
