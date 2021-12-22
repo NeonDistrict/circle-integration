@@ -84,7 +84,6 @@ module.exports = circle_integration_client = {
         const encrypted_card_information = await circle_integration_client.encrypt_card_information(public_key, card_number, card_cvv);
         const request_body = {
             idempotency_key: idempotency_key,
-            key_id: public_key.keyId,
             encrypted_card_information: encrypted_card_information,
             hashed_card_details: hashed_card_details,
             name_on_card: name_on_card,

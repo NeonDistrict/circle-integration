@@ -52,7 +52,6 @@ module.exports = server = {
         app.post('/purchase', async (req, res) => {
             return circle_integration_server.purchase(
                 req.body.idempotency_key,
-                req.body.key_id,
                 req.body.encrypted_card_information,
                 req.body.hashed_card_details,
                 req.body.name_on_card,

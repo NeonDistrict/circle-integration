@@ -302,7 +302,7 @@ module.exports = circle_integration = {
         return sale_items;
     },
 
-    purchase: (idempotency_key, key_id, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+    purchase: (idempotency_key, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
         // find sale item
         const sale_item = sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
         if (sale_item === undefined || sale_item === null) {
@@ -315,7 +315,7 @@ module.exports = circle_integration = {
         }
         
         // create a card for the transaction
-        circle_integration.create_card(idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
+        circle_integration.create_card(idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
             if (error) {
                 return cb(error);
             }
@@ -326,7 +326,7 @@ module.exports = circle_integration = {
             const payment_idempotency_key = uuidv4();
 
             // create a payment for the transaction
-            circle_integration.create_payment(payment_idempotency_key, key_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, payment_result) => {
+            circle_integration.create_payment(payment_idempotency_key, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, payment_result) => {
                 if (error) {
                     return cb(error);
                 }
@@ -336,7 +336,7 @@ module.exports = circle_integration = {
     },
 
     // todo dont need key id implicit here as a param
-    create_card: (idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
+    create_card: (idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
         const request_body = {
             idempotencyKey: idempotency_key,
             keyId: encrypted_card_information.keyId,
@@ -412,7 +412,7 @@ module.exports = circle_integration = {
     },
 
     // todo key id
-    create_payment: (payment_idempotency_key, key_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
+    create_payment: (payment_idempotency_key, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
         const request_body = {
             idempotencyKey: payment_idempotency_key,
             keyId: encrypted_card_information.key_id,
