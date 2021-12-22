@@ -59,7 +59,7 @@ module.exports = circle_integration = {
         // reaching here implies that no notification was waiting for us already so we go ahead and park this callback
         // once its parked we are done here, the on_notification will pick up the parked callback and call it when ready
         // or in the event of a timeout it will be called back with an error indicating the timeout
-        circle_integration.park_callback[id] = cb;
+        circle_integration.parked_callbacks[id] = cb;
     },
 
     call_circle: async (accepted_response_codes, method, url, data, cb) => {
@@ -233,7 +233,7 @@ module.exports = circle_integration = {
 
         let result = null;
         switch (parsed_message.notificationType) {
-            case 'card':
+            case 'cards':
                 result = parsed_message.card;
                 break;
 
@@ -363,12 +363,12 @@ module.exports = circle_integration = {
             if (error) {
                 return cb(error);
             }
-            circle_integration.assess_create_card_result(create_card_result, (error, assessed_create_card_result) => {
+            circle_integration.assess_create_card_result(create_card_result, (error, card_id) => {
                 if (error) {
                     return cb(error);
                 }
                 // todo record success or failure here for fraud
-                return cb(null, assessed_create_card_result);
+                return cb(null, card_id);
             });
         });
     },

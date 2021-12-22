@@ -23,11 +23,6 @@ module.exports = server = {
             }
         }));
 
-        app.use((error, req, res, next) => {
-            res.end();
-            throw error;
-        });
-        
         // todo there should be some json schema validation here, and error responses, logging etc
         // todo generic responders
         
@@ -37,7 +32,8 @@ module.exports = server = {
         app.post(config.sns_endpoint, async (req, res) => {
             circle_integration_server.on_notification(req.body, (error) => {
                 if (error) {
-                    throw error;
+                    console.log(error, JSON.stringify(error));
+                    return process.exit(1);
                 }
                 return res.end();
             });
