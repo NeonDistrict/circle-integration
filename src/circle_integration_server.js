@@ -6,7 +6,8 @@ const payment_status_enum = require('./enum/payment_status_enum.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
 const cvv_verification_status_enum = require('./enum/cvv_verification_status_enum.js');
 const three_d_secure_verification_status_enum = require('./enum/three_d_secure_verification_status_enum.js');
-const sale_items = require('./sale_items.js');
+const sale_items = require('./sale_items.dev.js');
+const req = require('express/lib/request');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
@@ -37,27 +38,28 @@ const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 // todo we should have a park notification similar to park callback
 
 module.exports = circle_integration = {
-    _parked_callbacks: {},
-    _parked_notifications: {},
+    parked_callbacks: {},
+    parked_notifications: {},
     cached_public_key: null,
     cached_public_key_timestamp: null,
 
-    _park_callback: (id, callback) => {
+    park_callback: (id, cb) => {
         // whenever we go to park a callback we actually have a race condition where the notification may have already arrived
         // so first we have to check the parked notifications to see if we have a notification already waiting for this callback
-        if (circle_integration._parked_notifications.hasOwnProperty(id)) {
+        if (circle_integration.parked_notifications.hasOwnProperty(id)) {
             
             // reaching here implies that a notification was already waiting for us, get that notification and remove it from parking
-            const parked_notification = circle_integration._parked_notifications[id];
-            delete circle_integration._parked_notifications[id];
+            const parked_notification = circle_integration.parked_notifications[id];
+            delete circle_integration.parked_notifications[id];
 
             // return the notification in the callback
-            return callback(parked_notification);
+            return cb(null, parked_notification);
         }
 
         // reaching here implies that no notification was waiting for us already so we go ahead and park this callback
-        // once parked we are done here, the on_notification will pick up the parked callback
-        circle_integration._park_callback[id] = callback;
+        // once its parked we are done here, the on_notification will pick up the parked callback and call it when ready
+        // or in the event of a timeout it will be called back with an error indicating the timeout
+        circle_integration.park_callback[id] = cb;
     },
 
     call_circle: async (accepted_response_codes, method, url, data, cb) => {
@@ -72,6 +74,8 @@ module.exports = circle_integration = {
         if (data !== null) {
             request.data = data;
         }
+
+        console.log(JSON.stringify(request, null, 2));
 
         let response;
         try {
@@ -119,6 +123,10 @@ module.exports = circle_integration = {
             '404': {
                 reason: 'server',
                 message: 'Not Found'
+            },
+            '422': {
+                reason: 'server',
+                message: 'Unprocessable Entity'
             },
             '429': {
                 reason: 'server',
@@ -197,7 +205,7 @@ module.exports = circle_integration = {
         });
     },
 
-    on_notification: async (notification) => {
+    on_notification: async (notification, cb) => {
 
         // if this is a subscription confirmation
         if (notification.Type === 'SubscriptionConfirmation') {
@@ -209,12 +217,12 @@ module.exports = circle_integration = {
             try {
                 await axios(request);
             } catch (request_error) {
-                return {
+                return cb({
                     error: request_error
-                };
+                });
             }
 
-            return {};
+            return cb(null);
         }
 
         console.log('notification:', notification);
@@ -284,7 +292,7 @@ module.exports = circle_integration = {
         }
         
         // create a card for the transaction
-        circle_integration.create_card(idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, (error, card_id) => {
+        circle_integration.create_card(idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
             if (error) {
                 return cb(error);
             }
@@ -304,15 +312,8 @@ module.exports = circle_integration = {
         });
     },
 
-    create_card: async (idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year) => {
-        // todo ensure this card isnt already on this account, flow for updating card?
-        // todo fraud check to confirm this card hash isnt on any other account
-        // todo whats the best way to get metadata into here, including sessioning?
-        // todo we need to keep track of which cards belong to which users
-        // todo more than X cards on an account should be a fraud indicator
-
-        // call api to create card
-        ({ error, response_body } = await circle_integration.call_circle([201], 'post', `${api_uri_base}cards`, {
+    create_card: (idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
+        const request_body = {
             idempotencyKey: idempotency_key,
             keyId: key_id,
             encryptedData: encrypted_card_information,
@@ -328,98 +329,60 @@ module.exports = circle_integration = {
             expMonth: expiry_month,
             expYear: expiry_year,
             metadata: {
-                email: 'todo',
-                phoneNumber: 'todo',
-                sessionId: 'todo',
-                ipAddress: 'todo'
+                email: email,
+                phoneNumber: phone_number,
+                sessionId: session_id,
+                ipAddress: ip_address
             }
-        }));
-        if (error) {
-            return {
-                error: error
-            };
-        }
-
-        // assess the result of the original call, note that false here denotes this is not an aws sns callback
-        ({error, register_callback, card_id} = await circle_integration._assess_add_card_result(response_body, false));
-        if (error) {
-            return {
-                error: error
-            };
-        }
-
-        // if we do not need to register a callback and have a result already return that
-        if (register_callback !== 1) {
-            return {
-                card_id: card_id
-            };
-        }
-
-        // reaching here implies we need to register a callback, register one
-        // note that we wrap the callback in a promise here so we can keep our execution context despite waiting
-        // on an event from another execution context
-        ({error, card_id} = await new Promise((resolve) => {
-            circle_integration._park_callback(response_body.id, async (callback_response_body) => {
-
-                // assess the result of the callback, note that true here denotes this is not an aws sns callback,
-                // also note that we never expect a register callback return since that should never happen and
-                // will instead come back as an error here (this is what the true here is for)
-                const resolution = await circle_integration._assess_add_card_result(callback_response_body, true);
-                resolve(resolution);
-            });
-        }));
-        if (error) {
-            return {
-                error: error
-            };
-        }
-
-        // reaching here implies we succeeded in creating a card
-        return {
-            card_id: card_id
         };
+        circle_integration.call_circle([201], 'post', `${api_uri_base}cards`, request_body, (error, create_card_result) => {
+            if (error) {
+                return cb(error);
+            }
+            circle_integration.assess_create_card_result(create_card_result, (error, assessed_create_card_result) => {
+                if (error) {
+                    return cb(error);
+                }
+                // todo record success or failure here for fraud
+                return cb(null, assessed_create_card_result);
+            });
+        });
     },
 
-    assess_create_card_result: async (response_body, is_aws_sns_callback) => {
+    assess_create_card_result: async (create_card_result, cb) => {
         // todo risk/fraud/errors?
-        
+
         // check the status of the response
-        switch (response_body.status) {
+        switch (create_card_result.status) {
 
             // complete implies that the card was created successfully, we can now return the card id
             case add_card_status_enum.COMPLETE:
-                return {
-                    card_id: response_body.id
-                };
+                return cb(null, create_card_result.id); // todo is this the id?
 
-            // failed implies
+            // failed implies ??? todo?
             case add_card_status_enum.FAILED:
                 // todo
             
             // pending implies we will need to wait for an aws sns callback when the add card action resolves
             case add_card_status_enum.PENDING:
-                // if for some reason the aws sns callback sends as a pending status circle fucked up, catch it
-                if (is_aws_sns_callback) {
-                    return {
-                        status: 'error',
-                        reason: 'server',
-                        message: 'An aws sns callback returned a pending result, this should never happen',
-                        payload: response_body
-                    };
-                }
-                // otherwise respond that we need to register a callback and wait for aws sns to callback
-                return {
-                    register_callback: 1
-                };
+                // todo is this the right id
+                return circle_integration.park_callback(create_card_result.id, (error, notification) => {
+                    if (error) {
+                        return cb(error);
+                    }
+                    console.log('notification');
+                    console.log(JSON.stringify(notification, null, 2));
+                });
             
             // guardrail against unexpected responses or changing api
             default:
-                return {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected response status: ' + response_body.status,
-                    payload: response_body
-                };
+                return cb({
+                    error: {
+                        reason: 'server',
+                        message: 'Unexpected Create Card Status: ' + create_card_result.status,
+                        create_card_result: create_card_result
+                    }
+                });
         }
     },
 
@@ -475,7 +438,7 @@ module.exports = circle_integration = {
         }
 
         // check the status
-        switch (result.status) {
+        switch (payment_result.status) {
 
             // confirmed and paid are equivalent for considering the payment a success, paid just implies its in our wallet now
             case payment_status_enum.CONFIRMED:
@@ -504,19 +467,19 @@ module.exports = circle_integration = {
             
             // handle unexpected status
             default:
-                return {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected result status: ' + result.status,
-                    payload: response
-                };
+                return cb({
+                    error: {
+                        reason: 'server',
+                        message: 'Unexpected Payment Status: ' + payment_result.status,
+                        payment_result: payment_result
+                    }
+                });
         }
     },
 
-    _assess_purchase_risk: async (result) => {
+    assess_payment_risk: (payment_result) => {
         // if a risk evaluation is present, along with a decision, and that decision is denied we have failed the payment from risk, determine why
         if (result.hasOwnProperty('riskEvaluation') && result.riskEvalutaion.hasOwnProperty('decision') && result.riskEvalutaion.decision === 'denied') {
-            // get the reason code from the result
             const reason_code = result.riskEvalutaion.reason;
 
             // attempt to find the risk category
@@ -533,10 +496,11 @@ module.exports = circle_integration = {
             // if we did not find the risk category we have an unexpected risk code, crash
             if (found_risk_category === null) {
                 return {
-                    status: 'failed_no_retry',
-                    reason: 'server',
-                    message: 'Unexpected risk result: ' + reason_code,
-                    payload: result
+                    error: {
+                        reason: 'server',
+                        message: 'Unexpected Risk Code: ' + reason_code,
+                        payment_result: payment_result
+                    }
                 }; 
             }
 
@@ -545,7 +509,7 @@ module.exports = circle_integration = {
             for (const specific_reason in found_risk_category.specific_reasons) {
                 
                 // if the specific reason code matches we found the specific reason
-                if (specific_reason.code === reson_code) {
+                if (specific_reason.code === reason_code) {
                     found_specific_reason = specific_reason;
                     break;
                 }
@@ -554,15 +518,15 @@ module.exports = circle_integration = {
             // we may or may not have found a specific reason, but the category is all that is gauranteed
             // return whatever we have
             return {
-                status: 'fraud',
-                reason: 'player',
-                message: `code: ${reason_code}: ${found_risk_category.category}: ${found_risk_category.description} (${found_specific_reason === null ? 'no specific reason found' : found_specific_reason.description})`,
-                payload: result
+                error: {
+                    reason: 'user',
+                    message: `code: ${reason_code}: ${found_risk_category.category}: ${found_risk_category.description} (${found_specific_reason === null ? 'no specific reason found' : found_specific_reason.description})`,
+                    payment_result: payment_result
+                }
             };
 
         // reaching here implies there was no risk evaluation, or nested decision, or the decision was not denied, meaning no risk, return null to inidicate no risk
         } else {
-            
             return null;
         }
     },

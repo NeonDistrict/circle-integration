@@ -8,7 +8,7 @@ const circle_integration_server = require('./circle_integration_server.js');
 
 module.exports = server = {
     https_server: null,
-    respond: (error, body) => {
+    respond: (res, error, body) => {
         if (error) {
             res.status(500);
             return res.send(error);
@@ -30,16 +30,17 @@ module.exports = server = {
         // maybe we do an abstract service that handles all of that shit
         
         app.post(config.sns_endpoint, async (req, res) => {
-            ({ error } = await circle_integration_server.on_notification(req.body));
-            if (error) {
-                throw error;
-            }
-            res.end();
+            circle_integration_server.on_notification(req.body, (error) => {
+                if (error) {
+                    throw error;
+                }
+                return res.end();
+            });
         });
         
         app.post('/get_public_key', (req, res) => {
             let force_refresh = false;
-            circle_integration_server.get_public_key(force_refresh, server.respond);
+            circle_integration_server.get_public_key(force_refresh, server.respond.bind(this, res));
         });
 
         app.post('/get_sale_items', async (req, res) => {
@@ -48,7 +49,7 @@ module.exports = server = {
         });
         
         app.post('/purchase', async (req, res) => {
-            circle_integration_server.purchase(
+            return circle_integration_server.purchase(
                 req.body.idempotency_key,
                 req.body.key_id,
                 req.body.encrypted_card_information,
@@ -62,12 +63,12 @@ module.exports = server = {
                 req.body.postal_zip_code,
                 req.body.expiry_month,
                 req.body.expiry_year,
-                req.body.sale_item_key,
                 req.body.email, 
                 req.body.phone_number, 
-                'todo session id',
-                'todo ip address',
-                server.respond
+                '12345678912345678912345678912345', // session hash
+                '192.166.43.2', //req.ip,
+                req.body.sale_item_key,
+                server.respond.bind(this, res)
             );
         });
         

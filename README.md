@@ -7,6 +7,8 @@ Contains documentation, demo, and back/front end components required to integrat
 + json schema validation
 + does adding card have redirect validation?
 + hash details on backend, client cant be trusted to make their own hashes against themselves.. but we do need to hash card numbers soo?
++ parking cleanup for timeouts
++ when we send in session ids they should be one way hashed as to not send actual session ids as per circles documentation
 
 ## Useful Links
 

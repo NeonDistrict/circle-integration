@@ -1,4 +1,4 @@
-module.exports = sale_items = [
+module.exports = sale_items_dev = [
     {
         "sale_item_key": "NEON_1000",
         "currency": "USD",
