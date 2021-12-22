@@ -32,7 +32,7 @@ module.exports = server = {
         app.post(config.sns_endpoint, async (req, res) => {
             circle_integration_server.on_notification(req.body, (error) => {
                 if (error) {
-                    console.log(error, JSON.stringify(error));
+                    console.log(JSON.stringify(error));
                     return process.exit(1);
                 }
                 return res.end();
@@ -66,7 +66,7 @@ module.exports = server = {
                 req.body.email, 
                 req.body.phone_number, 
                 '12345678912345678912345678912345', // session hash
-                '192.166.43.2', //req.ip,
+                req.ip,
                 req.body.sale_item_key,
                 server.respond.bind(this, res)
             );

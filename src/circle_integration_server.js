@@ -236,6 +236,10 @@ module.exports = circle_integration = {
             case 'cards':
                 result = parsed_message.card;
                 break;
+            
+            case 'payments':
+                result = parsed_message.payment;
+                break;
 
             default:
                 return cb({
@@ -315,22 +319,22 @@ module.exports = circle_integration = {
         }
         
         // create a card for the transaction
-        circle_integration.create_card(idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
+        circle_integration.create_card(idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, assessed_create_card_result) => {
             if (error) {
                 return cb(error);
             }
 
-            // todo do we get card id here? or can we get redirects?
+            // todo do we get card id here? or can we get redirects? i dont think redirs here
 
             // the user provides an idempotency key for adding the card and we create another here for the payment
             const payment_idempotency_key = uuidv4();
 
             // create a payment for the transaction
-            circle_integration.create_payment(payment_idempotency_key, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, payment_result) => {
+            circle_integration.create_payment(payment_idempotency_key, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
                 if (error) {
                     return cb(error);
                 }
-                return cb(null, payment_result);
+                return cb(null, assessed_payment_result);
             });
         });
     },
@@ -381,7 +385,7 @@ module.exports = circle_integration = {
 
             // complete implies that the card was created successfully, we can now return the card id
             case add_card_status_enum.COMPLETE:
-                return cb(null, create_card_result.id); // todo is this the id?
+                return cb(null, create_card_result); // todo is this the id?
 
             // failed implies ??? todo?
             case add_card_status_enum.FAILED:
@@ -411,11 +415,10 @@ module.exports = circle_integration = {
         }
     },
 
-    // todo key id
     create_payment: (payment_idempotency_key, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
         const request_body = {
             idempotencyKey: payment_idempotency_key,
-            keyId: encrypted_card_information.key_id,
+            keyId: encrypted_card_information.keyId,
             metadata: {
                 email: email,
                 phoneNumber: phone_number,
@@ -427,16 +430,15 @@ module.exports = circle_integration = {
                 currency: sale_item.currency
             },
             autoCapture: true,
-            verification: 'three_d_secure',
-            verificationSuccessUrl: 'todo',
-            verificationFailureUrl: 'todo',
+            verification: 'cvv',
+            //verificationSuccessUrl: 'todo',
+            //verificationFailureUrl: 'todo',
             source: {
                 id: card_id,
                 type: 'card'
             },
             description: sale_item.statement_description,
-            encryptedData: encrypted_card_information.encryptedMessage,
-            channel: 'todo, what is a channel in this context?'
+            encryptedData: encrypted_card_information.encryptedMessage
         };
 
         // create the payment
@@ -445,7 +447,7 @@ module.exports = circle_integration = {
                 return cb(error);
             }
 
-            // determine if the payment outcome, waiting on sns if needed
+            // determine the payment outcome, waiting on sns if needed
             circle_integration.assess_payment_result(payment_result, (error, assessed_payment_result) => {
                 if (error) {
                     return cb(error);
@@ -469,17 +471,22 @@ module.exports = circle_integration = {
             // confirmed and paid are equivalent for considering the payment a success, paid just implies its in our wallet now
             case payment_status_enum.CONFIRMED:
             case payment_status_enum.PAID:
-                return cb(null, 'todo receipt id?');
+                return cb(null, payment_result);
 
             // failed implies that the the payment is complete and will never be successful, figure out what the reason was to
             // determine what we tell the player and if they should retry the payment or not (with a new payment)
             case payment_status_enum.FAILED:
-                return circle_integration.assess_payment_failure(payment_result);
+                return circle_integration.assess_payment_failure(payment_result, cb);
             
-            // pending means we just need to wait, and continue polling for the result - null here implies pending
+            // pending implies we will need to wait for an aws sns callback when the payment action resolves
             case payment_status_enum.PENDING:
-                // todo park here id guess?
-                return null;
+                return circle_integration.park_callback(payment_result.id, (error, payment_result) => {
+                    if (error) {
+                        return cb(error);
+                    }
+                    // assess the new result
+                    return circle_integration.assess_payment_result(payment_result, cb);
+                });
             
             // action required means the player will need to be redirected to verify payment
             case payment_status_enum.ACTION_REQUIRED:
@@ -505,7 +512,7 @@ module.exports = circle_integration = {
 
     assess_payment_risk: (payment_result) => {
         // if a risk evaluation is present, along with a decision, and that decision is denied we have failed the payment from risk, determine why
-        if (result.hasOwnProperty('riskEvaluation') && result.riskEvalutaion.hasOwnProperty('decision') && result.riskEvalutaion.decision === 'denied') {
+        if (payment_result.hasOwnProperty('riskEvaluation') && payment_result.riskEvalutaion.hasOwnProperty('decision') && payment_result.riskEvalutaion.decision === 'denied') {
             const reason_code = result.riskEvalutaion.reason;
 
             // attempt to find the risk category
@@ -557,25 +564,11 @@ module.exports = circle_integration = {
         }
     },
 
-    _assess_purchase_failure: async (result) => {
+    assess_purchase_failure: (payment_result, cb) => {
         // todo this whole clusterfuck should probably illicit a bunch of different responses
-        switch (result.errorCode) {
+        switch (payment_result.errorCode) {
             case payment_error_enum.PAYMENT_FAILED:
-                return {
-                    status: 'failed_retry',
-                    reason: 'player',
-                    message: result.errorCode,
-                    payload: response
-                };
-
             case payment_error_enum.PAYMENT_FRAUD_DETECTED:
-                return {
-                    status: 'fraud',
-                    reason: 'player',
-                    message: result.errorCode,
-                    payload: response
-                };
-
             case payment_error_enum.PAYMENT_DENIED:
             case payment_error_enum.PAYMENT_NOT_SUPPORTED_BY_ISSUER:
             case payment_error_enum.PAYMENT_NOT_FUNDED:
@@ -603,21 +596,23 @@ module.exports = circle_integration = {
             case payment_error_enum.INVALID_ACCOUNT_NUMBER:
             case payment_error_enum.INVALID_WIRE_RTN:
             case payment_error_enum.INVALID_ACH_RTN:
-                return {
-                    status: 'failed_no_retry',
-                    reason: 'player',
-                    message: result.errorCode,
-                    payload: response
-                };
+                return cb({
+                    error: {
+                        reason: 'player',
+                        message: payment_result.errorCode,
+                        payment_result: payment_result
+                    }
+                });
 
             // handle unexpected error code
             default:
-                return {
-                    status: 'error',
-                    reason: 'server',
-                    message: 'Unexpected result errorCode: ' + result.errorCode,
-                    payload: response
-                };
+                return cb({
+                    error: {
+                        reason: 'server',
+                        message: 'Unexpected Payment Error Code: ' + payment_result.errorCode,
+                        payment_result: payment_result
+                    }
+                });
         }
     },
 

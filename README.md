@@ -12,6 +12,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
 + looks like cards come back with a finger print? maybe we can use that as a prepayment check? since we need to create the card to get it
++ public key changed flow for client/server
++ public key encryption of all details on front, then hashing of those on back
++ drop error reason, just do message
 
 ## Useful Links
 
