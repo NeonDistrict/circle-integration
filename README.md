@@ -9,6 +9,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + hash details on backend, client cant be trusted to make their own hashes against themselves.. but we do need to hash card numbers soo?
 + parking cleanup for timeouts
 + when we send in session ids they should be one way hashed as to not send actual session ids as per circles documentation
++ need to verify notifications via aws docs or else anyone can post in there
++ we will get notifications for refunds and shit that need handling right now they will just park eternally
++ looks like cards come back with a finger print? maybe we can use that as a prepayment check? since we need to create the card to get it
 
 ## Useful Links
 

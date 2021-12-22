@@ -75,8 +75,6 @@ module.exports = circle_integration = {
             request.data = data;
         }
 
-        console.log(JSON.stringify(request, null, 2));
-
         let response;
         try {
             response = await axios(request);
@@ -225,26 +223,51 @@ module.exports = circle_integration = {
             return cb(null);
         }
 
-        console.log('notification:', notification);
-        return {};
+        // reaching here implies its a notification, get the message
+        let parsed_message = null;
+        try {
+            parsed_message = JSON.parse(notification.Message);
+        } catch (parse_error)  {
+            return cb(parse_error);
+        }
 
-        // todo notification.id? format?
+        let result = null;
+        switch (parsed_message.notificationType) {
+            case 'card':
+                result = parsed_message.card;
+                break;
+
+            default:
+                return cb({
+                    error: {
+                        reason: 'server',
+                        message: 'Unexpected Notification Type: ' + parsed_message.notificationType,
+                        notification: notification
+                    }
+                });
+        }
 
         // whenever we receive a normal notification (not the confirmation one) we have a race condition, sometimes a callback
         // will already be parked and waiting, and sometimes the callback may not be ready yet, first check if a callback is parked
-        if (circle_integration._parked_callbacks.hasOwnProperty(notification.id)) {
+        if (circle_integration.parked_callbacks.hasOwnProperty(result.id)) {
 
-            // reaching here implies a callback was parked and already waiting for us, get that callback and remove it from parking
-            const parked_callback = circle_integration._parked_callbacks[notification.id];
-            delete circle_integration._parked_callbacks[notification.id];
+            // reaching here implies a callback was parked and already waiting for this result, get that callback and remove it from parking
+            const parked_callback = circle_integration.parked_callbacks[result.id];
+            delete circle_integration.parked_callbacks[result.id];
 
-            // return the notification in the callback
-            return callback(notification);
+            // return the result in the callback
+            parked_callback(null, result);
+
+            // close sns request success
+            return cb(null);
         }
 
         // reaching here implies that a callback was not already waiting meaning that the notification came before we could park one
-        // in this case we park the notification so that when the callback goes to park with _park_callback it will see it waiting
-        circle_integration._parked_notifications[notification.id] = notification;
+        // in this case we park the notification so that when the callback goes to park with park_callback it will see it waiting
+        circle_integration.parked_notifications[result.id] = result;
+
+        // close sns request success
+        return cb(null);
     },
 
     get_public_key: (force_refresh, cb) => {
@@ -312,11 +335,12 @@ module.exports = circle_integration = {
         });
     },
 
+    // todo dont need key id implicit here as a param
     create_card: (idempotency_key, key_id, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
         const request_body = {
             idempotencyKey: idempotency_key,
-            keyId: key_id,
-            encryptedData: encrypted_card_information,
+            keyId: encrypted_card_information.keyId,
+            encryptedData: encrypted_card_information.encryptedMessage,
             billingDetails: {
                 name: name_on_card,
                 city: city,
@@ -349,7 +373,7 @@ module.exports = circle_integration = {
         });
     },
 
-    assess_create_card_result: async (create_card_result, cb) => {
+    assess_create_card_result: (create_card_result, cb) => {
         // todo risk/fraud/errors?
 
         // check the status of the response
@@ -362,16 +386,17 @@ module.exports = circle_integration = {
             // failed implies ??? todo?
             case add_card_status_enum.FAILED:
                 // todo
+                console.log(create_card_result);
+                return;
             
             // pending implies we will need to wait for an aws sns callback when the add card action resolves
             case add_card_status_enum.PENDING:
-                // todo is this the right id
-                return circle_integration.park_callback(create_card_result.id, (error, notification) => {
+                return circle_integration.park_callback(create_card_result.id, (error, create_card_result) => {
                     if (error) {
                         return cb(error);
                     }
-                    console.log('notification');
-                    console.log(JSON.stringify(notification, null, 2));
+                    // assess the new result
+                    return circle_integration.assess_create_card_result(create_card_result, cb);
                 });
             
             // guardrail against unexpected responses or changing api
@@ -386,10 +411,11 @@ module.exports = circle_integration = {
         }
     },
 
+    // todo key id
     create_payment: (payment_idempotency_key, key_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
         const request_body = {
             idempotencyKey: payment_idempotency_key,
-            keyId: key_id,
+            keyId: encrypted_card_information.key_id,
             metadata: {
                 email: email,
                 phoneNumber: phone_number,
@@ -409,7 +435,7 @@ module.exports = circle_integration = {
                 type: 'card'
             },
             description: sale_item.statement_description,
-            encryptedData: encrypted_card_information,
+            encryptedData: encrypted_card_information.encryptedMessage,
             channel: 'todo, what is a channel in this context?'
         };
 

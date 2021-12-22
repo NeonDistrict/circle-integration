@@ -22,6 +22,11 @@ module.exports = server = {
                 return true;
             }
         }));
+
+        app.use((error, req, res, next) => {
+            res.end();
+            throw error;
+        });
         
         // todo there should be some json schema validation here, and error responses, logging etc
         // todo generic responders
