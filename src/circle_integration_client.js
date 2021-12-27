@@ -34,19 +34,7 @@ module.exports = circle_integration_client = {
 
         // get the response body from the response
         const response_body = response.data;
-
-        // if our request has an accepted response code
-        if (response.status === 200) {
-
-            // return response
-            return response_body;
-        
-        // otherwise we received an error response
-        } else {
-
-            // throw the error
-            throw new Error(`${response_body.reason}: ${response_body.message}`)
-        }
+        return response_body;
     },
 
     hash_card_details: (card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key) => {

@@ -564,30 +564,63 @@ module.exports = circle_integration = {
         }
     },
 
-    assess_purchase_failure: (payment_result, cb) => {
+    assess_payment_failure: (payment_result, cb) => {
         // todo this whole clusterfuck should probably illicit a bunch of different responses
         switch (payment_result.errorCode) {
             case payment_error_enum.PAYMENT_FAILED:
+                return cb({
+                    error: 'Payment Failed (Unspecified)'
+                });
             case payment_error_enum.PAYMENT_FRAUD_DETECTED:
+                return cb({
+                    error: 'Fraud Detected (Contact Card Provider)'
+                });
             case payment_error_enum.PAYMENT_DENIED:
+                return cb({
+                    error: 'Payment Denied (Contact Card Provider)'
+                });
             case payment_error_enum.PAYMENT_NOT_SUPPORTED_BY_ISSUER:
+                return cb({
+                    error: 'Payment Not Supported (Contact Card Provider)'
+                });
             case payment_error_enum.PAYMENT_NOT_FUNDED:
+                return cb({
+                    error: 'Insufficient Funds (Contact Card Provider)'
+                });
             case payment_error_enum.PAYMENT_UNPROCESSABLE:
             case payment_error_enum.PAYMENT_STOPPED_BY_ISSUER:
+                return cb({
+                    error: 'Payment Stopped (Contact Card Provider)'
+                });
             case payment_error_enum.PAYMENT_CANCELED:
             case payment_error_enum.PAYMENT_RETURNED:
             case payment_error_enum.PAYMENT_FAILED_BALANCE_CHECK:
             case payment_error_enum.CARD_FAILED:
             case payment_error_enum.CARD_INVALID:
+                return cb({
+                    error: 'Invalid Card Details (Correct Information)'
+                });
             case payment_error_enum.CARD_ADDRESS_MISMATCH:
             case payment_error_enum.CARD_ZIP_MISMATCH:
             case payment_error_enum.CARD_CVV_INVALID:
             case payment_error_enum.CARD_EXPIRED:
             case payment_error_enum.CARD_LIMIT_VIOLATED:
+                return cb({
+                    error: 'Limit Exceeded (Circle Limit)'
+                });
             case payment_error_enum.CARD_NOT_HONORED:
+                return cb({
+                    error: 'Card Not Honored (Contact Card Provider)'
+                });
             case payment_error_enum.CARD_CVV_REQUIRED:
             case payment_error_enum.CREDIT_CARD_NOT_ALLOWED:
+                return cb({
+                    error: 'Card Not Allowed (Contact Card Provider)'
+                });
             case payment_error_enum.CARD_ACCOUNT_INELIGIBLE:
+                return cb({
+                    error: 'Ineligible Account (Contact Card Provider)'
+                });
             case payment_error_enum.CARD_NETWORK_UNSUPPORTED:
             case payment_error_enum.CHANNEL_INVALID:
             case payment_error_enum.UNAUTHORIZED_TRANSACTION:
