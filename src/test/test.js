@@ -3,7 +3,8 @@ const server = require('../server.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
-const test_amounts = require('./test_amounts.js');
+const test_cvvs = require('./test_cvvs.js');
+const test_avss = require('./test_avss.js');
 
 const ok_purchase = {
     card_number: test_cards[0].card_number,
@@ -84,7 +85,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Payment Failed (Unspecified)'); 
     });
 
-    it.only('CARD_NOT_HONORED', async function () {
+    it('CARD_NOT_HONORED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -105,7 +106,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Card Not Honored (Contact Card Provider)'); 
     });
 
-    it.only('PAYMENT_NOT_SUPPORTED_BY_ISSUER', async function () {
+    it('PAYMENT_NOT_SUPPORTED_BY_ISSUER', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -126,7 +127,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Payment Not Supported (Contact Card Provider)'); 
     });
 
-    it.only('PAYMENT_NOT_FUNDED', async function () {
+    it('PAYMENT_NOT_FUNDED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -147,7 +148,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Insufficient Funds (Contact Card Provider)'); 
     });
 
-    it.only('CARD_INVALID', async function () {
+    it('CARD_INVALID', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -168,7 +169,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Invalid Card Details (Correct Information)'); 
     });
 
-    it.only('CARD_LIMIT_VIOLATED', async function () {
+    it('CARD_LIMIT_VIOLATED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -189,7 +190,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Limit Exceeded (Circle Limit)'); 
     });
 
-    it.only('PAYMENT_DENIED', async function () {
+    it('PAYMENT_DENIED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -210,7 +211,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Payment Denied (Contact Card Provider)'); 
     });
 
-    it.only('PAYMENT_FRAUD_DETECTED', async function () {
+    it('PAYMENT_FRAUD_DETECTED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -231,7 +232,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Fraud Detected (Contact Card Provider)'); 
     });
 
-    it.only('CREDIT_CARD_NOT_ALLOWED', async function () {
+    it('CREDIT_CARD_NOT_ALLOWED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -253,7 +254,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Card Not Allowed (Contact Card Provider)'); 
     });
 
-    it.only('PAYMENT_STOPPED_BY_ISSUER', async function () {
+    it('PAYMENT_STOPPED_BY_ISSUER', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -274,7 +275,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Payment Stopped (Contact Card Provider)'); 
     });
 
-    it.only('CARD_ACCOUNT_INELIGIBLE', async function () {
+    it('CARD_ACCOUNT_INELIGIBLE', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -294,4 +295,27 @@ describe('circle-integration-server', function () {
         );
         assert(purchase_result.error === 'Ineligible Account (Contact Card Provider)'); 
     });
+
+    it('BAD_CVVS', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            test_cvvs[0],
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Card Details (Correct Information)'); 
+    });
+
+    
 });

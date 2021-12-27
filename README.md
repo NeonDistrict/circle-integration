@@ -15,6 +15,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + public key changed flow for client/server
 + public key encryption of all details on front, then hashing of those on back
 + drop error reason, just do message
++ some payment errors should never be able to happen and should lock an account, not just quarantine it
++ card creation does avs too
++ there is a number of scenarios where a dev should be notified
 
 ## Useful Links
 

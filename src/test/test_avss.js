@@ -44,12 +44,12 @@ module.exports = test_avss = [
     {
         value: 'Test_K',
         result: 'Address mismatch',
-        description: 'Card member’s name matches but billing address and billing postal code do not match.'
+        description: 'Card member\'s name matches but billing address and billing postal code do not match.'
     },
     {
         value: 'Test_L',
         result: 'Partial match',
-        description: 'Card member’s name and billing postal code match, but billing address does not match.'
+        description: 'Card member\'s name and billing postal code match, but billing address does not match.'
     },
     {
         value: 'Test_M',
@@ -64,7 +64,7 @@ module.exports = test_avss = [
     {
         value: 'Test_O',
         result: 'Partial match',
-        description: 'Card member’s name and billing address match, but billing postal code does not match.'
+        description: 'Card member\'s name and billing address match, but billing postal code does not match.'
     },
     {
         value: 'Test_P',

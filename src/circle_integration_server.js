@@ -565,7 +565,6 @@ module.exports = circle_integration = {
     },
 
     assess_payment_failure: (payment_result, cb) => {
-        // todo this whole clusterfuck should probably illicit a bunch of different responses
         switch (payment_result.errorCode) {
             case payment_error_enum.PAYMENT_FAILED:
                 return cb({
@@ -580,6 +579,7 @@ module.exports = circle_integration = {
                     error: 'Payment Denied (Contact Card Provider)'
                 });
             case payment_error_enum.PAYMENT_NOT_SUPPORTED_BY_ISSUER:
+            case payment_error_enum.CARD_NETWORK_UNSUPPORTED:
                 return cb({
                     error: 'Payment Not Supported (Contact Card Provider)'
                 });
@@ -587,23 +587,28 @@ module.exports = circle_integration = {
                 return cb({
                     error: 'Insufficient Funds (Contact Card Provider)'
                 });
-            case payment_error_enum.PAYMENT_UNPROCESSABLE:
             case payment_error_enum.PAYMENT_STOPPED_BY_ISSUER:
                 return cb({
                     error: 'Payment Stopped (Contact Card Provider)'
                 });
-            case payment_error_enum.PAYMENT_CANCELED:
-            case payment_error_enum.PAYMENT_RETURNED:
-            case payment_error_enum.PAYMENT_FAILED_BALANCE_CHECK:
-            case payment_error_enum.CARD_FAILED:
+            case payment_error_enum.UNAUTHORIZED_TRANSACTION:
+                return cb({
+                    error: 'Payment Unauthorized (Contact Card Provider)'
+                });
             case payment_error_enum.CARD_INVALID:
+            case payment_error_enum.INVALID_ACCOUNT_NUMBER:
+            case payment_error_enum.CARD_CVV_INVALID:
+            case payment_error_enum.CARD_ADDRESS_MISMATCH:
+            case payment_error_enum.CARD_ZIP_MISMATCH:
+            case payment_error_enum.CARD_CVV_REQUIRED:
+            case payment_error_enum.CARD_FAILED:
                 return cb({
                     error: 'Invalid Card Details (Correct Information)'
                 });
-            case payment_error_enum.CARD_ADDRESS_MISMATCH:
-            case payment_error_enum.CARD_ZIP_MISMATCH:
-            case payment_error_enum.CARD_CVV_INVALID:
             case payment_error_enum.CARD_EXPIRED:
+                return cb({
+                    error: 'Card Expired'
+                });
             case payment_error_enum.CARD_LIMIT_VIOLATED:
                 return cb({
                     error: 'Limit Exceeded (Circle Limit)'
@@ -612,39 +617,40 @@ module.exports = circle_integration = {
                 return cb({
                     error: 'Card Not Honored (Contact Card Provider)'
                 });
-            case payment_error_enum.CARD_CVV_REQUIRED:
             case payment_error_enum.CREDIT_CARD_NOT_ALLOWED:
                 return cb({
                     error: 'Card Not Allowed (Contact Card Provider)'
                 });
             case payment_error_enum.CARD_ACCOUNT_INELIGIBLE:
+            case payment_error_enum.BANK_ACCOUNT_INELIGIBLE:
                 return cb({
                     error: 'Ineligible Account (Contact Card Provider)'
                 });
-            case payment_error_enum.CARD_NETWORK_UNSUPPORTED:
-            case payment_error_enum.CHANNEL_INVALID:
-            case payment_error_enum.UNAUTHORIZED_TRANSACTION:
-            case payment_error_enum.BANK_ACCOUNT_INELIGIBLE:
+            case payment_error_enum.PAYMENT_FAILED_BALANCE_CHECK:
+                return cb({
+                    error: 'Insufficient Balance (Contact Card Provider)'
+                });
+            case payment_error_enum.PAYMENT_UNPROCESSABLE:
+                // todo this means the encrypted data couldnt be read, need to get a new public key
+                return cb({
+                    error: 'Public Key Failure'
+                });
             case payment_error_enum.BANK_TRANSACTION_ERROR:
-            case payment_error_enum.INVALID_ACCOUNT_NUMBER:
+                return cb({
+                    error: 'Bank Transaction Error (Contact Card Provider)'
+                });
+            case payment_error_enum.PAYMENT_CANCELED:
+                return cb({
+                    error: 'Payment Cancelled'
+                });
             case payment_error_enum.INVALID_WIRE_RTN:
             case payment_error_enum.INVALID_ACH_RTN:
-                return cb({
-                    error: {
-                        reason: 'player',
-                        message: payment_result.errorCode,
-                        payment_result: payment_result
-                    }
-                });
-
-            // handle unexpected error code
+            case payment_error_enum.CHANNEL_INVALID:
+            case payment_error_enum.PAYMENT_RETURNED:
             default:
+                // todo these cant happen, a dev should be notified
                 return cb({
-                    error: {
-                        reason: 'server',
-                        message: 'Unexpected Payment Error Code: ' + payment_result.errorCode,
-                        payment_result: payment_result
-                    }
+                    error: 'Invalid Request (Internal Error)'
                 });
         }
     },
