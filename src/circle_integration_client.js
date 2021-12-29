@@ -66,8 +66,8 @@ module.exports = circle_integration_client = {
         };
     },
 
-    purchase: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key) => {
-        const public_key = await circle_integration_client.call_circle_api('/get_public_key', {force_refresh: false});
+    purchase: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, force_refresh_public_key = false) => {
+        const public_key = await circle_integration_client.call_circle_api('/get_public_key', {force_refresh: force_refresh_public_key});
         const hashed_card_details = circle_integration_client.hash_card_details(card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key);
         const encrypted_card_information = await circle_integration_client.encrypt_card_information(public_key, card_number, card_cvv);
         const request_body = {
@@ -89,6 +89,14 @@ module.exports = circle_integration_client = {
         }
         const purchase_result = await circle_integration_client.call_circle_api('/purchase', request_body);
         // todo redirects?
+
+        // try to handle bad or expired public keys by force refreshing the pk
+        // if we force refreshed the pk already this purchase don't try it twice
+        if (!force_refresh_public_key && purchase_result.hasOwnProperty('error') && (purchase_result.error === 'Unprocessable Entity' || purchase_result.error === 'Public Key Failure')) {
+            // get a new idempotency key for the retry
+            const retry_idempotency_key = circle_integration_client.generate_idempotency_key();
+            return await circle_integration_client.purchase(retry_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, true);
+        }
 
         return purchase_result;
     }

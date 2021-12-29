@@ -7,7 +7,6 @@ const payment_error_enum = require('./enum/payment_error_enum.js');
 const cvv_verification_status_enum = require('./enum/cvv_verification_status_enum.js');
 const three_d_secure_verification_status_enum = require('./enum/three_d_secure_verification_status_enum.js');
 const sale_items = require('./sale_items.dev.js');
-const req = require('express/lib/request');
 
 const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
@@ -109,50 +108,27 @@ module.exports = circle_integration = {
         // reaching here implies we had a bad response, attempt to identify why
 
         // define failure codes
+        // todo some of these should informa  dev if not all of them?
         const failure_codes = {
-            '400': {
-                reason: 'server',
-                message: 'Bad Request'
-            },
-            '401': {
-                reason: 'server',
-                message: 'Unauthorized'
-            },
-            '404': {
-                reason: 'server',
-                message: 'Not Found'
-            },
-            '422': {
-                reason: 'server',
-                message: 'Unprocessable Entity'
-            },
-            '429': {
-                reason: 'server',
-                message: 'Too Many Requests'
-            },
-            '500': {
-                reason: 'server',
-                message: 'Unexpected Server Error'
-            }
+            '400': 'Bad Request',
+            '401': 'Unauthorized',
+            '404': 'Not Found',
+            '422': 'Unprocessable Entity',
+            '429': 'Too Many Requests',
+            '500': 'Unexpected Server Error'
         };
 
         // check if its an expected error code, returning the relevant error
         if (failure_codes.hasOwnProperty(status_code)) {
             const failure = failure_codes[status_code];
             return cb({
-                error: {
-                    reason: failure.reason,
-                    message: failure.message
-                }
+                error: failure
             });
         }
 
         // reaching here implies it was an unexpected error code
         return cb({
-            error: {
-                reason: 'server',
-                message: 'Unknown Server Error'
-            }
+            error: 'Unknown Status Code Error'
         });
     },
     
@@ -567,14 +543,19 @@ module.exports = circle_integration = {
     assess_payment_failure: (payment_result, cb) => {
         switch (payment_result.errorCode) {
             case payment_error_enum.PAYMENT_FAILED:
+            case payment_error_enum.VERIFICATION_FAILED:
                 return cb({
                     error: 'Payment Failed (Unspecified)'
                 });
             case payment_error_enum.PAYMENT_FRAUD_DETECTED:
+            case payment_error_enum.VERIFICATION_FRAUD_DETECTED:
                 return cb({
                     error: 'Fraud Detected (Contact Card Provider)'
                 });
             case payment_error_enum.PAYMENT_DENIED:
+            case payment_error_enum.RISK_DENIED:
+            case payment_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
+            case payment_error_enum.THREE_D_SECURE_FAILURE:
                 return cb({
                     error: 'Payment Denied (Contact Card Provider)'
                 });
@@ -588,6 +569,7 @@ module.exports = circle_integration = {
                     error: 'Insufficient Funds (Contact Card Provider)'
                 });
             case payment_error_enum.PAYMENT_STOPPED_BY_ISSUER:
+            case payment_error_enum.VERIFICATION_STOPPED_BY_ISSUER:
                 return cb({
                     error: 'Payment Stopped (Contact Card Provider)'
                 });
@@ -630,11 +612,6 @@ module.exports = circle_integration = {
                 return cb({
                     error: 'Insufficient Balance (Contact Card Provider)'
                 });
-            case payment_error_enum.PAYMENT_UNPROCESSABLE:
-                // todo this means the encrypted data couldnt be read, need to get a new public key
-                return cb({
-                    error: 'Public Key Failure'
-                });
             case payment_error_enum.BANK_TRANSACTION_ERROR:
                 return cb({
                     error: 'Bank Transaction Error (Contact Card Provider)'
@@ -643,10 +620,27 @@ module.exports = circle_integration = {
                 return cb({
                     error: 'Payment Cancelled'
                 });
-            case payment_error_enum.INVALID_WIRE_RTN:
-            case payment_error_enum.INVALID_ACH_RTN:
-            case payment_error_enum.CHANNEL_INVALID:
-            case payment_error_enum.PAYMENT_RETURNED:
+            case payment_error_enum.PAYMENT_UNPROCESSABLE:
+                // todo this means the encrypted data couldnt be read, need to get a new public key
+                return cb({
+                    error: 'Public Key Failure'
+                });
+            case payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED:
+                // todo this means we need to retry using cvv instead of 3dsecure
+                return cb({
+                    error: '3DSecure Not Supported'
+                });
+            case payment_error_enum.THREE_D_SECURE_ACTION_EXPIRED:
+                // todo this means we need to retry using 3dsecure again
+                return cb({
+                    error: '3DSecure Expired'
+                });
+            case payment_error_enum.PAYMENT_RETURNED:               // todo: this is a different case entirely, how to handle this?
+            case payment_error_enum.INVALID_WIRE_RTN:               // note: we do not do wires
+            case payment_error_enum.INVALID_ACH_RTN:                // note: we do not do ach payments
+            case payment_error_enum.CHANNEL_INVALID:                // note: we do not use the channels function of circle
+            case payment_error_enum.THREE_D_SECURE_REQUIRED:        // note: we start with 3dsecure then step down to cvv if not available. if this error occurs someone is doing something they shouldnt
+            case payment_error_enum.THREE_D_SECURE_INVALID_REQUEST: // note: this means we sent bad params, which should never happen. if this error occurs someone is doing something they shouldnt
             default:
                 // todo these cant happen, a dev should be notified
                 return cb({

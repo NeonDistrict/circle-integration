@@ -7,6 +7,7 @@ const app = express();
 const circle_integration_server = require('./circle_integration_server.js');
 
 module.exports = server = {
+    circle_integration_server: circle_integration_server,
     https_server: null,
     respond: (res, error, body) => {
         if (error) {
@@ -40,8 +41,7 @@ module.exports = server = {
         });
         
         app.post('/get_public_key', (req, res) => {
-            let force_refresh = false;
-            circle_integration_server.get_public_key(force_refresh, server.respond.bind(this, res));
+            circle_integration_server.get_public_key(req.body.force_refresh, server.respond.bind(this, res));
         });
 
         app.post('/get_sale_items', async (req, res) => {

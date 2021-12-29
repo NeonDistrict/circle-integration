@@ -317,5 +317,54 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Invalid Card Details (Correct Information)'); 
     });
 
-    
+    it('should correct bad public key', async function () {
+        // since other tests come before this one the server has already received and cached a public key
+        // this public key is fetched for each purchase, so we fuck up the cached version which will cause
+        // a public key failure, and force a key refresh. all of this should be handled automatically and
+        // allow a successfull purchase without further intervention
+
+        // fuck up the cached public key
+        server.circle_integration_server.cached_public_key.keyId = 'junk';
+
+        // do a normal purchase which should correct automatically
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it.only('invalid card number', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            'bogus',
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.status === 'confirmed');
+    });
 });

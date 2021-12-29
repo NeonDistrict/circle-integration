@@ -27,5 +27,18 @@ module.exports = payment_error_enum = {
     BANK_TRANSACTION_ERROR: 'bank_transaction_error', 
     INVALID_ACCOUNT_NUMBER: 'invalid_account_number', 
     INVALID_WIRE_RTN: 'invalid_wire_rtn', 
-    INVALID_ACH_RTN: 'invalid_ach_rtn'
+    INVALID_ACH_RTN: 'invalid_ach_rtn',
+
+    VERIFICATION_FAILED: 'verification_failed',
+    VERIFICATION_FRAUD_DETECTED: 'verification_fraud_detected',
+    RISK_DENIED: 'risk_denied',
+    VERIFICATION_NOT_SUPPORTED_BY_ISSUER: 'verification_not_supported_by_issuer',
+    VERIFICATION_STOPPED_BY_ISSUER: 'verification_stopped_by_issuer',
+    THREE_D_SECURE_NOT_SUPPORTED: 'three_d_secure_not_supported',
+    THREE_D_SECURE_REQUIRED: 'three_d_secure_required',
+    THREE_D_SECURE_FAILURE: 'three_d_secure_failure',
+    THREE_D_SECURE_ACTION_EXPIRED: 'three_d_secure_action_expired',
+    THREE_D_SECURE_INVALID_REQUEST: 'three_d_secure_invalid_request',
+
+    //todo need to add these: https://developers.circle.com/docs/entity-errors#card-verification-error-codes
 };
