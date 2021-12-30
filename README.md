@@ -21,6 +21,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + test for repeat idempotency key
 + waiting to hear back on teh 5.54 amount issue on slack from circle
 + waiting to hear back on the expiry validation issue
++ AVS test letters EKLO- all return Y erroneously
 
 ## Useful Links
 

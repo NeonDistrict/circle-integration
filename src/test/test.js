@@ -721,6 +721,490 @@ describe('circle-integration-server', function () {
         assert(purchase_result.error === 'Sale Item Key Not Found');
     });
 
+    it('AVS A', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_A.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'A');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS B', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_B.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'B');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS C', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_C.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'C');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS D', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_D.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'D');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS E', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_E.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'E');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS F', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_F.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'F');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS G', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_G.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'G');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS I', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_I.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'I');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS K', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_K.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'K');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS L', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_L.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'L');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS M', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_M.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'M');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS N', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_N.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'N');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS O', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_O.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'O');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS P', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_P.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'P');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS R', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_R.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'R');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS S', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_S.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'S');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS U', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_U.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'U');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS W', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_W.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'W');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS X', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_X.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'X');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS Y', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_Y.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'Y');
+        assert(purchase_result.status === 'confirmed');
+    });
+    
+    it('AVS Z', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss.TEST_Z.value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === 'Z');
+        assert(purchase_result.status === 'confirmed');
+    });
+
+    it('AVS -', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            test_avss['TEST_-'].value,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.verification.avs === '-');
+        assert(purchase_result.status === 'confirmed');
+    });
+
     /*
     it.only('invalid name', async function () {
         const purchase_result = await circle_integration_client.purchase(
