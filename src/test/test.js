@@ -166,7 +166,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'CARD_INVALID'
         );
-        assert(purchase_result.error === 'Invalid Card Details (Correct Information)'); 
+        assert(purchase_result.error === 'Invalid Details (Correct Information)'); 
     });
 
     it('CARD_LIMIT_VIOLATED', async function () {
@@ -314,7 +314,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert(purchase_result.error === 'Invalid Card Details (Correct Information)'); 
+        assert(purchase_result.error === 'Invalid Details (Correct Information)'); 
     });
 
     it('should correct bad public key', async function () {
@@ -347,7 +347,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.status === 'confirmed');
     });
 
-    it.only('invalid card number', async function () {
+    it('invalid card number', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             'bogus',
@@ -365,6 +365,382 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert(purchase_result.status === 'confirmed');
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
+
+    it('invalid cvv', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            'bogus',
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid name', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            42069,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid city', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            null,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid country', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            42069,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid address 1', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            null,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('address 2 always valid', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            42069,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.status === 'confirmed');
+
+        const purchase_result_2 = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            null,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result_2.status === 'confirmed');
+
+        const purchase_result_3 = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            undefined,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result_3.status === 'confirmed');
+
+        const purchase_result_4 = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            'LOREM IPSUM BOGUS BONUS DELORUM DUS BOGUSEN LAS DOSEN BOGUS LOREM IPSUM BOGUS BONUS DELURM DUS BODUSED LAS DDOSEN HORSEN DORSEN SHORSEN',
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result_4.status === 'confirmed');
+    });
+
+    it('invalid district', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            42069,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid postal', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            null,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid expiry month', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            'BOGUS',
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        // todo waiting to hear back from circle, this should be a 400 error with details
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid expiry year', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            'BOGUS',
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        // todo waiting to hear back from circle, this should be a 400 error with details
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid email', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            'BOGUS',
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid email (number)', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            42069,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid phone', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            'BOGUS',
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid sale item key', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            'BOGUS'
+        );
+        assert(purchase_result.error === 'Sale Item Key Not Found');
+    });
+
+    /*
+    it.only('invalid name', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+    });
+    */
 });

@@ -18,6 +18,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + some payment errors should never be able to happen and should lock an account, not just quarantine it
 + card creation does avs too
 + there is a number of scenarios where a dev should be notified
++ test for repeat idempotency key
++ waiting to hear back on teh 5.54 amount issue on slack from circle
++ waiting to hear back on the expiry validation issue
 
 ## Useful Links
 
