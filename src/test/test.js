@@ -64,6 +64,48 @@ describe('circle-integration-server', function () {
         assert(purchase_result.status === 'confirmed');
     });
 
+    it.only('dont allow duplicate idempotency keys', async function () {
+        const idempotency_key = circle_integration_client.generate_idempotency_key();
+        const purchase_result = await circle_integration_client.purchase(
+            idempotency_key,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        assert(purchase_result.status === 'confirmed');
+
+        const purchase_result_2 = await circle_integration_client.purchase(
+            idempotency_key,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key
+        );
+        // todo this should be an error and its not, reported to circle
+        assert(purchase_result_2.error === 'Idempotency Key Already Used');
+    });
+
     it('PAYMENT_FAILED', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -1204,27 +1246,4 @@ describe('circle-integration-server', function () {
         assert(purchase_result.verification.avs === '-');
         assert(purchase_result.status === 'confirmed');
     });
-
-    /*
-    it.only('invalid name', async function () {
-        const purchase_result = await circle_integration_client.purchase(
-            circle_integration_client.generate_idempotency_key(),
-            ok_purchase.card_number,
-            ok_purchase.cvv,
-            ok_purchase.name,
-            ok_purchase.city,
-            ok_purchase.country,
-            ok_purchase.address_1,
-            ok_purchase.address_2,
-            ok_purchase.district,
-            ok_purchase.postal,
-            ok_purchase.expiry_month,
-            ok_purchase.expiry_year,
-            ok_purchase.email,
-            ok_purchase.phone,
-            ok_purchase.sale_item_key
-        );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
-    });
-    */
 });
