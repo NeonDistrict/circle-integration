@@ -6,5 +6,7 @@ module.exports = config = {
     host: host,
     port: port,
     server_url: server_url,
-    sns_endpoint: '/aws_sns3'
+    sns_endpoint: '/aws_sns3',
+    success_url_3dsecure: '',
+    failure_url_3dsecure: ''
 };

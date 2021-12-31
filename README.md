@@ -22,6 +22,15 @@ Contains documentation, demo, and back/front end components required to integrat
 + waiting to hear back on the expiry validation issue
 + AVS test letters EKLO- all return Y erroneously, circle informed, waiting to hear back
 + idempotency key reuse is allowed on sandbox, reported to circle waiting to hear back
++ need a process to clean up dead callbacks, and an endpoint to get purchases, it should check that the users auth owns that purchase
++ need deep logging by uuid
++ need json schema validation on calls
++ what does the body parser do on non json or bad json bodies?
++ can we impose a body size limit to prevent heap fill atatcks
++ need sessions and session hashes
++ http_server needs listeners for on.error
++ use strict equal for asserts to get better logs
++ do a test where we success encrypt the data, then mess up the encrypted
 
 ## Useful Links
 

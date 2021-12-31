@@ -1,5 +1,5 @@
 const assert = require('assert');
-const server = require('../server.js');
+const create_server = require('../server.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
@@ -24,17 +24,20 @@ const ok_purchase = {
 };
 
 describe('circle-integration-server', function () {
+    let test_server;
+
     before(function (done) {
-        server.initialize(config_dev, function (error) {
+        create_server(config_dev, function (error, server) {
             if (error) {
                 throw error;
             }
+            test_server = server;
             done();
         });
     });
 
     after(function () {
-        server.shutdown();
+        test_server.shutdown();
     });
     
     it('generate idempotency key', async function () {
@@ -64,7 +67,7 @@ describe('circle-integration-server', function () {
         assert(purchase_result.status === 'confirmed');
     });
 
-    it.only('dont allow duplicate idempotency keys', async function () {
+    it('dont allow duplicate idempotency keys', async function () {
         const idempotency_key = circle_integration_client.generate_idempotency_key();
         const purchase_result = await circle_integration_client.purchase(
             idempotency_key,

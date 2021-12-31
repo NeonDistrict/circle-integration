@@ -1,7 +1,7 @@
 const config_dev = require('./config.dev.js');
-const server = require('./server.js');
+const create_server = require('./server.js');
 
-server.initialize(config_dev, (error) => {
+create_server(config_dev, (error, server) => {
     if (error) {
         throw error;
     }
