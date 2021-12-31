@@ -5,6 +5,7 @@ const add_card_status_enum = require('./enum/add_card_status_enum.js');
 const payment_status_enum = require('./enum/payment_status_enum.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
 const api_error_enum = require('./enum/api_error_enum.js');
+const verification_types_enum = require('./enum/verification_types_enum.js');
 const cvv_verification_status_enum = require('./enum/cvv_verification_status_enum.js');
 const three_d_secure_verification_status_enum = require('./enum/three_d_secure_verification_status_enum.js');
 const sale_items = require('./sale_items.dev.js');
@@ -378,7 +379,7 @@ module.exports = create_circle_integration_server = (config) => {
             return sale_items;
         },
 
-        purchase: (idempotency_key, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+        purchase: (idempotency_key, verification_type, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
             // find sale item
             const sale_item = sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
             if (sale_item === undefined || sale_item === null) {
@@ -399,7 +400,7 @@ module.exports = create_circle_integration_server = (config) => {
                 const payment_idempotency_key = uuidv4();
 
                 // create a payment for the transaction
-                circle_integration_server.create_payment(payment_idempotency_key, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
+                circle_integration_server.create_payment(payment_idempotency_key, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
                     if (error) {
                         return cb(error);
                     }
@@ -408,7 +409,6 @@ module.exports = create_circle_integration_server = (config) => {
             });
         },
 
-        // todo dont need key id implicit here as a param
         create_card: (idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
             const request_body = {
                 idempotencyKey: idempotency_key,
@@ -484,7 +484,7 @@ module.exports = create_circle_integration_server = (config) => {
             }
         },
 
-        create_payment: (payment_idempotency_key, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
+        create_payment: (payment_idempotency_key, verification_type, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
             const request_body = {
                 idempotencyKey: payment_idempotency_key,
                 keyId: encrypted_card_information.keyId,
@@ -499,9 +499,9 @@ module.exports = create_circle_integration_server = (config) => {
                     currency: sale_item.currency
                 },
                 autoCapture: true,
-                verification: 'cvv',
-                //verificationSuccessUrl: 'todo',
-                //verificationFailureUrl: 'todo',
+                verification: verification_type,
+                verificationSuccessUrl: config.three_d_secure_success_url,
+                verificationFailureUrl: config.three_d_secure_failure_url,
                 source: {
                     id: card_id,
                     type: 'card'
@@ -560,11 +560,7 @@ module.exports = create_circle_integration_server = (config) => {
                 // action required means the player will need to be redirected to verify payment
                 case payment_status_enum.ACTION_REQUIRED:
                     return cb(null, {
-                        redirect: {
-                            redirect_url: result.requiredAction.redirectUrl,
-                            success_url: 'todo',
-                            failure_url: 'todo'
-                        }
+                        redirect: payment_result.requiredAction.redirectUrl
                     });
                 
                 // handle unexpected status

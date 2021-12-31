@@ -31,6 +31,15 @@ Contains documentation, demo, and back/front end components required to integrat
 + http_server needs listeners for on.error
 + use strict equal for asserts to get better logs
 + do a test where we success encrypt the data, then mess up the encrypted
++ we need to track the 3dsecure and cvv not available to allow the user to step down, otherwise they could just ask for no verirfication
++ purchases should send two idempotency keys from the frontend one for card one for payment, server shouldnt create
++ if they player does some stupid back/forward stuff around redirects we should get the latest purchase or started purchase on all pages just to make sure theyre not duplicating
++ when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
++ schema to check for verification type and force refresh
+
+flow:
+
+call purchase -> get one of {error: whatever}, {redirect: urlfor3dsecure}
 
 ## Useful Links
 

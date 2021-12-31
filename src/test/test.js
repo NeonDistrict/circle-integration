@@ -1,10 +1,14 @@
 const assert = require('assert');
+const axios = require('axios').default.create();
+const zombie = require('zombie');
 const create_server = require('../server.js');
+const create_test_three_d_secure_server = require('./test_three_d_secure_server.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
 const test_cvvs = require('./test_cvvs.js');
 const test_avss = require('./test_avss.js');
+const verification_types_enum = require('../enum/verification_types_enum.js');
 
 const ok_purchase = {
     card_number: test_cards[0].card_number,
@@ -25,19 +29,28 @@ const ok_purchase = {
 
 describe('circle-integration-server', function () {
     let test_server;
+    let test_three_d_secure_server;
 
     before(function (done) {
-        create_server(config_dev, function (error, server) {
+        create_server(config_dev, function (error, created_server) {
             if (error) {
                 throw error;
             }
-            test_server = server;
-            done();
+            test_server = created_server;
+
+            create_test_three_d_secure_server(config_dev, function (error, created_test_three_d_secure_server) {
+                if (error) {
+                    throw error;
+                }
+                test_three_d_secure_server = created_test_three_d_secure_server;
+                done();
+            });
         });
     });
 
     after(function () {
         test_server.shutdown();
+        test_three_d_secure_server.shutdown();
     });
     
     it('generate idempotency key', async function () {
@@ -46,7 +59,7 @@ describe('circle-integration-server', function () {
         assert(idempotency_key.length === 36);
     });
 
-    it('make a purchase', async function () {
+    it.only('make a purchase force 3dsecure', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -62,7 +75,36 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.THREE_D_SECURE
+        );
+        assert(purchase_result.hasOwnProperty('redirect'));
+
+        const browser = new zombie();
+        await browser.visit(purchase_result.redirect);
+
+        // todo how the shit do we handlet his browser redirect/check/button click?
+        console.log(browser);
+    });
+
+    it('make a purchase force cvv', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.status === 'confirmed');
     });
@@ -84,7 +126,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.status === 'confirmed');
 
@@ -103,7 +146,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         // todo this should be an error and its not, reported to circle
         assert(purchase_result_2.error === 'Idempotency Key Already Used');
@@ -125,7 +169,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_FAILED'
+            'PAYMENT_FAILED',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Payment Failed (Unspecified)'); 
     });
@@ -146,7 +191,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_NOT_HONORED'
+            'CARD_NOT_HONORED',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Card Not Honored (Contact Card Provider)'); 
     });
@@ -167,7 +213,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_NOT_SUPPORTED_BY_ISSUER'
+            'PAYMENT_NOT_SUPPORTED_BY_ISSUER',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Payment Not Supported (Contact Card Provider)'); 
     });
@@ -188,7 +235,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_NOT_FUNDED'
+            'PAYMENT_NOT_FUNDED',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Insufficient Funds (Contact Card Provider)'); 
     });
@@ -209,7 +257,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_INVALID'
+            'CARD_INVALID',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)'); 
     });
@@ -230,7 +279,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_LIMIT_VIOLATED'
+            'CARD_LIMIT_VIOLATED',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Limit Exceeded (Circle Limit)'); 
     });
@@ -251,7 +301,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_DENIED'
+            'PAYMENT_DENIED',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Payment Denied (Contact Card Provider)'); 
     });
@@ -272,7 +323,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_FRAUD_DETECTED'
+            'PAYMENT_FRAUD_DETECTED',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Fraud Detected (Contact Card Provider)'); 
     });
@@ -293,7 +345,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CREDIT_CARD_NOT_ALLOWED'
+            'CREDIT_CARD_NOT_ALLOWED',
+            verification_types_enum.CVV
         );
         // todo circle sends the wrong response code here, waiting on their response (adrian) dec 27th 2021
         assert(purchase_result.error === 'Card Not Allowed (Contact Card Provider)'); 
@@ -315,7 +368,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_STOPPED_BY_ISSUER'
+            'PAYMENT_STOPPED_BY_ISSUER',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Payment Stopped (Contact Card Provider)'); 
     });
@@ -336,7 +390,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_ACCOUNT_INELIGIBLE'
+            'CARD_ACCOUNT_INELIGIBLE',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Ineligible Account (Contact Card Provider)'); 
     });
@@ -357,7 +412,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)'); 
     });
@@ -387,7 +443,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.status === 'confirmed');
     });
@@ -408,7 +465,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -429,7 +487,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -450,7 +509,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -471,7 +531,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -492,7 +553,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -513,7 +575,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -534,7 +597,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.status === 'confirmed');
 
@@ -553,7 +617,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result_2.status === 'confirmed');
 
@@ -572,7 +637,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result_3.status === 'confirmed');
 
@@ -591,7 +657,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result_4.status === 'confirmed');
     });
@@ -612,7 +679,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -633,7 +701,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -654,7 +723,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         // todo waiting to hear back from circle, this should be a 400 error with details
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
@@ -676,7 +746,8 @@ describe('circle-integration-server', function () {
             'BOGUS',
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         // todo waiting to hear back from circle, this should be a 400 error with details
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
@@ -698,7 +769,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             'BOGUS',
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -719,7 +791,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             42069,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -740,7 +813,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             'BOGUS',
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Invalid Details (Correct Information)');
     });
@@ -761,7 +835,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'BOGUS'
+            'BOGUS',
+            verification_types_enum.CVV
         );
         assert(purchase_result.error === 'Sale Item Key Not Found');
     });
@@ -782,7 +857,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'A');
         assert(purchase_result.status === 'confirmed');
@@ -804,7 +880,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'B');
         assert(purchase_result.status === 'confirmed');
@@ -826,7 +903,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'C');
         assert(purchase_result.status === 'confirmed');
@@ -848,7 +926,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'D');
         assert(purchase_result.status === 'confirmed');
@@ -870,7 +949,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'E');
         assert(purchase_result.status === 'confirmed');
@@ -892,7 +972,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'F');
         assert(purchase_result.status === 'confirmed');
@@ -914,7 +995,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'G');
         assert(purchase_result.status === 'confirmed');
@@ -936,7 +1018,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'I');
         assert(purchase_result.status === 'confirmed');
@@ -958,7 +1041,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'K');
         assert(purchase_result.status === 'confirmed');
@@ -980,7 +1064,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'L');
         assert(purchase_result.status === 'confirmed');
@@ -1002,7 +1087,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'M');
         assert(purchase_result.status === 'confirmed');
@@ -1024,7 +1110,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'N');
         assert(purchase_result.status === 'confirmed');
@@ -1046,7 +1133,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'O');
         assert(purchase_result.status === 'confirmed');
@@ -1068,7 +1156,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'P');
         assert(purchase_result.status === 'confirmed');
@@ -1090,7 +1179,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'R');
         assert(purchase_result.status === 'confirmed');
@@ -1112,7 +1202,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'S');
         assert(purchase_result.status === 'confirmed');
@@ -1134,7 +1225,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'U');
         assert(purchase_result.status === 'confirmed');
@@ -1156,7 +1248,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'W');
         assert(purchase_result.status === 'confirmed');
@@ -1178,7 +1271,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'X');
         assert(purchase_result.status === 'confirmed');
@@ -1200,7 +1294,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'Y');
         assert(purchase_result.status === 'confirmed');
@@ -1222,7 +1317,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === 'Z');
         assert(purchase_result.status === 'confirmed');
@@ -1244,7 +1340,8 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
         );
         assert(purchase_result.verification.avs === '-');
         assert(purchase_result.status === 'confirmed');
