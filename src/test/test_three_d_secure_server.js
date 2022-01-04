@@ -6,11 +6,11 @@ const express = require('express');
 module.exports = create_test_three_d_secure_server = (config, cb) => {
     const app = express();
 
-    app.get(config.three_d_secure_success_url, (req, res) => {
+    app.get(config.three_d_secure_success_endpoint, (req, res) => {
        return res.end();
     });
 
-    app.get(config.three_d_secure_failure_url, (req, res) => {
+    app.get(config.three_d_secure_failure_endpoint, (req, res) => {
         return res.end();
     });
     

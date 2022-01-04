@@ -79,12 +79,21 @@ describe('circle-integration-server', function () {
             verification_types_enum.THREE_D_SECURE
         );
         assert(purchase_result.hasOwnProperty('redirect'));
+        console.log(purchase_result.redirect);
 
         const browser = new zombie();
+        browser.on('request', (request) => {
+            //await browser.wait(2000);
+            console.log('request', request.method, request.url);
+        });
+
         await browser.visit(purchase_result.redirect);
+        
+
+        await new Promise((resolve, reject) => { setTimeout(resolve, 180000); });
 
         // todo how the shit do we handlet his browser redirect/check/button click?
-        console.log(browser);
+        console.log('close');
     });
 
     it('make a purchase force cvv', async function () {

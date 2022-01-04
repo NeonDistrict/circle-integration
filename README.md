@@ -36,6 +36,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + if they player does some stupid back/forward stuff around redirects we should get the latest purchase or started purchase on all pages just to make sure theyre not duplicating
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
 + schema to check for verification type and force refresh
++ looks like 3ds calls back with `paymentId=` in the query string which is great
 
 flow:
 
