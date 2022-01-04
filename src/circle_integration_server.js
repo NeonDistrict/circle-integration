@@ -277,7 +277,6 @@ module.exports = create_circle_integration_server = (config) => {
         },
 
         on_notification: async (notification, cb) => {
-
             // if this is a subscription confirmation
             if (notification.Type === 'SubscriptionConfirmation') {
                 const subscribe_url = notification.SubscribeURL;

@@ -1,8 +1,6 @@
 const assert = require('assert');
 const axios = require('axios').default.create();
-const zombie = require('zombie');
 const create_server = require('../server.js');
-const create_test_three_d_secure_server = require('./test_three_d_secure_server.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
@@ -29,7 +27,6 @@ const ok_purchase = {
 
 describe('circle-integration-server', function () {
     let test_server;
-    let test_three_d_secure_server;
 
     before(function (done) {
         create_server(config_dev, function (error, created_server) {
@@ -37,20 +34,12 @@ describe('circle-integration-server', function () {
                 throw error;
             }
             test_server = created_server;
-
-            create_test_three_d_secure_server(config_dev, function (error, created_test_three_d_secure_server) {
-                if (error) {
-                    throw error;
-                }
-                test_three_d_secure_server = created_test_three_d_secure_server;
-                done();
-            });
+            done();
         });
     });
 
     after(function () {
         test_server.shutdown();
-        test_three_d_secure_server.shutdown();
     });
     
     it('generate idempotency key', async function () {
@@ -80,20 +69,30 @@ describe('circle-integration-server', function () {
         );
         assert(purchase_result.hasOwnProperty('redirect'));
         console.log(purchase_result.redirect);
-
-        const browser = new zombie();
-        browser.on('request', (request) => {
-            //await browser.wait(2000);
-            console.log('request', request.method, request.url);
-        });
-
-        await browser.visit(purchase_result.redirect);
         
+        const session_id = purchase_result.redirect.split('session/')[1];
+        const three_d_secure_page = await axios.get(purchase_result.redirect);
+        const device_information_result = await axios.post('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/deviceInformation', {
+            colorDepth: 32,
+            javaEnabled: false,
+            language: 'en-US',
+            screenHeight: 1080,
+            screenWidth: 1920,
+            timeZoneOffset: 300,
+            userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'
+        });
+        let status_result;
+        do {
+            status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
+            assert(status_result.hasOwnProperty('data'));
+    let test_three_d_secure_server;
+            assert(status_result.data.hasOwnProperty('data'));
+            status_result = status_result.data.data;
+        } while (status_result.status === 'processing');
+        assert(status_result.status === 'processed');
+        
+        console.log('we should be doing a get against our server to finalize the result with the purchase id that gets returned in the processed status result');
 
-        await new Promise((resolve, reject) => { setTimeout(resolve, 180000); });
-
-        // todo how the shit do we handlet his browser redirect/check/button click?
-        console.log('close');
     });
 
     it('make a purchase force cvv', async function () {

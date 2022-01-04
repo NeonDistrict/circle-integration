@@ -37,6 +37,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
 + schema to check for verification type and force refresh
 + looks like 3ds calls back with `paymentId=` in the query string which is great
++ we do get a notification of the confirmed even though the player isnt attached waiting for a callback, we can use this to update the account. need to hook these notifications so they get processed and not parking gets cleaned up or maybe user makes request to server after to get it? 5m timeout or somethibng
 
 flow:
 
