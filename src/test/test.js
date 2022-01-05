@@ -48,7 +48,30 @@ describe('circle-integration-server', function () {
         assert(idempotency_key.length === 36);
     });
 
-    it.only('make a purchase force 3dsecure', async function () {
+    it('reject malformed json', async function () {
+        const malformed_json = '{"key": "value';
+        const result = await circle_integration_client.call_circle_api('/purchase', malformed_json);
+        assert(result.hasOwnProperty('error'));
+        assert(result.error === 'Malformed Body');
+    });
+
+    it('reject body to large', async function () {
+        const big_object = [];
+        for (let i = 0; i < 1000; i++) {
+            big_object.push({
+                lorem: "ipsum",
+                delorem: "desote",
+                insola: "yetsole",
+                vora: "inara"
+            });
+        }
+        const big_json = JSON.stringify(big_object, null, 2);
+        const result = await circle_integration_client.call_circle_api('/purchase', big_json);
+        assert(result.hasOwnProperty('error'));
+        assert(result.error === 'Body Too Large');
+    });
+
+    it('make a purchase force 3dsecure', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,

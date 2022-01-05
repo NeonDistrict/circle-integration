@@ -2,7 +2,6 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const body_parser = require('body-parser');
 const create_circle_integration_server = require('./circle_integration_server.js');
 
 module.exports = create_server = (config, cb) => {
@@ -15,17 +14,45 @@ module.exports = create_server = (config, cb) => {
         return res.send(body);
     };
 
+    const parse_body = (req, res, next) => {
+        let body_length = 0;
+        let data_ended = false;
+        const body_parts = [];
+        req.on('data', (chunk) => {
+            if (data_ended) {
+                return;
+            } 
+            if (body_length + chunk.length > config.max_body_length) {
+                data_ended = true;
+                return respond(res, {
+                    error: 'Body Too Large'
+                });
+            }
+            body_length += chunk.length;
+            body_parts.push(chunk);
+        });
+        req.on('end', function(){
+            if (data_ended) {
+                return;
+            } 
+            data_ended = true;
+            const raw_body = body_parts.join('');
+            let parsed_body = null;
+            try {
+                parsed_body = JSON.parse(raw_body);
+            } catch (error) {
+                return respond(res, {
+                    error: 'Malformed Body'
+                });
+            }
+            req.body = parsed_body;
+            return next();
+        })
+    };
+
     const circle_integration_server = create_circle_integration_server(config);
     const app = express();
-
-    // aws sns calls specify the mime type as plaintext so the body parser wont pick them up
-    // the type(req) here just says to always parse the body as json
-    // todo: what happens on non-json bodies? need to test this
-    app.use(body_parser.json({
-        type (req) {
-            return true;
-        }
-    }));
+    app.use(parse_body);                      
     
     app.post(config.sns_endpoint, (req, res) => {
         circle_integration_server.on_notification(req.body, (error) => {

@@ -736,6 +736,10 @@ module.exports = create_circle_integration_server = (config) => {
             }
         },
 
+        get_payment: (payment_id) => {
+
+        },
+
         purchase_history: async (user_id) => {
 
         }
