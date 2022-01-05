@@ -14,31 +14,22 @@ const api_uri_base = 'https://api-sandbox.circle.com/v1/';
 const api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
 const public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
-// todo how the fuck do we security sandbox the payment gateway to receive posts from aws sns and only our server, actually wait thats
-// todo really need to unify these errors and return formats
-
-// todo adding a card has no id associated with it other than the card id, which maybe we could use as the callback hook?
-// making a payment gives you a payment id to use as a callback hook.
-// perhaps the callback system does a two way check, when we register for a callback we can check if a callback is already waiting
-// and if no callback is already waiting then we can add a callback, there could also be a period check to address any missed connections
-// which would be an extremely rare race condition that should be reported when it happens
-
-// todo need to verify the behaviour if a call returns with success, and if a notification comes in for an already resolved situation which
-// may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also
-// be recorded. this will have to against the db
-
-// todo handle callback timeouts (like the callback never comes)
-
-// todo handle the request ending before we can callback
-
-
 module.exports = create_circle_integration_server = (config) => {
     const circle_integration_server = {
         config: config,
+        cleanup_parking_interval: null,
         parked_callbacks: {},
         parked_notifications: {},
         cached_public_key: null,
         cached_public_key_timestamp: null,
+
+        shutdown: () => {
+            clearInterval(circle_integration_server.cleanup_parking_interval);
+        },
+
+        cleanup_parking: () => {
+            // todo
+        },
 
         park_callback: (id, cb) => {
             // whenever we go to park a callback we actually have a race condition where the notification may have already arrived
@@ -50,13 +41,43 @@ module.exports = create_circle_integration_server = (config) => {
                 delete circle_integration_server.parked_notifications[id];
 
                 // return the notification in the callback
-                return cb(null, parked_notification);
+                return cb(null, parked_notification.result);
             }
 
             // reaching here implies that no notification was waiting for us already so we go ahead and park this callback
             // once its parked we are done here, the on_notification will pick up the parked callback and call it when ready
             // or in the event of a timeout it will be called back with an error indicating the timeout
-            circle_integration_server.parked_callbacks[id] = cb;
+            circle_integration_server.parked_callbacks[id] = {
+                callback: cb,
+                parked_at: new Date().getTime()
+            };
+        },
+
+        park_notification: (id, result, cb) => {
+            // whenever we receive a normal notification (not the confirmation one) we have a race condition, sometimes a callback
+            // will already be parked and waiting, and sometimes the callback may not be ready yet, first check if a callback is parked
+            if (circle_integration_server.parked_callbacks.hasOwnProperty(id)) {
+
+                // reaching here implies a callback was parked and already waiting for this result, get that callback and remove it from parking
+                const parked_callback = circle_integration_server.parked_callbacks[id];
+                delete circle_integration_server.parked_callbacks[id];
+
+                // return the result in the callback
+                parked_callback.callback(null, result);
+
+                // handled ok
+                return cb(null);
+            }
+
+            // reaching here implies that a callback was not already waiting meaning that the notification came before we could park one
+            // in this case we park the notification so that when the callback goes to park with park_callback it will see it waiting
+            circle_integration_server.parked_notifications[id] = {
+                result: result,
+                parked_at: new Date().getTime()
+            };
+
+            // handled ok
+            return cb(null);
         },
 
         call_circle: async (accepted_response_codes, method, url, data, cb) => {
@@ -315,35 +336,19 @@ module.exports = create_circle_integration_server = (config) => {
 
                 default:
                     return cb({
-                        error: {
-                            reason: 'server',
-                            message: 'Unexpected Notification Type: ' + parsed_message.notificationType,
-                            notification: notification
-                        }
+                        error: 'Unexpected Notification Type'
                     });
             }
 
-            // whenever we receive a normal notification (not the confirmation one) we have a race condition, sometimes a callback
-            // will already be parked and waiting, and sometimes the callback may not be ready yet, first check if a callback is parked
-            if (circle_integration_server.parked_callbacks.hasOwnProperty(result.id)) {
-
-                // reaching here implies a callback was parked and already waiting for this result, get that callback and remove it from parking
-                const parked_callback = circle_integration_server.parked_callbacks[result.id];
-                delete circle_integration_server.parked_callbacks[result.id];
-
-                // return the result in the callback
-                parked_callback(null, result);
+            // park the notification and dispatch the callback if its available
+            return circle_integration_server.park_notification(result.id, result, (error) => {
+                if (error) {
+                    return cb(error);
+                }
 
                 // close sns request success
                 return cb(null);
-            }
-
-            // reaching here implies that a callback was not already waiting meaning that the notification came before we could park one
-            // in this case we park the notification so that when the callback goes to park with park_callback it will see it waiting
-            circle_integration_server.parked_notifications[result.id] = result;
-
-            // close sns request success
-            return cb(null);
+            });
         },
 
         get_public_key: (force_refresh, cb) => {
@@ -474,11 +479,7 @@ module.exports = create_circle_integration_server = (config) => {
                 // guardrail against unexpected responses or changing api
                 default:
                     return cb({
-                        error: {
-                            reason: 'server',
-                            message: 'Unexpected Create Card Status: ' + create_card_result.status,
-                            create_card_result: create_card_result
-                        }
+                        error: 'Unexpected Create Card Status'
                     });
             }
         },
@@ -565,11 +566,7 @@ module.exports = create_circle_integration_server = (config) => {
                 // handle unexpected status
                 default:
                     return cb({
-                        error: {
-                            reason: 'server',
-                            message: 'Unexpected Payment Status: ' + payment_result.status,
-                            payment_result: payment_result
-                        }
+                        error: 'Unexpected Payment Status'
                     });
             }
         },
@@ -593,11 +590,7 @@ module.exports = create_circle_integration_server = (config) => {
                 // if we did not find the risk category we have an unexpected risk code, crash
                 if (found_risk_category === null) {
                     return {
-                        error: {
-                            reason: 'server',
-                            message: 'Unexpected Risk Code: ' + reason_code,
-                            payment_result: payment_result
-                        }
+                        error: 'Unexpected Risk Code'
                     }; 
                 }
 
@@ -614,12 +607,14 @@ module.exports = create_circle_integration_server = (config) => {
 
                 // we may or may not have found a specific reason, but the category is all that is gauranteed
                 // return whatever we have
+                let description = null;
+                if (found_specific_reason === null) {
+                    description = found_risk_category.description;
+                } else {
+                    description = found_specific_reason.description;
+                }
                 return {
-                    error: {
-                        reason: 'user',
-                        message: `code: ${reason_code}: ${found_risk_category.category}: ${found_risk_category.description} (${found_specific_reason === null ? 'no specific reason found' : found_specific_reason.description})`,
-                        payment_result: payment_result
-                    }
+                    error: `${reason_code} ${found_risk_category.category}: ${description}`,
                 };
 
             // reaching here implies there was no risk evaluation, or nested decision, or the decision was not denied, meaning no risk, return null to inidicate no risk
@@ -713,12 +708,10 @@ module.exports = create_circle_integration_server = (config) => {
                         error: 'Public Key Failure'
                     });
                 case payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED:
-                    // todo this means we need to retry using cvv instead of 3dsecure
                     return cb({
                         error: '3DSecure Not Supported'
                     });
                 case payment_error_enum.THREE_D_SECURE_ACTION_EXPIRED:
-                    // todo this means we need to retry using 3dsecure again
                     return cb({
                         error: '3DSecure Expired'
                     });
@@ -744,5 +737,6 @@ module.exports = create_circle_integration_server = (config) => {
 
         }
     };
+    circle_integration_server.cleanup_parking_interval = setInterval(circle_integration_server.cleanup_parking, 5000);
     return circle_integration_server;
 };

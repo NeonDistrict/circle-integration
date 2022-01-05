@@ -127,6 +127,7 @@ module.exports = create_server = (config, cb) => {
                 https_server: https_server,
                 shutdown: () => {
                     server.https_server.close();
+                    server.circle_integration_server.shutdown();
                 }
             };
             return cb(null, server);

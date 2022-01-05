@@ -12,9 +12,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
 + looks like cards come back with a finger print? maybe we can use that as a prepayment check? since we need to create the card to get it
-+ public key changed flow for client/server
 + public key encryption of all details on front, then hashing of those on back
-+ drop error reason, just do message
 + some payment errors should never be able to happen and should lock an account, not just quarantine it
 + card creation does avs too
 + there is a number of scenarios where a dev should be notified
@@ -25,12 +23,8 @@ Contains documentation, demo, and back/front end components required to integrat
 + need a process to clean up dead callbacks, and an endpoint to get purchases, it should check that the users auth owns that purchase
 + need deep logging by uuid
 + need json schema validation on calls
-+ what does the body parser do on non json or bad json bodies?
-+ can we impose a body size limit to prevent heap fill atatcks
 + need sessions and session hashes
 + http_server needs listeners for on.error
-+ use strict equal for asserts to get better logs
-+ do a test where we success encrypt the data, then mess up the encrypted
 + we need to track the 3dsecure and cvv not available to allow the user to step down, otherwise they could just ask for no verirfication
 + purchases should send two idempotency keys from the frontend one for card one for payment, server shouldnt create
 + if they player does some stupid back/forward stuff around redirects we should get the latest purchase or started purchase on all pages just to make sure theyre not duplicating
@@ -38,6 +32,15 @@ Contains documentation, demo, and back/front end components required to integrat
 + schema to check for verification type and force refresh
 + looks like 3ds calls back with `paymentId=` in the query string which is great
 + we do get a notification of the confirmed even though the player isnt attached waiting for a callback, we can use this to update the account. need to hook these notifications so they get processed and not parking gets cleaned up or maybe user makes request to server after to get it? 5m timeout or somethibng
++ there could also be a period check to address any missed connections in parking
++ which would be an extremely rare race condition that should be reported when it happens
++ todo need to verify the behaviour if a call returns with success, and if a notification comes in for an already resolved situation which
++ may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also
++ be recorded. this will have to against the db
++ todo handle callback timeouts (like the callback never comes)
++ todo handle the request ending before we can callback
++ fallback from 3d to cvv to none
++ return on 3d expired
 
 flow:
 

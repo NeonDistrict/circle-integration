@@ -44,15 +44,15 @@ describe('circle-integration-server', function () {
     
     it('generate idempotency key', async function () {
         const idempotency_key = circle_integration_client.generate_idempotency_key();
-        assert(typeof idempotency_key === 'string');
-        assert(idempotency_key.length === 36);
+        assert.strictEqual(typeof idempotency_key, 'string');
+        assert.strictEqual(idempotency_key.length, 36);
     });
 
     it('reject malformed json', async function () {
         const malformed_json = '{"key": "value';
         const result = await circle_integration_client.call_circle_api('/purchase', malformed_json);
         assert(result.hasOwnProperty('error'));
-        assert(result.error === 'Malformed Body');
+        assert.strictEqual(result.error, 'Malformed Body');
     });
 
     it('reject body to large', async function () {
@@ -68,7 +68,7 @@ describe('circle-integration-server', function () {
         const big_json = JSON.stringify(big_object, null, 2);
         const result = await circle_integration_client.call_circle_api('/purchase', big_json);
         assert(result.hasOwnProperty('error'));
-        assert(result.error === 'Body Too Large');
+        assert.strictEqual(result.error, 'Body Too Large');
     });
 
     it('make a purchase force 3dsecure', async function () {
@@ -108,11 +108,10 @@ describe('circle-integration-server', function () {
         do {
             status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
             assert(status_result.hasOwnProperty('data'));
-    let test_three_d_secure_server;
             assert(status_result.data.hasOwnProperty('data'));
             status_result = status_result.data.data;
         } while (status_result.status === 'processing');
-        assert(status_result.status === 'processed');
+        assert.strictEqual(status_result.status, 'processed');
         
         console.log('we should be doing a get against our server to finalize the result with the purchase id that gets returned in the processed status result');
 
@@ -137,7 +136,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('dont allow duplicate idempotency keys', async function () {
@@ -160,7 +159,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.status, 'confirmed');
 
         const purchase_result_2 = await circle_integration_client.purchase(
             idempotency_key,
@@ -181,7 +180,7 @@ describe('circle-integration-server', function () {
             verification_types_enum.CVV
         );
         // todo this should be an error and its not, reported to circle
-        assert(purchase_result_2.error === 'Idempotency Key Already Used');
+        assert.strictEqual(purchase_result_2.error, 'Idempotency Key Already Used');
     });
 
     it('PAYMENT_FAILED', async function () {
@@ -203,7 +202,7 @@ describe('circle-integration-server', function () {
             'PAYMENT_FAILED',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Payment Failed (Unspecified)'); 
+        assert.strictEqual(purchase_result.error, 'Payment Failed (Unspecified)'); 
     });
 
     it('CARD_NOT_HONORED', async function () {
@@ -225,7 +224,7 @@ describe('circle-integration-server', function () {
             'CARD_NOT_HONORED',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Card Not Honored (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Card Not Honored (Contact Card Provider)'); 
     });
 
     it('PAYMENT_NOT_SUPPORTED_BY_ISSUER', async function () {
@@ -247,7 +246,7 @@ describe('circle-integration-server', function () {
             'PAYMENT_NOT_SUPPORTED_BY_ISSUER',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Payment Not Supported (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Payment Not Supported (Contact Card Provider)'); 
     });
 
     it('PAYMENT_NOT_FUNDED', async function () {
@@ -269,7 +268,7 @@ describe('circle-integration-server', function () {
             'PAYMENT_NOT_FUNDED',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Insufficient Funds (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Insufficient Funds (Contact Card Provider)'); 
     });
 
     it('CARD_INVALID', async function () {
@@ -291,7 +290,7 @@ describe('circle-integration-server', function () {
             'CARD_INVALID',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)'); 
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)'); 
     });
 
     it('CARD_LIMIT_VIOLATED', async function () {
@@ -313,7 +312,7 @@ describe('circle-integration-server', function () {
             'CARD_LIMIT_VIOLATED',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Limit Exceeded (Circle Limit)'); 
+        assert.strictEqual(purchase_result.error, 'Limit Exceeded (Circle Limit)'); 
     });
 
     it('PAYMENT_DENIED', async function () {
@@ -335,7 +334,7 @@ describe('circle-integration-server', function () {
             'PAYMENT_DENIED',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Payment Denied (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Payment Denied (Contact Card Provider)'); 
     });
 
     it('PAYMENT_FRAUD_DETECTED', async function () {
@@ -357,7 +356,7 @@ describe('circle-integration-server', function () {
             'PAYMENT_FRAUD_DETECTED',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Fraud Detected (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Fraud Detected (Contact Card Provider)'); 
     });
 
     it('CREDIT_CARD_NOT_ALLOWED', async function () {
@@ -380,7 +379,7 @@ describe('circle-integration-server', function () {
             verification_types_enum.CVV
         );
         // todo circle sends the wrong response code here, waiting on their response (adrian) dec 27th 2021
-        assert(purchase_result.error === 'Card Not Allowed (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Card Not Allowed (Contact Card Provider)'); 
     });
 
     it('PAYMENT_STOPPED_BY_ISSUER', async function () {
@@ -402,7 +401,7 @@ describe('circle-integration-server', function () {
             'PAYMENT_STOPPED_BY_ISSUER',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Payment Stopped (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Payment Stopped (Contact Card Provider)'); 
     });
 
     it('CARD_ACCOUNT_INELIGIBLE', async function () {
@@ -424,7 +423,7 @@ describe('circle-integration-server', function () {
             'CARD_ACCOUNT_INELIGIBLE',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Ineligible Account (Contact Card Provider)'); 
+        assert.strictEqual(purchase_result.error, 'Ineligible Account (Contact Card Provider)'); 
     });
 
     it('BAD_CVVS', async function () {
@@ -446,7 +445,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)'); 
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)'); 
     });
 
     it('should correct bad public key', async function () {
@@ -477,7 +476,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('invalid card number', async function () {
@@ -499,7 +498,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid cvv', async function () {
@@ -521,7 +520,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid name', async function () {
@@ -543,7 +542,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid city', async function () {
@@ -565,7 +564,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid country', async function () {
@@ -587,7 +586,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid address 1', async function () {
@@ -609,7 +608,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('address 2 always valid', async function () {
@@ -631,7 +630,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.status, 'confirmed');
 
         const purchase_result_2 = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -651,7 +650,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result_2.status === 'confirmed');
+        assert.strictEqual(purchase_result_2.status, 'confirmed');
 
         const purchase_result_3 = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -671,7 +670,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result_3.status === 'confirmed');
+        assert.strictEqual(purchase_result_3.status, 'confirmed');
 
         const purchase_result_4 = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -691,7 +690,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result_4.status === 'confirmed');
+        assert.strictEqual(purchase_result_4.status, 'confirmed');
     });
 
     it('invalid district', async function () {
@@ -713,7 +712,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid postal', async function () {
@@ -735,7 +734,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid expiry month', async function () {
@@ -758,7 +757,7 @@ describe('circle-integration-server', function () {
             verification_types_enum.CVV
         );
         // todo waiting to hear back from circle, this should be a 400 error with details
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid expiry year', async function () {
@@ -781,7 +780,7 @@ describe('circle-integration-server', function () {
             verification_types_enum.CVV
         );
         // todo waiting to hear back from circle, this should be a 400 error with details
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid email', async function () {
@@ -803,7 +802,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid email (number)', async function () {
@@ -825,7 +824,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid phone', async function () {
@@ -847,7 +846,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid sale item key', async function () {
@@ -869,7 +868,7 @@ describe('circle-integration-server', function () {
             'BOGUS',
             verification_types_enum.CVV
         );
-        assert(purchase_result.error === 'Sale Item Key Not Found');
+        assert.strictEqual(purchase_result.error, 'Sale Item Key Not Found');
     });
 
     it('AVS A', async function () {
@@ -891,8 +890,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'A');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'A');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS B', async function () {
@@ -914,8 +913,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'B');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'B');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS C', async function () {
@@ -937,8 +936,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'C');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'C');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS D', async function () {
@@ -960,8 +959,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'D');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'D');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS E', async function () {
@@ -983,8 +982,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'E');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'E');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS F', async function () {
@@ -1006,8 +1005,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'F');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'F');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS G', async function () {
@@ -1029,8 +1028,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'G');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'G');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS I', async function () {
@@ -1052,8 +1051,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'I');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'I');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS K', async function () {
@@ -1075,8 +1074,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'K');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'K');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS L', async function () {
@@ -1098,8 +1097,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'L');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'L');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS M', async function () {
@@ -1121,8 +1120,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'M');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'M');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS N', async function () {
@@ -1144,8 +1143,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'N');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'N');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS O', async function () {
@@ -1167,8 +1166,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'O');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'O');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS P', async function () {
@@ -1190,8 +1189,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'P');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'P');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS R', async function () {
@@ -1213,8 +1212,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'R');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'R');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS S', async function () {
@@ -1236,8 +1235,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'S');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'S');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS U', async function () {
@@ -1259,8 +1258,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'U');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'U');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS W', async function () {
@@ -1282,8 +1281,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'W');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'W');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS X', async function () {
@@ -1305,8 +1304,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'X');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'X');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS Y', async function () {
@@ -1328,8 +1327,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'Y');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'Y');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
     
     it('AVS Z', async function () {
@@ -1351,8 +1350,8 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === 'Z');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, 'Z');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 
     it('AVS -', async function () {
@@ -1374,7 +1373,7 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
-        assert(purchase_result.verification.avs === '-');
-        assert(purchase_result.status === 'confirmed');
+        assert.strictEqual(purchase_result.verification.avs, '-');
+        assert.strictEqual(purchase_result.status, 'confirmed');
     });
 });
