@@ -41,6 +41,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + todo handle the request ending before we can callback
 + fallback from 3d to cvv to none
 + return on 3d expired
++ when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it
 
 flow:
 

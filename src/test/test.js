@@ -1,6 +1,7 @@
 const assert = require('assert');
 const axios = require('axios').default.create();
 const create_server = require('../server.js');
+const create_postgres = require('../postgres.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
@@ -27,19 +28,27 @@ const ok_purchase = {
 
 describe('circle-integration-server', function () {
     let test_server;
+    let test_postgres;
 
     before(function (done) {
-        create_server(config_dev, function (error, created_server) {
+        create_postgres(config_dev, function (error, created_postgres) {
             if (error) {
                 throw error;
             }
-            test_server = created_server;
-            done();
+            test_postgres = created_postgres;
+            create_server(config_dev, test_postgres, function (error, created_server) {
+                if (error) {
+                    throw error;
+                }
+                test_server = created_server;
+                done();
+            });
         });
     });
 
     after(function () {
         test_server.shutdown();
+        test_postgres.shutdown();
     });
     
     it('generate idempotency key', async function () {

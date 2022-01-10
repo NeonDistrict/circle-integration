@@ -4,7 +4,7 @@ const path = require('path');
 const express = require('express');
 const create_circle_integration_server = require('./circle_integration_server.js');
 
-module.exports = create_server = (config, cb) => {
+module.exports = create_server = (config, postgres, cb) => {
     const respond = (res, error, body) => {
         if (error) {
             res.status(500);
