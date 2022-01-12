@@ -42,6 +42,11 @@ Contains documentation, demo, and back/front end components required to integrat
 + fallback from 3d to cvv to none
 + return on 3d expired
 + when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it
++ ok new plan the client will send a single idempotency key to represent a series of purchase exchanges and retries using different verification mechanisms, we then on the server side generate the idempotency keys that are sent to circle
++ update notion
++ log the idempotency key that comes from the client and ensure it has no collisions, collisions should be flagged as malicious
++ server generated idempotency keys should be generated then checked for collisions before being used
++ the client should not have to specify cvv/3ds it should just send the request the the server can renegotiate all those terms itself. the only thing that goes back is a hard error, redirct, or success
 
 flow:
 

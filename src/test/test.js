@@ -1,7 +1,7 @@
 const assert = require('assert');
 const axios = require('axios').default.create();
 const create_server = require('../server.js');
-const create_postgres = require('../postgres.js');
+const create_postgres = require('../postgres/postgres.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
@@ -126,7 +126,7 @@ describe('circle-integration-server', function () {
 
     });
 
-    it('make a purchase force cvv', async function () {
+    it.only('make a purchase force cvv', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
@@ -152,7 +152,7 @@ describe('circle-integration-server', function () {
         const idempotency_key = circle_integration_client.generate_idempotency_key();
         const purchase_result = await circle_integration_client.purchase(
             idempotency_key,
-            ok_purchase.card_number,
+            test_cards[0].card_number,
             ok_purchase.cvv,
             ok_purchase.name,
             ok_purchase.city,
@@ -172,19 +172,19 @@ describe('circle-integration-server', function () {
 
         const purchase_result_2 = await circle_integration_client.purchase(
             idempotency_key,
-            ok_purchase.card_number,
-            ok_purchase.cvv,
-            ok_purchase.name,
-            ok_purchase.city,
+            test_cards[1].card_number,
+            222,
+            'Different Name',
+            'Different City',
             ok_purchase.country,
-            ok_purchase.address_1,
+            'Different Address',
             ok_purchase.address_2,
             ok_purchase.district,
             ok_purchase.postal,
-            ok_purchase.expiry_month,
-            ok_purchase.expiry_year,
-            ok_purchase.email,
-            ok_purchase.phone,
+            11,
+            2026,
+            'different@email.com',
+            '+16132221234',
             ok_purchase.sale_item_key,
             verification_types_enum.CVV
         );
@@ -510,11 +510,55 @@ describe('circle-integration-server', function () {
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid cvv', async function () {
+    it('invalid cvv string', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,
             'bogus',
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
+        );
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid cvv float', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            123.456,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_1,
+            ok_purchase.address_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            verification_types_enum.CVV
+        );
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+    });
+
+    it('invalid cvv too big', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            ok_purchase.card_number,
+            123456789,
             ok_purchase.name,
             ok_purchase.city,
             ok_purchase.country,

@@ -334,6 +334,11 @@ module.exports = create_circle_integration_server = (config) => {
                     result = parsed_message.payment;
                     break;
 
+                case 'settlements':
+                    // todo wut?
+                    result = parsed_message.settlement;
+                    break;
+
                 default:
                     return cb({
                         error: 'Unexpected Notification Type'
@@ -392,17 +397,17 @@ module.exports = create_circle_integration_server = (config) => {
                 });
             }
             
+            // generate idempotency keys that go to circle
+            // todo thes need to be checked for uniqueness
+            const create_card_idempotency_key = uidv4();
+            const payment_idempotency_key = uuidv4();
+
             // create a card for the transaction
-            circle_integration_server.create_card(idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, assessed_create_card_result) => {
+            circle_integration_server.create_card(create_card_idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, assessed_create_card_result) => {
                 if (error) {
                     return cb(error);
                 }
-
-                // todo do we get card id here? or can we get redirects? i dont think redirs here
-
-                // the user provides an idempotency key for adding the card and we create another here for the payment
-                const payment_idempotency_key = uuidv4();
-
+                
                 // create a payment for the transaction
                 circle_integration_server.create_payment(payment_idempotency_key, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
                     if (error) {
@@ -413,9 +418,9 @@ module.exports = create_circle_integration_server = (config) => {
             });
         },
 
-        create_card: (idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
+        create_card: (create_card_idempotency_key, hashed_card_details, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
             const request_body = {
-                idempotencyKey: idempotency_key,
+                idempotencyKey: create_card_idempotency_key,
                 keyId: encrypted_card_information.keyId,
                 encryptedData: encrypted_card_information.encryptedMessage,
                 billingDetails: {
