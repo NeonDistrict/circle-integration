@@ -126,7 +126,7 @@ describe('circle-integration-server', function () {
 
     });
 
-    it.only('make a purchase force cvv', async function () {
+    it('make a purchase force cvv', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.card_number,

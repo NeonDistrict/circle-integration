@@ -399,7 +399,7 @@ module.exports = create_circle_integration_server = (config) => {
             
             // generate idempotency keys that go to circle
             // todo thes need to be checked for uniqueness
-            const create_card_idempotency_key = uidv4();
+            const create_card_idempotency_key = uuidv4();
             const payment_idempotency_key = uuidv4();
 
             // create a card for the transaction
