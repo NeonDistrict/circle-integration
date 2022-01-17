@@ -36,12 +36,17 @@ describe('circle-integration-server', function () {
                 throw error;
             }
             test_postgres = created_postgres;
-            create_server(config_dev, test_postgres, function (error, created_server) {
+            test_postgres.reset_all_tables((error, result) => {
                 if (error) {
                     throw error;
                 }
-                test_server = created_server;
-                done();
+                create_server(config_dev, test_postgres, function (error, created_server) {
+                    if (error) {
+                        throw error;
+                    }
+                    test_server = created_server;
+                    done();
+                });
             });
         });
     });

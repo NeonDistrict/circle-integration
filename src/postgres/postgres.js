@@ -26,6 +26,9 @@ module.exports = create_postgres = (config, cb) => {
     const postgres = {
         pool: pool,
         query: query,
+        delete_all_tables: require('./delete_all_tables.js').bind(this, config, query),
+        create_all_tables: require('./create_all_tables.js').bind(this, config, query),
+        reset_all_tables: require('./reset_all_tables.js').bind(this, config, query),
         shutdown: (cb) => {
             postgres.pool.end(cb);
         }

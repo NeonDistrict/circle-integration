@@ -1,4 +1,5 @@
 const config = {};
+config.dangerous = true;
 config.max_body_length = 5000;
 config.host = 'dev.circle-integration.neondistrict.io';
 config.port = 8443;
