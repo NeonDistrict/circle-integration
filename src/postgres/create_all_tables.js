@@ -13,8 +13,6 @@ const create_purchase_status_enum = (config, query, cb) => {
     const text = 
     `
     CREATE TYPE "PURCHASE_STATUS" AS ENUM (
-        'NONE',
-        'REQUESTED',
         'PENDING',
         'FAILED',
         'FRAUD',
@@ -217,7 +215,6 @@ module.exports = create_all_tables = (config, query, cb) => {
         create_game_identitier_enum,
         create_purchase_status_enum,
         create_game_credited_status_enum,
-        create_validation_status_enum,
         create_create_card_status_enum,
         create_public_key_status_enum,
         create_payment_3ds_status_enum,

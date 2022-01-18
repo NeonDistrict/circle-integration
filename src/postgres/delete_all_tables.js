@@ -17,7 +17,6 @@ const drop_enums = (config, query, cb) => {
         "GAME_IDENTIFIER",
         "PURCHASE_STATUS", 
         "GAME_CREDITED_STATUS", 
-        "VALIDATION_STATUS",
         "CREATE_CARD_STATUS",
         "PUBLIC_KEY_STATUS",
         "PAYMENT_3DS_STATUS",

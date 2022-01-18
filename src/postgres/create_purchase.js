@@ -204,7 +204,7 @@ module.exports = create_purchase = (
         now,                               // "t_modified_purchase",
         client_generated_idempotency_key,  // "client_generated_idempotency_key",
         'NONE',                            // "game_credited_result",
-        'NONE',                            // "purchase_result",
+        'PENDING',                         // "purchase_result",
         null,                              // "t_created_create_card",
         null,                              // "t_modified_create_card",
         null,                              // "create_card_idempotency_key",
