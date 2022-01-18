@@ -258,7 +258,7 @@ module.exports = create_circle_integration_server = (config) => {
             // list any existing subscriptions to see if one needs to be created
             circle_integration_server.call_circle([200], 'get', `${api_uri_base}notifications/subscriptions`, null, (error, existing_subscriptions) => {
                 if (error) {
-                    return error;
+                    return cb(error);
                 }
 
                 // look through subscriptions to see if we have a fully confirmed one
