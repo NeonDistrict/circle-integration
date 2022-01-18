@@ -149,7 +149,6 @@ module.exports = create_purchase = (
             "client_generated_idempotency_key",
             "game_credited_result",
             "purchase_result",
-            "request_validation_result",
             "t_created_create_card",
             "t_modified_create_card",
             "create_card_idempotency_key",
@@ -192,7 +191,7 @@ module.exports = create_purchase = (
             $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, 
             $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, 
-            $41, $42, $43, $44, $45, $46, $47, $48
+            $41, $42, $43, $44, $45, $46, $47
         )
     `;
     const values = [
@@ -206,7 +205,6 @@ module.exports = create_purchase = (
         client_generated_idempotency_key,  // "client_generated_idempotency_key",
         'NONE',                            // "game_credited_result",
         'NONE',                            // "purchase_result",
-        true,                              // todo this should be reflective of validation above // "request_validation_result",
         null,                              // "t_created_create_card",
         null,                              // "t_modified_create_card",
         null,                              // "create_card_idempotency_key",
