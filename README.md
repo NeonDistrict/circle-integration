@@ -47,7 +47,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + log the idempotency key that comes from the client and ensure it has no collisions, collisions should be flagged as malicious
 + server generated idempotency keys should be generated then checked for collisions before being used
 + the client should not have to specify cvv/3ds it should just send the request the the server can renegotiate all those terms itself. the only thing that goes back is a hard error, redirct, or success
-+ am i being throttled by circle?
++ we almost need a fraud table, with date, reason etc?
++ if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
+
 
 flow:
 

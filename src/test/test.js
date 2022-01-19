@@ -36,12 +36,17 @@ describe('circle-integration-server', function () {
                 throw error;
             }
             test_postgres = created_postgres;
-            create_server(config_dev, test_postgres, function (error, created_server) {
+            test_postgres.reset_all_tables((error, result) => {
                 if (error) {
                     throw error;
                 }
-                test_server = created_server;
-                done();
+                create_server(config_dev, test_postgres, function (error, created_server) {
+                    if (error) {
+                        throw error;
+                    }
+                    test_server = created_server;
+                    done();
+                });
             });
         });
     });
@@ -49,6 +54,214 @@ describe('circle-integration-server', function () {
     after(function () {
         test_server.shutdown();
         test_postgres.shutdown();
+    });
+
+    it.only('validate uuid', function () {
+        const is_valid_uuid = require('../validation/is_valid_uuid');
+        let result = null;
+
+        // dont allow undefined
+        result = is_valid_uuid(undefined);
+        assert.strictEqual(result, false);
+
+        // dont allow undefined
+        result = is_valid_uuid(null);
+        assert.strictEqual(result, false);
+
+        // dont allow empty string
+        result = is_valid_uuid('');
+        assert.strictEqual(result, false);
+
+        // dont allow number
+        result = is_valid_uuid(41254);
+        assert.strictEqual(result, false);
+
+        // dont allow object
+        result = is_valid_uuid({test: 'test'});
+        assert.strictEqual(result, false);
+
+        // dont allow array
+        result = is_valid_uuid(['test']);
+        assert.strictEqual(result, false);
+
+        // dont allow < 36 length (35)
+        result = is_valid_uuid('11111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // dont allow > 36 length (37)
+        result = is_valid_uuid('1111111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // dont allow correct length (36) but wrong format
+        result = is_valid_uuid('111111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // dont allow close to uuidv4
+        result = is_valid_uuid('5a31c2e-8e7f8-4ba7-8def-77b5cbf7be96');
+        assert.strictEqual(result, false);
+
+        // allow proper uuidv4
+        result = is_valid_uuid('5a31c2e8-e7f8-4ba7-8def-77b5cbf7be96');
+        assert.strictEqual(result, true);
+    });
+
+    it.only('validate sha512_hex', function () {
+        const is_valid_sha512_hex = require('../validation/is_valid_sha512_hex');
+        let result = null;
+
+        // dont allow undefined
+        result = is_valid_sha512_hex(undefined);
+        assert.strictEqual(result, false);
+
+        // dont allow undefined
+        result = is_valid_sha512_hex(null);
+        assert.strictEqual(result, false);
+
+        // dont allow empty string
+        result = is_valid_sha512_hex('');
+        assert.strictEqual(result, false);
+
+        // dont allow number
+        result = is_valid_sha512_hex(41254);
+        assert.strictEqual(result, false);
+
+        // dont allow object
+        result = is_valid_sha512_hex({test: 'test'});
+        assert.strictEqual(result, false);
+
+        // dont allow array
+        result = is_valid_sha512_hex(['test']);
+        assert.strictEqual(result, false);
+
+        // dont allow < 128 length (127)
+        result = is_valid_sha512_hex('1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // dont allow > 128 length (129)
+        result = is_valid_sha512_hex('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // dont allow correct length (128) but wrong format
+        result = is_valid_sha512_hex('g1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // dont allow close to sha512 hex
+        result = is_valid_sha512_hex('g083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7');
+        assert.strictEqual(result, false);
+
+        // allow proper sha512 hex
+        result = is_valid_sha512_hex('2083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7');
+        assert.strictEqual(result, true);
+    });
+
+    it.only('validate sale_item_key', function () {
+        const is_valid_sale_item_key = require('../validation/is_valid_sale_item_key');
+        let result = null;
+
+        // dont allow undefined
+        result = is_valid_sale_item_key(undefined);
+        assert.strictEqual(result, false);
+
+        // dont allow null
+        result = is_valid_sale_item_key(null);
+        assert.strictEqual(result, false);
+
+        // dont allow empty string
+        result = is_valid_sale_item_key('');
+        assert.strictEqual(result, false);
+
+        // dont allow number
+        result = is_valid_sale_item_key(41254);
+        assert.strictEqual(result, false);
+
+        // dont allow object
+        result = is_valid_sale_item_key({test: 'test'});
+        assert.strictEqual(result, false);
+
+        // dont allow array
+        result = is_valid_sale_item_key(['test']);
+        assert.strictEqual(result, false);
+
+        // dont allow < 3 length (2)
+        result = is_valid_sale_item_key('11');
+        assert.strictEqual(result, false);
+
+        // dont allow > 128 length (129)
+        result = is_valid_sale_item_key('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
+        assert.strictEqual(result, false);
+
+        // allow proper sale item key
+        result = is_valid_sale_item_key('big_neon_pack');
+        assert.strictEqual(result, true);
+    });
+
+    it.only('validate sale_item_price', function () {
+        const is_valid_sale_item_price = require('../validation/is_valid_sale_item_price');
+        let result = null;
+
+        // dont allow undefined
+        result = is_valid_sale_item_price(undefined);
+        assert.strictEqual(result, false);
+
+        // dont allow null
+        result = is_valid_sale_item_price(null);
+        assert.strictEqual(result, false);
+
+        // dont allow empty string
+        result = is_valid_sale_item_price('');
+        assert.strictEqual(result, false);
+
+        // dont allow number
+        result = is_valid_sale_item_price(41254);
+        assert.strictEqual(result, false);
+
+        // dont allow object
+        result = is_valid_sale_item_price({test: 'test'});
+        assert.strictEqual(result, false);
+
+        // dont allow array
+        result = is_valid_sale_item_price(['test']);
+        assert.strictEqual(result, false);
+
+        // dont allow < 4 length (3)
+        result = is_valid_sale_item_price('.11');
+        assert.strictEqual(result, false);
+
+        // dont allow > 16 length (17)
+        result = is_valid_sale_item_price('11111111111111.11');
+        assert.strictEqual(result, false);
+
+        // dont allow $
+        result = is_valid_sale_item_price('$420.69');
+        assert.strictEqual(result, false);
+
+        // dont allow ,
+        result = is_valid_sale_item_price('420,69');
+        assert.strictEqual(result, false);
+
+        // dont allow space
+        result = is_valid_sale_item_price('4 20.69');
+        assert.strictEqual(result, false);
+
+        // dont allow no decimal
+        result = is_valid_sale_item_price('42069');
+        assert.strictEqual(result, false);
+
+        // dont allow no decimal places
+        result = is_valid_sale_item_price('420.');
+        assert.strictEqual(result, false);
+
+        // dont allow one decimal place
+        result = is_valid_sale_item_price('420.6');
+        assert.strictEqual(result, false);
+
+        // dont allow more than two decimal places
+        result = is_valid_sale_item_price('420.699');
+        assert.strictEqual(result, false);
+
+        // allow proper sale item price
+        result = is_valid_sale_item_price('420.69');
+        assert.strictEqual(result, true);
     });
     
     it('generate idempotency key', async function () {
