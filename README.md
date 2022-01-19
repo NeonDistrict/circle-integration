@@ -51,6 +51,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
 + do we get an id for create card / create purchase on a pending response? and if so we need to store it at that point
 + there should be safe guards in the where clause to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
++ some circle functions on the server will require the config make sure those get passed int
++ all the circle_integration. refs in server need to be import / updated, not sure about circular inheritance?
++ some enums might not be getting used, they should all be somewhere..
 
 
 flow:
