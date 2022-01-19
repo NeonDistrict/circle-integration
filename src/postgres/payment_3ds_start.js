@@ -1,10 +1,10 @@
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 
-module.exports = create_card_mark_failed = (
+module.exports = payment_3ds_start = (
     config, 
     query, 
     internal_purchase_id,
-    create_card_id,
+    payment_3ds_idempotency_key,
     cb
 ) => {
     if (!is_valid_uuid(internal_purchase_id)) {
@@ -12,9 +12,9 @@ module.exports = create_card_mark_failed = (
             error: 'Invalid internal_purchase_id'
         });
     }
-    if (!is_valid_uuid(create_card_id)) {
+    if (!is_valid_uuid(payment_3ds_idempotency_key)) {
         return cb({
-            error: 'Invalid create_card_id'
+            error: 'Invalid payment_3ds_idempotency_key'
         });
     }
     const now = new Date().getTime();
@@ -22,19 +22,19 @@ module.exports = create_card_mark_failed = (
     `
         UPDATE "purchases" SET
             "t_modified_purchase"         = $1,
-            "t_modified_create_card"      = $2,
-            "create_card_result"          = $3,
-            "public_key_result"           = $4,
-            "create_card_id"              = $5
+            "t_created_payment_3ds"       = $2,
+            "t_modified_payment_3ds"      = $3,
+            "payment_3ds_idempotency_key" = $4,
+            "payment_3ds_result"          = $5
         WHERE
-            "internal_purchase_id"        = $5;
+            "internal_purchase_id"        = $6;
     `;
     const values = [
         now,                         // "t_modified_purchase"
-        now,                         // "t_modified_create_card"
-        'COMPLETED',                 // "create_card_result"
-        'COMPLETED',                 // "public_key_result"
-        create_card_id,              // "create_card_id"
+        now,                         // "t_created_payment_3ds"
+        now,                         // "t_modified_payment_3ds"
+        payment_3ds_idempotency_key, // "payment_3ds_idempotency_key"
+        'REQUESTED',                 // "payment_3ds_result"
         internal_purchase_id         // "internal_purchase_id"
     ];
 

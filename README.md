@@ -49,6 +49,8 @@ Contains documentation, demo, and back/front end components required to integrat
 + the client should not have to specify cvv/3ds it should just send the request the the server can renegotiate all those terms itself. the only thing that goes back is a hard error, redirct, or success
 + we almost need a fraud table, with date, reason etc?
 + if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
++ do we get an id for create card / create purchase on a pending response? and if so we need to store it at that point
++ there should be safe guards in the where clause to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
 
 
 flow:

@@ -1,6 +1,6 @@
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 
-module.exports = create_card_failed_public_key = (
+module.exports = create_card_mark_failed_public_key = (
     config, 
     query, 
     internal_purchase_id,

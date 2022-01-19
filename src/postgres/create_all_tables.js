@@ -223,7 +223,6 @@ module.exports = create_all_tables = (config, query, cb) => {
         create_users_table,
         create_purchases_table
     ];
-
     const recurse_operations = (operation_index, cb) => {
         operations[operation_index](config, query, (error, result) => {
             if (error) {
@@ -236,6 +235,5 @@ module.exports = create_all_tables = (config, query, cb) => {
             }
         });
     };
-
     return recurse_operations(0, cb);
 };
