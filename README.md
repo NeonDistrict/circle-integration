@@ -54,6 +54,13 @@ Contains documentation, demo, and back/front end components required to integrat
 + some circle functions on the server will require the config make sure those get passed int
 + all the circle_integration. refs in server need to be import / updated, not sure about circular inheritance?
 + some enums might not be getting used, they should all be somewhere..
++ uuids need to be unique checked when generated
++ client provided uuid need to be unique checked
++ right now the server sends 3ds unavailable back to client but it should fallback on 3ds/cvv/unsec itself without involving the client
++ postgres lib errors should come back as generic internal error but log in full
++ in create card i use "create_card_id" which should actually just be "card_id" to match "payment_3ds_id" etc
++ right now we return the whole payment result which should just be a payment id or redirect requried
++ part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
 
 
 flow:

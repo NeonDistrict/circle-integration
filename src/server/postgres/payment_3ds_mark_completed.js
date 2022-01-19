@@ -1,12 +1,6 @@
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 
-module.exports = payment_3ds_mark_completed = (
-    config, 
-    query, 
-    internal_purchase_id,
-    payment_3ds_id,
-    cb
-) => {
+module.exports = payment_3ds_mark_completed = (config, query, internal_purchase_id, payment_3ds_id, cb) => {
     if (!is_valid_uuid(internal_purchase_id)) {
         return cb({
             error: 'Invalid internal_purchase_id'

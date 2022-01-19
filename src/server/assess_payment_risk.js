@@ -1,6 +1,9 @@
 const risk_categories = require('./enum/risk_categories.js');
 
 module.exports = assess_payment_risk = (payment_result) => {
+    // todo some of these puppies are fraud some are error, may have to hard code them in here in a switch :/
+    // todo yeah i will, fuck
+
     // if a risk evaluation is present, along with a decision, and that decision is denied we have failed the payment from risk, determine why
     if (payment_result.hasOwnProperty('riskEvaluation') && payment_result.riskEvalutaion.hasOwnProperty('decision') && payment_result.riskEvalutaion.decision === 'denied') {
         const reason_code = result.riskEvalutaion.reason;

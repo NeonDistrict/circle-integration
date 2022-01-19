@@ -1,11 +1,6 @@
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 
-module.exports = create_card_mark_pending = (
-    config, 
-    query, 
-    internal_purchase_id,
-    cb
-) => {
+module.exports = create_card_mark_pending = (config, query, internal_purchase_id, cb) => {
     if (!is_valid_uuid(internal_purchase_id)) {
         return cb({
             error: 'Invalid internal_purchase_id'
