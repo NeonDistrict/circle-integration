@@ -61,7 +61,15 @@ Contains documentation, demo, and back/front end components required to integrat
 + in create card i use "create_card_id" which should actually just be "card_id" to match "payment_3ds_id" etc
 + right now we return the whole payment result which should just be a payment id or redirect requried
 + part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
-
++ gotta do the public key to the front end to encrypt everything
++ when the server determines the public key is no longer valid it should regfresh it itself, the client shouldnt be responsible to determine that, it should just retry
++ uh after 3ds redirect is good or bad, the client prol needs to query the server
++ verification at the req.body phase
++ sns origin verification by signature verify
++ express sessions? across game? game provide session?
++ client provides 'idempotency_key' which should be renamed to 'client_generated_idempotency_key' accross the stack to clarify its origin and safety
++ we may not be able to store cvv at all, so check on that shit
++ nowhere can include postgres, it is parametered in, along with config
 
 flow:
 

@@ -1,8 +1,6 @@
 const payment_status_enum = require('./enum/payment_status_enum.js');
-
 const assess_payment_failure = require('./assess_payment_failure.js');
 const parking = require('./parking.js');
-const postgres = require('./postgres/postgres.js');
 
 module.exports = assess_payment_result = (internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb) => {
     switch (payment_result.status) {
@@ -34,7 +32,12 @@ module.exports = assess_payment_result = (internal_purchase_id, payment_result, 
             });
 
         case payment_status_enum.ACTION_REQUIRED:
-            // todo check this is 3ds, otherwise redirect should not be available
+            if (!mark_redirected) {
+                // todo this is a fatal error
+                return cb({
+                    error: 'Mark Redirected Not Available'
+                });
+            }
             return mark_redirected(internal_purchase_id, payment_result.id, (error) => {
                 if (error) {
                     return cb(error);

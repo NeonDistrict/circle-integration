@@ -1,22 +1,19 @@
 const { v4: uuidv4 } = require('uuid');
 const sha512 = require('./sha512.js');
-const sale_items = require('./sale_items.dev.js');
-// todo these should be passed in like config maybe?
-// maybe literally in the config to keep it simple
 const create_card = require('./create_card.js');
 const create_payment = require('./create_payment.js');
-const postgres = require('./postgres/postgres.js');
-
 
 // todo we need the circle public key id passed in after all
-module.exports = purchase = (client_generated_idempotency_key, verification_type, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+module.exports = purchase = (config, postgres, client_generated_idempotency_key, verification_type, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
     // find sale item
-    const sale_item = sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
+    const sale_item = config.sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
     if (sale_item === undefined || sale_item === null) {
         return cb({
             error: 'Sale Item Key Not Found'
         });
     }
+
+    // todo decrypt and hash happens here
 
     const internal_purchase_id               = uuidv4();
     const metadata_hash_email                = sha512(email);
@@ -42,11 +39,11 @@ module.exports = purchase = (client_generated_idempotency_key, verification_type
         if (error) {
             return cb(error);
         }
-        create_card(internal_purchase_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, assessed_create_card_result) => {
+        create_card(config, postgres, internal_purchase_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, assessed_create_card_result) => {
             if (error) {
                 return cb(error);
             }
-            create_payment(internal_purchase_id, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
+            create_payment(config, postgres, internal_purchase_id, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
                 if (error) {
                     return cb(error);
                 }

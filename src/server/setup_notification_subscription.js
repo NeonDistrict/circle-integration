@@ -1,12 +1,12 @@
 const call_circle = require('./call_circle.js');
 
-module.exports = setup_notification_subscription = (sns_endpoint_url, cb) => {
+module.exports = setup_notification_subscription = (config, sns_endpoint_url, cb) => {
     // many calls to circle such as adding a card, or creating a payment can take time to process
     // rather than hammering circle with polling requests they provide an aws sns hook that we can
     // use to listen for all responses when they complete so that we dont need to poll
 
     // list any existing subscriptions to see if one needs to be created
-    call_circle([200], 'get', `${api_uri_base}notifications/subscriptions`, null, (error, existing_subscriptions) => {
+    call_circle([200], 'get', `${config.api_uri_base}notifications/subscriptions`, null, (error, existing_subscriptions) => {
         if (error) {
             return cb(error);
         }
@@ -37,7 +37,7 @@ module.exports = setup_notification_subscription = (sns_endpoint_url, cb) => {
         const request_body = { 
             endpoint: sns_endpoint_url
         };
-        call_circle([200, 201], 'post', `${api_uri_base}notifications/subscriptions`, request_body, (error) => {
+        call_circle([200, 201], 'post', `${config.api_uri_base}notifications/subscriptions`, request_body, (error) => {
             if (error) {
                 return cb(error);
             }

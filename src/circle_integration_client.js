@@ -38,10 +38,6 @@ module.exports = circle_integration_client = {
         return response_body;
     },
 
-    hash_card_details: (card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key) => {
-        // todo, sha?
-    },
-
     atob: (key) => {
         return Buffer.from(key, 'base64').toString('binary');
     },
@@ -67,15 +63,13 @@ module.exports = circle_integration_client = {
         };
     },
 
-    purchase: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, verification_type = verification_types_enum.THREE_D_SECURE, force_refresh_public_key = false) => {
-        const public_key = await circle_integration_client.call_circle_api('/get_public_key', {force_refresh: force_refresh_public_key});
-        const hashed_card_details = circle_integration_client.hash_card_details(card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, sale_item_key);
+    purchase: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key) => {
+        const public_key = await circle_integration_client.call_circle_api('/get_public_key');
         const encrypted_card_information = await circle_integration_client.encrypt_card_information(public_key, card_number, card_cvv);
         const request_body = {
             idempotency_key: idempotency_key,
             verification_type: verification_type,
             encrypted_card_information: encrypted_card_information,
-            hashed_card_details: hashed_card_details,
             name_on_card: name_on_card,
             city: city,
             country: country,
@@ -99,16 +93,13 @@ module.exports = circle_integration_client = {
         // if we received an error
         if (purchase_result.hasOwnProperty('error')) {
 
-            // if the public key was bad (note: force_refresh_public_key is used to prevent recursing infintely looking for a new key)
+            // if the public key was bad 
             if (!force_refresh_public_key && purchase_result.error === 'Public Key Failure') {
                 
                 // get a new idempotency key for the retry
                 const retry_idempotency_key = circle_integration_client.generate_idempotency_key();
-                return await circle_integration_client.purchase(retry_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, verification_type, true);
+                return await circle_integration_client.purchase(retry_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key);
             }
-
-            // todo if 3dsecure isnt available recurse with cvv,
-            // todo if cvv isnt available recurse with none
         }
         return purchase_result;
     }

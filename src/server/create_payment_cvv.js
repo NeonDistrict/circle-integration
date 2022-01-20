@@ -1,11 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 const call_circle = require('./call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
-const api_uri_base = 'https://api-sandbox.circle.com/v1/';
-// todo shoul dbe in config
-const postgres = require('./postgres/postgres.js');
 
-module.exports = create_payment_cvv = (internal_purchase_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
+module.exports = create_payment_cvv = (config, postgres, internal_purchase_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
     const payment_cvv_idempotency_key = uuidv4();
     postgres.payment_cvv_start(internal_purchase_id, payment_cvv_idempotency_key, (error) => {
         if (error) {
@@ -33,7 +30,7 @@ module.exports = create_payment_cvv = (internal_purchase_id, card_id, encrypted_
             description: sale_item.statement_description,
             encryptedData: encrypted_card_information.encryptedMessage
         };
-        call_circle([201], 'post', `${api_uri_base}payments`, request_body, (error, payment_result) => {
+        call_circle([201], 'post', `${config.api_uri_base}payments`, request_body, (error, payment_result) => {
             if (error) {
                 return cb(error);
             }

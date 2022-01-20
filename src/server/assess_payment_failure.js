@@ -24,7 +24,8 @@ module.exports = assess_payment_failure = (internal_purchase_id, payment_result,
         case payment_error_enum.PAYMENT_FRAUD_DETECTED:
         case payment_error_enum.VERIFICATION_FRAUD_DETECTED:
             fraud_error = {
-                error: 'Fraud Detected (Contact Card Provider)'
+                error: 'Fraud Detected (Contact Card Provider)',
+                fraud: 1
             };
             break;
         // todo: i think these cases need breakouts
@@ -117,6 +118,12 @@ module.exports = assess_payment_failure = (internal_purchase_id, payment_result,
             };
             break;
         case payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED:
+            if (!mark_unavailable) {
+                // todo this is a fatal error
+                failure_error = {
+                    error: 'Mark Unavailable Not Available'
+                };
+            }
             return mark_unavailable(internal_purchase_id, payment_result.id, (error) => {
                 if (error) {
                     return cb(error);
@@ -136,9 +143,10 @@ module.exports = assess_payment_failure = (internal_purchase_id, payment_result,
         case payment_error_enum.THREE_D_SECURE_REQUIRED:        // note: we start with 3dsecure then step down to cvv if not available. if this error occurs someone is doing something they shouldnt
         case payment_error_enum.THREE_D_SECURE_INVALID_REQUEST: // note: this means we sent bad params, which should never happen. if this error occurs someone is doing something they shouldnt
         default:
-            // todo these cant happen, a dev should be notified
+            // todo these arent fatal but a dev should be notified.. i guess any fraud should notify right
             fraud_error = {
-                error: 'Unexpected Server Error'
+                error: 'Unexpected Server Error',
+                fraud: 1
             };
     }
     if (failure_error) {
