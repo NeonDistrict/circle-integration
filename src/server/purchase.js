@@ -39,15 +39,15 @@ module.exports = purchase = (config, postgres, client_generated_idempotency_key,
         if (error) {
             return cb(error);
         }
-        create_card(config, postgres, internal_purchase_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, assessed_create_card_result) => {
+        create_card(config, postgres, internal_purchase_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
             if (error) {
                 return cb(error);
             }
-            create_payment(config, postgres, internal_purchase_id, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessed_payment_result) => {
+            create_payment(config, postgres, card_id, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessment) => {
                 if (error) {
                     return cb(error);
                 }
-                return cb(null, assessed_payment_result);
+                return cb(null, assessment);
             });
         });
     });

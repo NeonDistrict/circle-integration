@@ -83,7 +83,7 @@ module.exports = create_server = (config, postgres, cb) => {
         return purchase(
             config,
             postgres,
-            req.body.idempotency_key,
+            req.body.client_generated_idempotency_key,
             req.body.encrypted_card_information,
             req.body.name_on_card,
             req.body.city,

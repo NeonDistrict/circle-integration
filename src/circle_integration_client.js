@@ -63,11 +63,11 @@ module.exports = circle_integration_client = {
         };
     },
 
-    purchase: async (idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key) => {
+    purchase: async (client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key) => {
         const public_key = await circle_integration_client.call_circle_api('/get_public_key');
         const encrypted_card_information = await circle_integration_client.encrypt_card_information(public_key, card_number, card_cvv);
         const request_body = {
-            idempotency_key: idempotency_key,
+            client_generated_idempotency_key: client_generated_idempotency_key,
             verification_type: verification_type,
             encrypted_card_information: encrypted_card_information,
             name_on_card: name_on_card,
@@ -97,8 +97,8 @@ module.exports = circle_integration_client = {
             if (!force_refresh_public_key && purchase_result.error === 'Public Key Failure') {
                 
                 // get a new idempotency key for the retry
-                const retry_idempotency_key = circle_integration_client.generate_idempotency_key();
-                return await circle_integration_client.purchase(retry_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key);
+                const retry_client_generated_idempotency_key = circle_integration_client.generate_idempotency_key();
+                return await circle_integration_client.purchase(retry_client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key);
             }
         }
         return purchase_result;

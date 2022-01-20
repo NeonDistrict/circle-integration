@@ -11,9 +11,7 @@ module.exports = assess_create_card_result = (postgres, internal_purchase_id, cr
                 if (error) {
                     return cb(error);
                 }
-                return cb(null, {
-                    card_id: create_card_result.id
-                });
+                return cb(null, create_card_result.id);
             });
 
         case add_card_status_enum.FAILED:

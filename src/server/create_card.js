@@ -39,7 +39,6 @@ module.exports = create_card = (config, postgres, internal_purchase_id, encrypte
                 if (error) {
                     return cb(error);
                 }
-                // todo record success or failure here for fraud
                 return cb(null, card_id);
             });
         });

@@ -5,13 +5,11 @@ Contains documentation, demo, and back/front end components required to integrat
 
 + ensure all error responses from server are of the same form
 + json schema validation
-+ does adding card have redirect validation?
 + hash details on backend, client cant be trusted to make their own hashes against themselves.. but we do need to hash card numbers soo?
 + parking cleanup for timeouts
 + when we send in session ids they should be one way hashed as to not send actual session ids as per circles documentation
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
-+ looks like cards come back with a finger print? maybe we can use that as a prepayment check? since we need to create the card to get it
 + public key encryption of all details on front, then hashing of those on back
 + some payment errors should never be able to happen and should lock an account, not just quarantine it
 + card creation does avs too
@@ -25,11 +23,8 @@ Contains documentation, demo, and back/front end components required to integrat
 + need json schema validation on calls
 + need sessions and session hashes
 + http_server needs listeners for on.error
-+ we need to track the 3dsecure and cvv not available to allow the user to step down, otherwise they could just ask for no verirfication
-+ purchases should send two idempotency keys from the frontend one for card one for payment, server shouldnt create
 + if they player does some stupid back/forward stuff around redirects we should get the latest purchase or started purchase on all pages just to make sure theyre not duplicating
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
-+ schema to check for verification type and force refresh
 + looks like 3ds calls back with `paymentId=` in the query string which is great
 + we do get a notification of the confirmed even though the player isnt attached waiting for a callback, we can use this to update the account. need to hook these notifications so they get processed and not parking gets cleaned up or maybe user makes request to server after to get it? 5m timeout or somethibng
 + there could also be a period check to address any missed connections in parking
@@ -39,37 +34,27 @@ Contains documentation, demo, and back/front end components required to integrat
 + be recorded. this will have to against the db
 + todo handle callback timeouts (like the callback never comes)
 + todo handle the request ending before we can callback
-+ fallback from 3d to cvv to none
-+ return on 3d expired
-+ when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it
-+ ok new plan the client will send a single idempotency key to represent a series of purchase exchanges and retries using different verification mechanisms, we then on the server side generate the idempotency keys that are sent to circle
++ handle dead request trying to respond?
++ when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it (this should actually happen periodically)
 + update notion
 + log the idempotency key that comes from the client and ensure it has no collisions, collisions should be flagged as malicious
-+ server generated idempotency keys should be generated then checked for collisions before being used
-+ the client should not have to specify cvv/3ds it should just send the request the the server can renegotiate all those terms itself. the only thing that goes back is a hard error, redirct, or success
-+ we almost need a fraud table, with date, reason etc?
-+ if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
-+ do we get an id for create card / create purchase on a pending response? and if so we need to store it at that point
-+ there should be safe guards in the where clause to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
-+ some circle functions on the server will require the config make sure those get passed int
-+ all the circle_integration. refs in server need to be import / updated, not sure about circular inheritance?
-+ some enums might not be getting used, they should all be somewhere..
-+ uuids need to be unique checked when generated
++ server generated idempotency keys should be checked for collisions before being used
 + client provided uuid need to be unique checked
-+ right now the server sends 3ds unavailable back to client but it should fallback on 3ds/cvv/unsec itself without involving the client
++ if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
++ there should be safe guards in the where clause to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
++ some enums might not be getting used, they should all be somewhere..
 + postgres lib errors should come back as generic internal error but log in full
-+ in create card i use "create_card_id" which should actually just be "card_id" to match "payment_3ds_id" etc
-+ right now we return the whole payment result which should just be a payment id or redirect requried
 + part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
 + gotta do the public key to the front end to encrypt everything
 + when the server determines the public key is no longer valid it should regfresh it itself, the client shouldnt be responsible to determine that, it should just retry
-+ uh after 3ds redirect is good or bad, the client prol needs to query the server
++ uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
 + verification at the req.body phase
 + sns origin verification by signature verify
-+ express sessions? across game? game provide session?
-+ client provides 'idempotency_key' which should be renamed to 'client_generated_idempotency_key' accross the stack to clarify its origin and safety
++ express sessions? across game server? game server provides session?
 + we may not be able to store cvv at all, so check on that shit
-+ nowhere can include postgres, it is parametered in, along with config
++ does a request stop processing mid way if they request is dropped?
++ logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
+
 
 flow:
 
