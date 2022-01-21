@@ -1,7 +1,7 @@
 const payment_error_enum = require('./enum/payment_error_enum.js');
 const assess_payment_risk = require('./assess_payment_risk.js');
 
-module.exports = assess_payment_failure = (internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
+module.exports = assess_payment_failure = (config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
     // todo does risk come back as failed? or some other result?
     // this could go into the switch then
     // todo do we even need this is we have the below?
@@ -113,8 +113,9 @@ module.exports = assess_payment_failure = (internal_purchase_id, payment_result,
             };
             break;
         case payment_error_enum.PAYMENT_UNPROCESSABLE:
+            config.cached_circle_key = null;
             failure_error = {
-                error: 'Public Key Failure'
+                error: 'Circle Key Failure'
             };
             break;
         case payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED:

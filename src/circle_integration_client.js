@@ -1,5 +1,4 @@
 const config = require('./config.dev.js');
-const verification_types_enum = require('./enum/verification_types_enum.js');
 const { v4: uuidv4 } = require('uuid');
 const openpgp = require('openpgp');
 const axios = require('axios').default.create();

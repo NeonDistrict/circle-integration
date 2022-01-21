@@ -2,10 +2,18 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-
+const generate_pgp_key_pair = require('./server/generate_pgp_key_pair.js');
+const is_valid_email = require('./validation/is_valid_email.js');
+const is_valid_expiry_month = require('./validation/is_valid_expiry_month.js');
+const is_valid_expiry_year = require('./validation/is_valid_expiry_year.js');
+const is_valid_ip_address = require('./validation/is_valid_ip_address.js');
+const is_valid_sale_item_key = require('./validation/is_valid_sale_item_key.js');
+const is_valid_sha512_hex = require('./validation/is_valid_sha512_hex.js');
+const is_valid_string = require('./validation/is_valid_string.js');
+const is_valid_uuid = require('./validation/is_valid_uuid.js');
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
 const on_notification = require('./server/on_notification.js');
-const get_public_key = require('./server/get_public_key.js');
+const get_public_keys = require('./server/get_public_keys.js');
 const list_sale_items = require('./server/list_sale_items.js');
 const purchase = require('./server/purchase.js');
 
@@ -69,9 +77,8 @@ module.exports = create_server = (config, postgres, cb) => {
         });
     });
     
-    app.post('/get_public_key', (req, res) => {
-        // false for force refreshing the public key which only happens internally
-        get_public_key(config, false, respond.bind(this, res));
+    app.post('/get_public_keys', (req, res) => {
+        get_public_keys(config, false, respond.bind(this, res));
     });
 
     app.post('/get_sale_items', async (req, res) => {
@@ -80,11 +87,98 @@ module.exports = create_server = (config, postgres, cb) => {
     });
     
     app.post('/purchase', async (req, res) => {
+        if (!is_valid_uuid(req.body.client_generated_idempotency_key)) {
+            return respond(res, {
+                error: 'Invalid client_generated_idempotency_key'
+            });
+        }
+        if (!is_valid_string(req.body.circle_encrypted_card_information)) {
+            return respond(res, {
+                error: 'Invalid circle_encrypted_card_information'
+            });
+        }
+        if (!is_valid_string(req.body.integration_encrypted_card_information)) {
+            return respond(res, {
+                error: 'Invalid integration_encrypted_card_information'
+            });
+        }
+        if (!is_valid_string(req.body.name_on_card)) {
+            return respond(res, {
+                error: 'Invalid name_on_card'
+            });
+        }
+        if (!is_valid_string(req.body.city)) {
+            return respond(res, {
+                error: 'Invalid city'
+            });
+        }
+        if (!is_valid_string(req.body.country)) {
+            return respond(res, {
+                error: 'Invalid country'
+            });
+        }
+        if (!is_valid_string(req.body.address_line_1)) {
+            return respond(res, {
+                error: 'Invalid address_line_1'
+            });
+        }
+        if (!is_valid_string(req.body.address_line_2)) {
+            return respond(res, {
+                error: 'Invalid address_line_2'
+            });
+        }
+        if (!is_valid_string(req.body.district)) {
+            return respond(res, {
+                error: 'Invalid district'
+            });
+        }
+        if (!is_valid_string(req.body.postal_zip_code)) {
+            return respond(res, {
+                error: 'Invalid postal_zip_code'
+            });
+        }
+        if (!is_valid_expiry_month(req.body.expiry_month)) {
+            return respond(res, {
+                error: 'Invalid expiry_month'
+            });
+        }
+        if (!is_valid_expiry_year(req.body.expiry_year)) {
+            return respond(res, {
+                error: 'Invalid expiry_year'
+            });
+        }
+        if (!is_valid_email(req.body.email)) {
+            return respond(res, {
+                error: 'Invalid email'
+            });
+        }
+        if (!is_valid_string(req.body.phone_number)) {
+            return respond(res, {
+                error: 'Invalid phone_number'
+            });
+        }
+        if (!is_valid_sha512_hex(req.body.session_hash)) {
+            return respond(res, {
+                error: 'Invalid session_hash'
+            });
+        }
+        if (!is_valid_ip_address(req.body.ip_address)) {
+            return respond(res, {
+                error: 'Invalid ip_address'
+            });
+        }
+        if (!is_valid_sale_item_key(req.body.sale_item_key)) {
+            return respond(res, {
+                error: 'Invalid sale_item_key'
+            });
+        }
+
         return purchase(
             config,
             postgres,
             req.body.client_generated_idempotency_key,
-            req.body.encrypted_card_information,
+            req.body.circle_encrypted_card_information,
+            req.body.integration_encrypted_card_information,
             req.body.name_on_card,
             req.body.city,
             req.body.country,
@@ -96,8 +190,8 @@ module.exports = create_server = (config, postgres, cb) => {
             req.body.expiry_year,
             req.body.email, 
             req.body.phone_number, 
-            '12345678912345678912345678912345', // session hash
-            req.ip,
+            req.body.session_hash,
+            req.body.ip_address,
             req.body.sale_item_key,
             respond.bind(this, res)
         );
@@ -113,27 +207,37 @@ module.exports = create_server = (config, postgres, cb) => {
         cert: fs.readFileSync(path.join(__dirname, '../keys/fullchain.pem')),
     }, app);
 
-    // start the https server
-    https_server.listen(config.port, () => {
-        
-        // once the https server is listening we setup the aws sns subscription
-        setup_notifications_subscription(config, config.sns_endpoint_url, (error) => {
-            if (error) {
-                return cb(error);
-            }
-
-            // server fully initialized, callback
-            const server = {
-                config: config,
-                postgres: postgres,
-                app: app,
-                https_server: https_server,
-                shutdown: () => {
-                    server.https_server.close();
-                    server.circle_integration_server.shutdown();
+    // generate the pgp keypair
+    generate_pgp_key_pair((error, pgp_passphrase, pgp_private_key, pgp_public_key) => {
+        if (error) {
+            return cb(error);
+        }
+        config.pgp_passphrase = pgp_passphrase;
+        config.pgp_private_key = pgp_private_key;
+        config.pgp_public_key = pgp_public_key;
+    
+        // start the https server
+        https_server.listen(config.port, () => {
+            
+            // once the https server is listening we setup the aws sns subscription
+            setup_notifications_subscription(config, config.sns_endpoint_url, (error) => {
+                if (error) {
+                    return cb(error);
                 }
-            };
-            return cb(null, server);
+
+                // server fully initialized, callback
+                const server = {
+                    config: config,
+                    postgres: postgres,
+                    app: app,
+                    https_server: https_server,
+                    shutdown: () => {
+                        server.https_server.close();
+                        server.circle_integration_server.shutdown();
+                    }
+                };
+                return cb(null, server);
+            });
         });
     });
 };

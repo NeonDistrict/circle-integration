@@ -2,7 +2,7 @@ const payment_status_enum = require('./enum/payment_status_enum.js');
 const assess_payment_failure = require('./assess_payment_failure.js');
 const parking = require('./parking.js');
 
-module.exports = assess_payment_result = (internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb) => {
+module.exports = assess_payment_result = (config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb) => {
     switch (payment_result.status) {
         case payment_status_enum.CONFIRMED:
         case payment_status_enum.PAID:
@@ -16,7 +16,7 @@ module.exports = assess_payment_result = (internal_purchase_id, payment_result, 
             });
 
         case payment_status_enum.FAILED:
-            return assess_payment_failure(internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
+            return assess_payment_failure(config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
         
         case payment_status_enum.PENDING:
             return mark_pending(internal_purchase_id, payment_result.id, (error) => {
@@ -27,7 +27,7 @@ module.exports = assess_payment_result = (internal_purchase_id, payment_result, 
                     if (error) {
                         return cb(error);
                     }
-                    return assess_payment_result(internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb);
+                    return assess_payment_result(config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb);
                 });
             });
 

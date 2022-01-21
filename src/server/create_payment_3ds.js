@@ -42,7 +42,7 @@ module.exports = create_payment_3ds = (config, postgres, internal_purchase_id, c
             const mark_redirected  = postgres.payment_3ds_mark_redirected;
             const mark_pending     = postgres.payment_3ds_mark_pending;
             const mark_completed   = postgres.payment_3ds_mark_completed;
-            assess_payment_result(internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
+            assess_payment_result(config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
         });
     });
 };

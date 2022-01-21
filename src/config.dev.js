@@ -2,6 +2,7 @@ const config = {};
 
 config.dangerous = true;
 config.max_body_length = 5000;
+config.public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
 config.api_uri_base = 'https://api-sandbox.circle.com/v1/';
 config.host = 'dev.circle-integration.neondistrict.io';

@@ -4,10 +4,8 @@ Contains documentation, demo, and back/front end components required to integrat
 ## Todo
 
 + ensure all error responses from server are of the same form
-+ json schema validation
 + hash details on backend, client cant be trusted to make their own hashes against themselves.. but we do need to hash card numbers soo?
 + parking cleanup for timeouts
-+ when we send in session ids they should be one way hashed as to not send actual session ids as per circles documentation
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
 + public key encryption of all details on front, then hashing of those on back
@@ -54,7 +52,8 @@ Contains documentation, demo, and back/front end components required to integrat
 + we may not be able to store cvv at all, so check on that shit
 + does a request stop processing mid way if they request is dropped?
 + logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
-
++ integraiton public key failure error needs to happen
++ key refresh for circle internally needs to happen
 
 flow:
 

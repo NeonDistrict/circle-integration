@@ -2,9 +2,11 @@ const { v4: uuidv4 } = require('uuid');
 const sha512 = require('./sha512.js');
 const create_card = require('./create_card.js');
 const create_payment = require('./create_payment.js');
+const is_valid_card_number = require('../validation/is_valid_card_number.js');
+const is_valid_card_cvv = require('../validation/is_valid_card_cvv.js');
 
 // todo we need the circle public key id passed in after all
-module.exports = purchase = (config, postgres, client_generated_idempotency_key, verification_type, encrypted_card_information, hashed_card_details, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+module.exports = purchase = async (config, postgres, client_generated_idempotency_key, verification_type, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
     // find sale item
     const sale_item = config.sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
     if (sale_item === undefined || sale_item === null) {
@@ -13,8 +15,39 @@ module.exports = purchase = (config, postgres, client_generated_idempotency_key,
         });
     }
 
-    // todo decrypt and hash happens here
+    // decrypt card information for hashing
+    let integration_decrypted_card_information = null;
+    try {
+        const integration_card_information_message = await openpgp.readMessage({
+            armoredMessage: integration_encrypted_card_information 
+        });
+        const decryption_result = await openpgp.decrypt({
+            message: integration_card_information_message,
+            verificationKeys: public_key,
+            decryptionKeys: private_key
+        });
+        integration_decrypted_card_information = decryption_result.data;
+    } catch (error) {
+        return cb({
+            error: 'Integration Key Failure'
+        });
+    }
 
+    // verify card information
+    if (!is_valid_card_number(integration_decrypted_card_information.card_number)) {
+        return cb({
+            error: 'Invalid card_number'
+        });
+    }
+    if (!is_valid_card_cvv(integration_decrypted_card_information.card_cvv)) {
+        return cb({
+            error: 'Invalid card_cvv'
+        });
+    }
+    const card_number = integration_decrypted_card_information.card_number;
+    const card_cvv = integration_decrypted_card_information.card_cvv;
+
+    // hash metadata
     const internal_purchase_id               = uuidv4();
     const metadata_hash_email                = sha512(email);
     const metadata_hash_phone                = sha512(phone);
@@ -39,11 +72,11 @@ module.exports = purchase = (config, postgres, client_generated_idempotency_key,
         if (error) {
             return cb(error);
         }
-        create_card(config, postgres, internal_purchase_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
+        create_card(config, postgres, internal_purchase_id, circle_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
             if (error) {
                 return cb(error);
             }
-            create_payment(config, postgres, card_id, verification_type, assessed_create_card_result.id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessment) => {
+            create_payment(config, postgres, card_id, verification_type, assessed_create_card_result.id, circle_encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessment) => {
                 if (error) {
                     return cb(error);
                 }
