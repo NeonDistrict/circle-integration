@@ -92,6 +92,11 @@ module.exports = create_server = (config, postgres, cb) => {
                 error: 'Invalid client_generated_idempotency_key'
             });
         }
+        if (!is_valid_string(req.body.circle_public_key_id)) {
+            return respond(res, {
+                error: 'Invalid circle_public_key_id'
+            });
+        }
         if (!is_valid_string(req.body.circle_encrypted_card_information)) {
             return respond(res, {
                 error: 'Invalid circle_encrypted_card_information'
@@ -177,6 +182,7 @@ module.exports = create_server = (config, postgres, cb) => {
             config,
             postgres,
             req.body.client_generated_idempotency_key,
+            req.body.circle_public_key_id,
             req.body.circle_encrypted_card_information,
             req.body.integration_encrypted_card_information,
             req.body.name_on_card,

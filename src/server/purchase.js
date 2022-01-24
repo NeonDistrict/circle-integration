@@ -6,7 +6,7 @@ const is_valid_card_number = require('../validation/is_valid_card_number.js');
 const is_valid_card_cvv = require('../validation/is_valid_card_cvv.js');
 
 // todo we need the circle public key id passed in after all
-module.exports = purchase = async (config, postgres, client_generated_idempotency_key, verification_type, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+module.exports = purchase = async (config, postgres, client_generated_idempotency_key, verification_type, circle_public_key_id, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
     // find sale item
     const sale_item = config.sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
     if (sale_item === undefined || sale_item === null) {
@@ -46,7 +46,6 @@ module.exports = purchase = async (config, postgres, client_generated_idempotenc
     }
     const card_number = integration_decrypted_card_information.card_number;
     const card_cvv = integration_decrypted_card_information.card_cvv;
-    // todo gotta put those in right on client
 
     // hash metadata
     const internal_purchase_id               = uuidv4();

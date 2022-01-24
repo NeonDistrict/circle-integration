@@ -45,30 +45,30 @@ module.exports = circle_integration_client = {
         return Buffer.from(key, 'binary').toString('base64');
     },
 
-    encrypt_card_information: async (public_key, card_number, card_cvv) => {
+    encrypt_card_information: async (public_key, to_encrypt) => {
         const card_details = {
             number: card_number,
             cvv: card_cvv
         };
-        const decoded_public_key = await openpgp.readKey({armoredKey: circle_integration_client.atob(public_key.publicKey)});
-        const message = await openpgp.createMessage({text: JSON.stringify(card_details)});
+        const decoded_public_key = await openpgp.readKey({armoredKey: circle_integration_client.atob(public_key)});
+        const message = await openpgp.createMessage({text: JSON.stringify(to_encrypt)});
         const cipher_text = await openpgp.encrypt({
             message: message,
             encryptionKeys: decoded_public_key,
         });
-        return {
-            encryptedMessage: circle_integration_client.btoa(cipher_text),
-            keyId: public_key.keyId
-        };
+        return circle_integration_client.btoa(cipher_text);
     },
 
     purchase: async (client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key) => {
-        const public_key = await circle_integration_client.call_circle_api('/get_public_key');
-        const encrypted_card_information = await circle_integration_client.encrypt_card_information(public_key, card_number, card_cvv);
+        const public_keys = await circle_integration_client.call_circle_api('/get_public_keys');
+        const circle_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
+        const integration_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.integration_public_key, {card_number: card_number, card_cvv: card_cvv});
         const request_body = {
             client_generated_idempotency_key: client_generated_idempotency_key,
             verification_type: verification_type,
-            encrypted_card_information: encrypted_card_information,
+            circle_public_key_id: public_keys.circle_public_key.keyId,
+            circle_encrypted_card_information: circle_encrypted_card_information,
+            integration_encrypted_card_information: integration_encrypted_card_information,
             name_on_card: name_on_card,
             city: city,
             country: country,
