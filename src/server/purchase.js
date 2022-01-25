@@ -31,20 +31,11 @@ module.exports = purchase = async (config, postgres, client_generated_idempotenc
             error: 'Integration Key Failure'
         });
     }
-
-    // verify card information
     if (!is_valid_card_number(integration_decrypted_card_information.card_number)) {
         return cb({
             error: 'Invalid card_number'
         });
     }
-    if (!is_valid_card_cvv(integration_decrypted_card_information.card_cvv)) {
-        return cb({
-            error: 'Invalid card_cvv'
-        });
-    }
-    const card_number = integration_decrypted_card_information.card_number;
-    const card_cvv = integration_decrypted_card_information.card_cvv;
 
     // hash metadata
     const internal_purchase_id               = uuidv4();
@@ -61,8 +52,7 @@ module.exports = purchase = async (config, postgres, client_generated_idempotenc
     const metadata_hash_postal_zip_code      = sha512(postal_zip_code);
     const metadata_hash_expiry_month         = sha512(expiry_month);
     const metadata_hash_expiry_year          = sha512(expiry_year);
-    const metadata_hash_card_number          = sha512(card_number); 
-    const metadata_hash_card_cvv             = sha512(card_cvv);
+    const metadata_hash_card_number          = sha512(integration_decrypted_card_information.card_number);
     const metadata_hash_circle_public_key_id = sha512(circle_public_key_id);
 
     // todo all fraud checks need to happen right here and not be passed through

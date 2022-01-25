@@ -181,7 +181,6 @@ const create_purchases_table = (config, query, cb) => {
         "metadata_hash_expiry_month"         CHAR(128) NOT NULL,                 -- the hashed expiry month from the billing address
         "metadata_hash_expiry_year"          CHAR(128) NOT NULL,                 -- the hashed expiry year from the billing address
         "metadata_hash_card_number"          CHAR(128) NOT NULL,                 -- the hashed payment card number
-        "metadata_hash_card_cvv"             CHAR(128) NOT NULL,                 -- the hashed payment card cvv code from the back
         "metadata_hash_circle_public_key_id" CHAR(128) NOT NULL,                 -- the hashed circle public key id used in encryption
         PRIMARY KEY ("internal_purchase_id"),
         CONSTRAINT "fk_internal_user_id" FOREIGN KEY("internal_user_id") REFERENCES "users"("internal_user_id"),
@@ -199,7 +198,6 @@ const create_purchases_table = (config, query, cb) => {
         CONSTRAINT "metadata_hash_expiry_month_length"         CHECK (char_length("metadata_hash_expiry_month")         = 128),
         CONSTRAINT "metadata_hash_expiry_year_length"          CHECK (char_length("metadata_hash_expiry_year")          = 128),
         CONSTRAINT "metadata_hash_card_number_length"          CHECK (char_length("metadata_hash_card_number")          = 128),
-        CONSTRAINT "metadata_hash_card_cvv_length"             CHECK (char_length("metadata_hash_card_cvv")             = 128),
         CONSTRAINT "metadata_hash_circle_public_key_id_length" CHECK (char_length("metadata_hash_circle_public_key_id") = 128)
     );
     `;

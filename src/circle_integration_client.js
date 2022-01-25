@@ -62,7 +62,7 @@ module.exports = circle_integration_client = {
     purchase: async (client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry = false) => {
         const public_keys = await circle_integration_client.call_circle_api('/get_public_keys');
         const circle_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
-        const integration_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.integration_public_key, {card_number: card_number, card_cvv: card_cvv});
+        const integration_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.integration_public_key, {card_number: card_number});
         const request_body = {
             client_generated_idempotency_key: client_generated_idempotency_key,
             verification_type: verification_type,
