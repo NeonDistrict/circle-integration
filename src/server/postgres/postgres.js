@@ -1,4 +1,5 @@
 const Pool = require('pg').Pool;
+const fatal_error = require('../fatal_error.js');
 
 module.exports = create_postgres = (config, cb) => {
     const pool = new Pool({
@@ -10,9 +11,10 @@ module.exports = create_postgres = (config, cb) => {
     });
     
     pool.on('error', (error, client) => {
-        console.log('Unexpected postgres error on idle client');
-        console.log(error);
-        process.exit(1);
+        return fatal_error({
+            error: 'Postgres Error On Idle Client',
+            details: error
+        });
     });
 
     const query = (text, values, cb) => {

@@ -1,5 +1,5 @@
-const fatal_error = require('../fatal_error.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
+const expect_one_row_count = require('./expect_one_row_count.js');
 
 module.exports = create_card_start = (
     config, 
@@ -39,17 +39,5 @@ module.exports = create_card_start = (
         internal_purchase_id         // "internal_purchase_id"
     ];
 
-    return query(text, values, (error, result) => {
-        if (error) {
-            return cb({
-                error: 'Server Error'
-            });
-        }
-        if (result.rowCount !== 1) {
-            return fatal_error({
-                error: 'Query rowCount !== 1'
-            });
-        }
-        return cb(null);
-    });
+    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
 };

@@ -2,6 +2,7 @@ const is_valid_sale_item_key = require('../validation/is_valid_sale_item_key.js'
 const is_valid_sale_item_price = require('../validation/is_valid_sale_item_price.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const is_valid_sha512_hex = require('../validation/is_valid_sha512_hex.js');
+const expect_one_row_count = require('./expect_one_row_count.js');
 
 module.exports = create_purchase = (
     config, 
@@ -123,11 +124,6 @@ module.exports = create_purchase = (
             error: 'Invalid metadata_hash_card_number'
         });
     }
-    if (!is_valid_sha512_hex(metadata_hash_card_cvv)) {
-        return cb({
-            error: 'Invalid metadata_hash_card_cvv'
-        });
-    }
     if (!is_valid_sha512_hex(metadata_hash_circle_public_key_id)) {
         return cb({
             error: 'Invalid metadata_hash_circle_public_key_id'
@@ -240,17 +236,5 @@ module.exports = create_purchase = (
         metadata_hash_card_number,         // "metadata_hash_card_number",
         metadata_hash_circle_public_key_id // "metadata_hash_circle_public_key_id"
     ];
-    return query(text, values, (error, result) => {
-        if (error) {
-            return cb({
-                error: 'Server Error'
-            });
-        }
-        if (result.rowCount !== 1) {
-            return fatal_error({
-                error: 'Query rowCount !== 1'
-            });
-        }
-        return cb(null);
-    });
+    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
 };

@@ -183,6 +183,16 @@ const create_purchases_table = (config, query, cb) => {
         "metadata_hash_card_number"          CHAR(128) NOT NULL,                 -- the hashed payment card number
         "metadata_hash_circle_public_key_id" CHAR(128) NOT NULL,                 -- the hashed circle public key id used in encryption
         PRIMARY KEY ("internal_purchase_id"),
+        UNIQUE ("internal_purchase_id"),
+        UNIQUE ("client_generated_idempotency_key"),
+        UNIQUE ("create_card_idempotency_key"),
+        UNIQUE ("create_card_id"),
+        UNIQUE ("payment_3ds_idempotency_key"),
+        UNIQUE ("payment_3ds_id"),
+        UNIQUE ("payment_cvv_idempotency_key"),
+        UNIQUE ("payment_cvv_id"),
+        UNIQUE ("payment_unsecure_idempotency_key"),
+        UNIQUE ("payment_unsecure_id"),
         CONSTRAINT "fk_internal_user_id" FOREIGN KEY("internal_user_id") REFERENCES "users"("internal_user_id"),
         CONSTRAINT "metadata_hash_email_length"                CHECK (char_length("metadata_hash_email")                = 128),
         CONSTRAINT "metadata_hash_phone_length"                CHECK (char_length("metadata_hash_phone")                = 128),

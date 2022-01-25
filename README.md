@@ -38,6 +38,8 @@ Contains documentation, demo, and back/front end components required to integrat
 + mark fraud should also mark it on the user
 + a user marked fraud cannot to anything, check user for fraud before processing
 + report fatal errors
++ unique constraint on all uuid, will need to detect error since thats fatal? maybe a common handler?
++ we mark public key as failed, do we mark it as completed everywhere?
 
 ## Useful Links
 
