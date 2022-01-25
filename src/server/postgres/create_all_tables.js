@@ -125,6 +125,7 @@ const create_users_table = (config, query, cb) => {
         "identification_hash"                UUID NOT NULL,                      -- how the user is identified by the integrating service such as neon district (a hash of the user name or id)
         "t_created"                          BIGINT NOT NULL,                    -- when the user record was created
         "t_modified"                         BIGINT NOT NULL,                    -- when the user record was last seen or used
+        UNIQUE ("internal_user_id"),
         PRIMARY KEY ("internal_user_id")
     );
     `;

@@ -31,17 +31,5 @@ module.exports = payment_3ds_mark_fraud = (
         internal_purchase_id         // "internal_purchase_id"
     ];
 
-    return query(text, values, (error, result) => {
-        if (error) {
-            return cb({
-                error: 'Server Error'
-            });
-        }
-        if (result.rowCount !== 1) {
-            return fatal_error({
-                error: 'Query rowCount !== 1'
-            });
-        }
-        return cb(null);
-    });
+    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
 };

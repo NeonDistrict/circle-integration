@@ -1,4 +1,3 @@
-const fatal_error = require('../fatal_error.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 

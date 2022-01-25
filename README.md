@@ -23,9 +23,6 @@ Contains documentation, demo, and back/front end components required to integrat
 + todo handle the request ending before we can callback, handle dead request trying to respond?
 + when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it (this should actually happen periodically)
 + update notion
-+ log the idempotency key that comes from the client and ensure it has no collisions, collisions should be flagged as malicious
-+ server generated idempotency keys should be checked for collisions before being used
-+ client provided uuid need to be unique checked
 + if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
 + there should be safe guards in the where clause sql to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
 + some enums might not be getting used, they should all be somewhere..
@@ -33,13 +30,12 @@ Contains documentation, demo, and back/front end components required to integrat
 + all errors should log in full but return only useful info for user
 + part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
 + uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
-+ we may not be able to store cvv at all, so check on that shit
 + logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
 + mark fraud should also mark it on the user
 + a user marked fraud cannot to anything, check user for fraud before processing
 + report fatal errors
-+ unique constraint on all uuid, will need to detect error since thats fatal? maybe a common handler?
-+ we mark public key as failed, do we mark it as completed everywhere?
++ client gen uuid needs to be unique checked before use, then return idempotent result? fraud for duplicate but not matching details
+
 
 ## Useful Links
 
