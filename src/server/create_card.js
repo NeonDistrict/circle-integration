@@ -31,7 +31,7 @@ module.exports = create_card = (config, postgres, internal_purchase_id, encrypte
                 ipAddress: ip_address
             }
         };
-        call_circle([201], 'post', `${config.api_uri_base}cards`, request_body, (error, create_card_result) => {
+        call_circle(config, [201], 'post', `${config.api_uri_base}cards`, request_body, (error, create_card_result) => {
             if (error) {
                 return cb(error);
             }

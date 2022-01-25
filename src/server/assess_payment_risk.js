@@ -1,8 +1,8 @@
+const fatal_error = require('./fatal_error.js');
 const risk_categories = require('./enum/risk_categories.js');
 
 module.exports = assess_payment_risk = (payment_result) => {
     // todo some of these puppies are fraud some are error, may have to hard code them in here in a switch :/
-    // todo yeah i will, fuck
 
     // if a risk evaluation is present, along with a decision, and that decision is denied we have failed the payment from risk, determine why
     if (payment_result.hasOwnProperty('riskEvaluation') && payment_result.riskEvalutaion.hasOwnProperty('decision') && payment_result.riskEvalutaion.decision === 'denied') {
@@ -19,11 +19,11 @@ module.exports = assess_payment_risk = (payment_result) => {
             }
         }
 
-        // if we did not find the risk category we have an unexpected risk code, crash
+        // if we did not find the risk category we have an unexpected risk code
         if (found_risk_category === null) {
-            return {
-                error: 'Unexpected Risk Code'
-            }; 
+            return fatal_error({
+                error: 'Unexpected Payment Risk Code: ' + reason_code
+            }); 
         }
 
         // reaching here implies we have a found_risk_category, attempt to find a specific reason

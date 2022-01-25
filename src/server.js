@@ -2,6 +2,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const fatal_error = require('./server/fatal_error.js');
 const generate_pgp_key_pair = require('./server/generate_pgp_key_pair.js');
 const is_valid_email = require('./validation/is_valid_email.js');
 const is_valid_expiry_month = require('./validation/is_valid_expiry_month.js');
@@ -68,10 +69,11 @@ module.exports = create_server = (config, postgres, cb) => {
     
     app.post(config.sns_endpoint, (req, res) => {
         on_notification(req.body, (error) => {
-            // if we get an error from aws sns crash, something is very wrong - better down then vulnerable
             if (error) {
-                console.log(JSON.stringify(error));
-                return process.exit(1);
+                return fatal_error({
+                    error: 'AWS SNS Notification Error',
+                    details: error 
+                });
             }
             return res.end();
         });
@@ -212,6 +214,14 @@ module.exports = create_server = (config, postgres, cb) => {
         key:  fs.readFileSync(path.join(__dirname, '../keys/privkey.pem')),
         cert: fs.readFileSync(path.join(__dirname, '../keys/fullchain.pem')),
     }, app);
+
+    // catch https server errors
+    https_server.on('error', (error) => {
+        return fatal_error({
+            error: 'HTTPS Server Threw Error',
+            details: error
+        });
+    });
 
     // generate the pgp keypair
     generate_pgp_key_pair((error, pgp_passphrase, pgp_private_key, pgp_public_key) => {

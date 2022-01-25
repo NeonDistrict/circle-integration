@@ -1,3 +1,4 @@
+const fatal_error = require('./fatal_error.js');
 const create_payment_3ds = require('./create_payment_3ds.js');
 const create_payment_cvv = require('./create_payment_cvv.js');
 const create_payment_unsecure = require('./create_payment_unsecure.js');
@@ -14,8 +15,7 @@ module.exports = create_payment = (config, postgres, internal_purchase_id, card_
             return cb(null, assessment);
         }
         if (!assessment.hasOwnProperty('unavailable')) {
-            // todo this is a fatal error
-            return cb({
+            return fatal_error({
                 error: 'Expected Unavailable Payment 3DS'
             });
         }
@@ -27,8 +27,7 @@ module.exports = create_payment = (config, postgres, internal_purchase_id, card_
                 return cb(null, assessment);
             }
             if (!assessment.hasOwnProperty('unavailable')) {
-                // todo this is a fatal error
-                return cb({
+                return fatal_error({
                     error: 'Expected Unavailable Payment CVV'
                 });
             }
@@ -39,8 +38,7 @@ module.exports = create_payment = (config, postgres, internal_purchase_id, card_
                 if (assessment.hasOwnProperty('payment_id')) {
                     return cb(null, assessment);
                 }
-                // todo this is a fatal error
-                return cb({
+                return fatal_error({
                     error: 'Unexpected Resolution Payment Unsecure'
                 });
             });

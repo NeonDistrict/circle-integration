@@ -3,61 +3,41 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ## Todo
 
-+ ensure all error responses from server are of the same form
-+ hash details on backend, client cant be trusted to make their own hashes against themselves.. but we do need to hash card numbers soo?
 + parking cleanup for timeouts
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
-+ public key encryption of all details on front, then hashing of those on back
 + some payment errors should never be able to happen and should lock an account, not just quarantine it
 + card creation does avs too
-+ there is a number of scenarios where a dev should be notified
 + waiting to hear back on teh 5.54 amount issue on slack from circle
 + waiting to hear back on the expiry validation issue
 + AVS test letters EKLO- all return Y erroneously, circle informed, waiting to hear back
-+ idempotency key reuse is allowed on sandbox, reported to circle waiting to hear back
 + need a process to clean up dead callbacks, and an endpoint to get purchases, it should check that the users auth owns that purchase
 + need deep logging by uuid
-+ need json schema validation on calls
-+ need sessions and session hashes
-+ http_server needs listeners for on.error
 + if they player does some stupid back/forward stuff around redirects we should get the latest purchase or started purchase on all pages just to make sure theyre not duplicating
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
 + looks like 3ds calls back with `paymentId=` in the query string which is great
 + we do get a notification of the confirmed even though the player isnt attached waiting for a callback, we can use this to update the account. need to hook these notifications so they get processed and not parking gets cleaned up or maybe user makes request to server after to get it? 5m timeout or somethibng
-+ there could also be a period check to address any missed connections in parking
-+ which would be an extremely rare race condition that should be reported when it happens
-+ todo need to verify the behaviour if a call returns with success, and if a notification comes in for an already resolved situation which
-+ may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also
-+ be recorded. this will have to against the db
++ there could also be a period check to address any missed connections in parking which would be an extremely rare race condition that should be reported when it happens
++ todo need to verify the behaviour if a call returns with success, and if a notification comes in for an already resolved situation which may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also, be recorded. this will have to against the db
 + todo handle callback timeouts (like the callback never comes)
-+ todo handle the request ending before we can callback
-+ handle dead request trying to respond?
++ todo handle the request ending before we can callback, handle dead request trying to respond?
 + when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it (this should actually happen periodically)
 + update notion
 + log the idempotency key that comes from the client and ensure it has no collisions, collisions should be flagged as malicious
 + server generated idempotency keys should be checked for collisions before being used
 + client provided uuid need to be unique checked
 + if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
-+ there should be safe guards in the where clause to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
++ there should be safe guards in the where clause sql to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
 + some enums might not be getting used, they should all be somewhere..
 + postgres lib errors should come back as generic internal error but log in full
++ all errors should log in full but return only useful info for user
 + part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
-+ gotta do the public key to the front end to encrypt everything
-+ when the server determines the public key is no longer valid it should regfresh it itself, the client shouldnt be responsible to determine that, it should just retry
 + uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
-+ verification at the req.body phase
-+ sns origin verification by signature verify
-+ express sessions? across game server? game server provides session?
 + we may not be able to store cvv at all, so check on that shit
-+ does a request stop processing mid way if they request is dropped?
 + logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
-+ integraiton public key failure error needs to happen
-+ key refresh for circle internally needs to happen
-
-flow:
-
-call purchase -> get one of {error: whatever}, {redirect: urlfor3dsecure}
++ mark fraud should also mark it on the user
++ a user marked fraud cannot to anything, check user for fraud before processing
++ report fatal errors
 
 ## Useful Links
 

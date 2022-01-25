@@ -43,4 +43,3 @@ module.exports = api_error_enum = {
     WALLET_TYPE_NOT_SUPPORTED: 2006,        
     UNSUPPORTED_TRANSFER: 2007
 };
-// todo these need to go in where we check response code

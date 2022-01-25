@@ -6,7 +6,7 @@ module.exports = setup_notification_subscription = (config, sns_endpoint_url, cb
     // use to listen for all responses when they complete so that we dont need to poll
 
     // list any existing subscriptions to see if one needs to be created
-    call_circle([200], 'get', `${config.api_uri_base}notifications/subscriptions`, null, (error, existing_subscriptions) => {
+    call_circle(config, [200], 'get', `${config.api_uri_base}notifications/subscriptions`, null, (error, existing_subscriptions) => {
         if (error) {
             return cb(error);
         }
@@ -37,7 +37,7 @@ module.exports = setup_notification_subscription = (config, sns_endpoint_url, cb
         const request_body = { 
             endpoint: sns_endpoint_url
         };
-        call_circle([200, 201], 'post', `${config.api_uri_base}notifications/subscriptions`, request_body, (error) => {
+        call_circle(config, [200, 201], 'post', `${config.api_uri_base}notifications/subscriptions`, request_body, (error) => {
             if (error) {
                 return cb(error);
             }

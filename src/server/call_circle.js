@@ -1,13 +1,11 @@
 const api_error_enum = require('./enum/api_error_enum.js');
-const api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
-// todo shoul dbe in config
 
-module.exports = call_circle = async (accepted_response_codes, method, url, data, cb) => {
+module.exports = call_circle = async (config, accepted_response_codes, method, url, data, cb) => {
     const request = {
         method: method,
         url: url,
         headers: {
-            'Authorization': `Bearer ${api_sandbox_key}`
+            'Authorization': `Bearer ${config.api_sandbox_key}`
         }
     };
     if (data !== null) {

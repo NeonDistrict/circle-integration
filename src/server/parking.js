@@ -1,7 +1,7 @@
 const parked_notifications = {};
 const parked_callbacks = {};
 const cleanup_parking_interval = setInterval(parking.cleanup_parking, 3000);
-// todo will this bitch if parking isnt forward declared
+// todo will this ^ cleanup call bitch if parking isnt forward declared
 
 module.exports = parking = {
     park_callback: (id, cb) => {

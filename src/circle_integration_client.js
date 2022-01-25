@@ -59,7 +59,7 @@ module.exports = circle_integration_client = {
         return circle_integration_client.btoa(cipher_text);
     },
 
-    purchase: async (client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key) => {
+    purchase: async (client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry = false) => {
         const public_keys = await circle_integration_client.call_circle_api('/get_public_keys');
         const circle_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
         const integration_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.integration_public_key, {card_number: card_number, card_cvv: card_cvv});
@@ -92,14 +92,22 @@ module.exports = circle_integration_client = {
         // if we received an error
         if (purchase_result.hasOwnProperty('error')) {
 
-            // if the public key was bad 
-            if (!force_refresh_public_key && purchase_result.error === 'Public Key Failure') {
+            // if a public key was bad 
+            if (purchase_result.error === 'Circle Key Failure' || purchase_result.error === 'Integration Key Failure') {
                 
-                // get a new idempotency key for the retry
+                // if we already did a retry to refresh the public keys and it failed, return the error
+                if (is_retry) {
+                    return purchase_result;
+                }
+
+                // we will retry to refresh the public keys, get a new idempotency key for the retry
+                is_retry = true;
                 const retry_client_generated_idempotency_key = circle_integration_client.generate_idempotency_key();
-                return await circle_integration_client.purchase(retry_client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key);
+                return await circle_integration_client.purchase(retry_client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry);
             }
         }
+
+        // return the failure or success result of the purchase
         return purchase_result;
     }
 };

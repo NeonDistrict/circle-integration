@@ -1,3 +1,4 @@
+const fatal_error = require('../fatal_error.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 
 module.exports = payment_3ds_mark_failed = (
@@ -30,6 +31,17 @@ module.exports = payment_3ds_mark_failed = (
         internal_purchase_id         // "internal_purchase_id"
     ];
 
-    // todo this query should run then puke if not exactly 1 row is updated
-    return query(text, values, cb);
+    return query(text, values, (error, result) => {
+        if (error) {
+            return cb({
+                error: 'Server Error'
+            });
+        }
+        if (result.rowCount !== 1) {
+            return fatal_error({
+                error: 'Query rowCount !== 1'
+            });
+        }
+        return cb(null);
+    });
 };

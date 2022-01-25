@@ -33,9 +33,8 @@ module.exports = assess_payment_result = (config, internal_purchase_id, payment_
 
         case payment_status_enum.ACTION_REQUIRED:
             if (!mark_redirected) {
-                // todo this is a fatal error
-                return cb({
-                    error: 'Mark Redirected Not Available'
+                return fatal_error({
+                    error: 'Function Not Provided: mark_redirected'
                 });
             }
             return mark_redirected(internal_purchase_id, payment_result.id, (error) => {

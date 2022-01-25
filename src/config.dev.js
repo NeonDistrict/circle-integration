@@ -4,6 +4,7 @@ config.dangerous = true;
 config.max_body_length = 5000;
 config.public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
 
+config.api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
 config.api_uri_base = 'https://api-sandbox.circle.com/v1/';
 config.host = 'dev.circle-integration.neondistrict.io';
 config.port = 8443;

@@ -22,7 +22,7 @@ module.exports = create_payment_cvv = (config, postgres, internal_purchase_id, c
                 currency: sale_item.currency
             },
             autoCapture: true,
-            verification: 'cvv', // todo is this correct?
+            verification: 'cvv',
             source: {
                 id: card_id,
                 type: 'card'
@@ -30,7 +30,7 @@ module.exports = create_payment_cvv = (config, postgres, internal_purchase_id, c
             description: sale_item.statement_description,
             encryptedData: encrypted_card_information.encryptedMessage
         };
-        call_circle([201], 'post', `${config.api_uri_base}payments`, request_body, (error, payment_result) => {
+        call_circle(config, [201], 'post', `${config.api_uri_base}payments`, request_body, (error, payment_result) => {
             if (error) {
                 return cb(error);
             }

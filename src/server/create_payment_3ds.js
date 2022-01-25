@@ -22,7 +22,7 @@ module.exports = create_payment_3ds = (config, postgres, internal_purchase_id, c
                 currency: sale_item.currency
             },
             autoCapture: true,
-            verification: '3_d_secure', // todo is this correct?
+            verification: 'three_d_secure',
             verificationSuccessUrl: config.three_d_secure_success_url,
             verificationFailureUrl: config.three_d_secure_failure_url,
             source: {
@@ -32,7 +32,7 @@ module.exports = create_payment_3ds = (config, postgres, internal_purchase_id, c
             description: sale_item.statement_description,
             encryptedData: encrypted_card_information.encryptedMessage
         };
-        call_circle([201], 'post', `${config.api_uri_base}payments`, request_body, (error, payment_result) => {
+        call_circle(config, [201], 'post', `${config.api_uri_base}payments`, request_body, (error, payment_result) => {
             if (error) {
                 return cb(error);
             }

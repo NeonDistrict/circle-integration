@@ -1,3 +1,4 @@
+const fatal_error = require('./fatal_error.js');
 const add_card_status_enum = require('./enum/add_card_status_enum.js');
 const parking = require('./parking.js');
 
@@ -39,14 +40,8 @@ module.exports = assess_create_card_result = (postgres, internal_purchase_id, cr
             });
 
         default:
-            // todo this is a fatal error
-            return postgres.create_card_mark_failed(internal_purchase_id, create_card_result.id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb({
-                    error: 'Unexpected Create Card Status'
-                })
+            return fatal_error({
+                error: 'Unexpected Create Card Status: ' + create_card_result.status
             });
     }
 };
