@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const fatal_error = require('./server/fatal_error.js');
-const generate_pgp_key_pair = require('./server/generate_pgp_key_pair.js');
+const generate_pgp_key_pair = require('./server/utilities/generate_pgp_key_pair.js');
+const create_or_find_user = require('./server/create_or_find_user.js');
 const is_valid_email = require('./validation/is_valid_email.js');
 const is_valid_expiry_month = require('./validation/is_valid_expiry_month.js');
 const is_valid_expiry_year = require('./validation/is_valid_expiry_year.js');
@@ -78,9 +79,24 @@ module.exports = create_server = (config, postgres, cb) => {
             return res.end();
         });
     });
+
+    app.post('*', (req, res, next) => {
+        if (!is_valid_uuid(req.body.user_id)) {
+            return respond(res, {
+                error: 'Invalid user_id'
+            });
+        }
+        create_or_find_user(config, postgres, req.body.user_id, (error, user) => {
+            if (error) {
+                return respond(res, error);
+            }
+            req.user = user;
+            return next();
+        });
+    });
     
     app.post('/get_public_keys', (req, res) => {
-        get_public_keys(config, false, respond.bind(this, res));
+        get_public_keys(config, respond.bind(this, res));
     });
 
     app.post('/get_sale_items', async (req, res) => {
@@ -183,6 +199,7 @@ module.exports = create_server = (config, postgres, cb) => {
         return purchase(
             config,
             postgres,
+            req.body.user,
             req.body.client_generated_idempotency_key,
             req.body.circle_public_key_id,
             req.body.circle_encrypted_card_information,

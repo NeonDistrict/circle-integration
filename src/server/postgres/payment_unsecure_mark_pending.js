@@ -20,7 +20,8 @@ module.exports = payment_unsecure_mark_pending = (
             "t_modified_payment_unsecure" = $2,
             "payment_unsecure_result"     = $3
         WHERE
-            "internal_purchase_id"        = $4;
+            "internal_purchase_id"        = $4
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

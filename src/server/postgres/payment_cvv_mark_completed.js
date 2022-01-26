@@ -28,7 +28,8 @@ module.exports = payment_cvv_mark_completed = (
             "purchase_result"             = $4,
             "payment_cvv_id"              = $5
         WHERE
-            "internal_purchase_id"        = $5;
+            "internal_purchase_id"        = $5
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

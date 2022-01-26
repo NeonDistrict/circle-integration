@@ -28,7 +28,8 @@ module.exports = payment_unsecure_mark_completed = (
             "purchase_result"             = $4,
             "payment_unsecure_id"         = $5
         WHERE
-            "internal_purchase_id"        = $5;
+            "internal_purchase_id"        = $5
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

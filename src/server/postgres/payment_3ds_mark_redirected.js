@@ -20,7 +20,8 @@ module.exports = payment_3ds_mark_redirected = (
             "t_modified_payment_3ds"      = $2,
             "payment_3ds_result"          = $3
         WHERE
-            "internal_purchase_id"        = $4;
+            "internal_purchase_id"        = $4
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

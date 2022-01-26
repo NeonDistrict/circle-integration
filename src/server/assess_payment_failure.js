@@ -2,7 +2,7 @@ const fatal_error = require('./fatal_error.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
 const assess_payment_risk = require('./assess_payment_risk.js');
 
-module.exports = assess_payment_failure = (config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
+module.exports = assess_payment_failure = (config, postgres, user, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
     // todo does risk come back as failed? or some other result?
     // this could go into the switch then
     // todo do we even need this is we have the below?
@@ -13,6 +13,7 @@ module.exports = assess_payment_failure = (config, internal_purchase_id, payment
     }
     */
 
+    // todo: this could jus tbe error with fraud: 1
     let failure_error = null;
     let fraud_error = null;
     switch (payment_result.errorCode) {
@@ -187,7 +188,12 @@ module.exports = assess_payment_failure = (config, internal_purchase_id, payment
             if (error) {
                 return cb(error);
             }
-            return cb(fraud_error);
+            return postgres.user_mark_fraud(user.user_id, (error) => {
+                if (error) {
+                    return cb(error);
+                }
+                return cb(fraud_error);
+            });
         });
     }
     return cb({

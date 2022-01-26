@@ -3,9 +3,10 @@ const sha512 = require('./sha512.js');
 const create_card = require('./create_card.js');
 const create_payment = require('./create_payment.js');
 const is_valid_card_number = require('../validation/is_valid_card_number.js');
-const is_valid_card_cvv = require('../validation/is_valid_card_cvv.js');
+const is_purchase_idempotent_equal = require('./utilities/is_purchase_idempotent_equal.js');
+const assess_existing_purchase_result = require('./assess_existing_purchase_result.js');
 
-module.exports = purchase = async (config, postgres, client_generated_idempotency_key, verification_type, circle_public_key_id, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
+module.exports = purchase = async (config, postgres, user, client_generated_idempotency_key, circle_public_key_id, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, sale_item_key, cb) => {
     // find sale item
     const sale_item = config.sale_items.find((search_sale_item) => { return search_sale_item.sale_item_key === sale_item_key; });
     if (sale_item === undefined || sale_item === null) {
@@ -57,19 +58,34 @@ module.exports = purchase = async (config, postgres, client_generated_idempotenc
 
     // todo all fraud checks need to happen right here and not be passed through
 
-    postgres.create_purchase(internal_purchase_id, internal_user_id, sale_item.sale_item_key, sale_item.sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_1, metadata_hash_address_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_card_cvv, metadata_hash_circle_public_key_id, (error) => {
+    postgres.find_purchase_by_client_generated_idempotency_key(client_generated_idempotency_key, (error, existing_purchase) => {
         if (error) {
             return cb(error);
         }
-        create_card(config, postgres, internal_purchase_id, circle_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
+        if (existing_purchase !== null) {
+            if (is_purchase_idempotent_equal(existing_purchase, user_id, sale_item.sale_item_key, sale_item.sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_1, metadata_hash_address_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_card_cvv, metadata_hash_circle_public_key_id)) {
+                return assess_existing_purchase_result(existing_purchase, cb);
+            } else {
+                return cb({
+                    error: 'Idempotency Collision',
+                    fraud: 1
+                });
+            }
+        }
+        postgres.create_purchase(internal_purchase_id, user_id, sale_item.sale_item_key, sale_item.sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_1, metadata_hash_address_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_card_cvv, metadata_hash_circle_public_key_id, (error) => {
             if (error) {
                 return cb(error);
             }
-            create_payment(config, postgres, card_id, verification_type, assessed_create_card_result.id, circle_encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessment) => {
+            create_card(config, postgres, user, internal_purchase_id, circle_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, (error, card_id) => {
                 if (error) {
                     return cb(error);
                 }
-                return cb(null, assessment);
+                create_payment(config, postgres, user, card_id, assessed_create_card_result.id, circle_encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, (error, assessment) => {
+                    if (error) {
+                        return cb(error);
+                    }
+                    return cb(null, assessment);
+                });
             });
         });
     });

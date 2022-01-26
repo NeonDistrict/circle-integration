@@ -121,12 +121,12 @@ const create_users_table = (config, query, cb) => {
     const text = 
     `
     CREATE TABLE "users" (
-        "internal_user_id"                   UUID NOT NULL,                      -- the primary key and internal representation of this user
-        "identification_hash"                UUID NOT NULL,                      -- how the user is identified by the integrating service such as neon district (a hash of the user name or id)
-        "t_created"                          BIGINT NOT NULL,                    -- when the user record was created
-        "t_modified"                         BIGINT NOT NULL,                    -- when the user record was last seen or used
-        UNIQUE ("internal_user_id"),
-        PRIMARY KEY ("internal_user_id")
+        "user_id"    UUID NOT NULL,                      -- the primary key and internal representation of this user
+        "t_created"  BIGINT NOT NULL,                    -- when the user record was created
+        "t_modified" BIGINT NOT NULL,                    -- when the user record was last seen or used
+        "fraud"      BOOLEAN NOT NULL,                   -- if the user is locked for fraud
+        UNIQUE ("user_id"),
+        PRIMARY KEY ("user_id")
     );
     `;
     const values = [];
@@ -138,7 +138,7 @@ const create_purchases_table = (config, query, cb) => {
     `
     CREATE TABLE "purchases" (
         "internal_purchase_id"               UUID NOT NULL,                      -- the primary key and internal representation of this purchase
-        "internal_user_id"                   UUID NOT NULL,                      -- the foreign key of the user making this purchase
+        "user_id"                   UUID NOT NULL,                      -- the foreign key of the user making this purchase
         "sale_item_key"                      CHAR(128) NOT NULL,                 -- the key used to represent the item being purchased, essentially a sku such as "NEON_1000_PACK"
         "sale_item_price"                    CHAR(16) NOT NULL,                  -- the amount of usd currency charged for the item as a string such as "1.46" which is how circle handles dollar amounts
         "game_id"                            "GAME_IDENTIFIER" NOT NULL,         -- the id of the game making a purchase
@@ -194,7 +194,7 @@ const create_purchases_table = (config, query, cb) => {
         UNIQUE ("payment_cvv_id"),
         UNIQUE ("payment_unsecure_idempotency_key"),
         UNIQUE ("payment_unsecure_id"),
-        CONSTRAINT "fk_internal_user_id" FOREIGN KEY("internal_user_id") REFERENCES "users"("internal_user_id"),
+        CONSTRAINT "fk_user_id" FOREIGN KEY("user_id") REFERENCES "users"("user_id"),
         CONSTRAINT "metadata_hash_email_length"                CHECK (char_length("metadata_hash_email")                = 128),
         CONSTRAINT "metadata_hash_phone_length"                CHECK (char_length("metadata_hash_phone")                = 128),
         CONSTRAINT "metadata_hash_session_id_length"           CHECK (char_length("metadata_hash_session_id")           = 128),

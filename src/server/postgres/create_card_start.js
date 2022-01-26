@@ -28,7 +28,8 @@ module.exports = create_card_start = (
             "create_card_idempotency_key" = $4,
             "create_card_result"          = $5
         WHERE
-            "internal_purchase_id"        = $6;
+            "internal_purchase_id"        = $6
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

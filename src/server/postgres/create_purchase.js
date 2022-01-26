@@ -8,7 +8,7 @@ module.exports = create_purchase = (
     config, 
     query, 
     internal_purchase_id,
-    internal_user_id,
+    user_id,
     sale_item_key,
     sale_item_price,
     client_generated_idempotency_key,
@@ -34,9 +34,9 @@ module.exports = create_purchase = (
             error: 'Invalid internal_purchase_id'
         });
     }
-    if (!is_valid_uuid(internal_user_id)) {
+    if (!is_valid_uuid(user_id)) {
         return cb({
-            error: 'Invalid internal_user_id'
+            error: 'Invalid user_id'
         });
     }
     if (!is_valid_sale_item_key(sale_item_key)) {
@@ -135,7 +135,7 @@ module.exports = create_purchase = (
     `
         INSERT INTO "purchases" (
             "internal_purchase_id",
-            "internal_user_id",
+            "user_id",
             "sale_item_key",
             "sale_item_price",
             "game_id",
@@ -186,11 +186,11 @@ module.exports = create_purchase = (
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, 
             $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, 
             $41, $42, $43, $44, $45, $46
-        )
+        );
     `;
     const values = [
         internal_purchase_id,              // "internal_purchase_id",
-        internal_user_id,                  // "internal_user_id",
+        user_id,                  // "user_id",
         sale_item_key,                     // "sale_item_key",
         sale_item_price,                   // "sale_item_price",
         'NEON_DISTRICT',                   // "game_id",

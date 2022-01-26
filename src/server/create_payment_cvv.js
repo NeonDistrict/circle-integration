@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const call_circle = require('./call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
 
-module.exports = create_payment_cvv = (config, postgres, internal_purchase_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
+module.exports = create_payment_cvv = (config, postgres, user, internal_purchase_id, card_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item, cb) => {
     const payment_cvv_idempotency_key = uuidv4();
     postgres.payment_cvv_start(internal_purchase_id, payment_cvv_idempotency_key, (error) => {
         if (error) {
@@ -41,7 +41,7 @@ module.exports = create_payment_cvv = (config, postgres, internal_purchase_id, c
             const mark_redirected  = null;
             const mark_pending     = postgres.payment_cvv_mark_pending;
             const mark_completed   = postgres.payment_cvv_mark_completed;
-            assess_payment_result(config, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
+            assess_payment_result(config, postgres, user, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
         });
     });
 };

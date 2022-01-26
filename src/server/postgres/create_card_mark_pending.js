@@ -15,7 +15,8 @@ module.exports = create_card_mark_pending = (config, query, internal_purchase_id
             "t_modified_create_card"      = $2,
             "create_card_result"          = $3
         WHERE
-            "internal_purchase_id"        = $4;
+            "internal_purchase_id"        = $4
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

@@ -20,7 +20,8 @@ module.exports = payment_cvv_mark_pending = (
             "t_modified_payment_cvv"      = $2,
             "payment_cvv_result"          = $3
         WHERE
-            "internal_purchase_id"        = $4;
+            "internal_purchase_id"        = $4
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

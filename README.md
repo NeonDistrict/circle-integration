@@ -31,10 +31,9 @@ Contains documentation, demo, and back/front end components required to integrat
 + part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
 + uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
 + logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
-+ mark fraud should also mark it on the user
-+ a user marked fraud cannot to anything, check user for fraud before processing
 + report fatal errors
-+ client gen uuid needs to be unique checked before use, then return idempotent result? fraud for duplicate but not matching details
++ user is generally available, for anywhere that needs it
++ add returns to all callback entry points, or switch to promises and a better error response scheme
 
 
 ## Useful Links

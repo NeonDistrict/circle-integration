@@ -28,7 +28,8 @@ module.exports = payment_cvv_start = (
             "payment_cvv_idempotency_key" = $4,
             "payment_cvv_result"          = $5
         WHERE
-            "internal_purchase_id"        = $6;
+            "internal_purchase_id"        = $6
+        LIMIT 1;
     `;
     const values = [
         now,                         // "t_modified_purchase"

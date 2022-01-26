@@ -1,6 +1,6 @@
 const call_circle = require('./call_circle.js');
 
-module.exports = get_public_keys = (config, force_refresh, cb) => {
+module.exports = get_public_keys = (config, cb) => {
     const public_keys = {
         integration_public_key: config.pgp_public_key
     };
@@ -12,7 +12,7 @@ module.exports = get_public_keys = (config, force_refresh, cb) => {
         config.cached_circle_key && 
         config.cached_circle_key_timestamp && 
         new Date().getTime() - config.cached_circle_key_timestamp <= config.public_key_cache_duration;
-    if (!force_refresh && cache_valid) {
+    if (cache_valid) {
         public_keys.circle_public_key = config.cached_circle_key;
         return cb(null, public_keys);
     }
