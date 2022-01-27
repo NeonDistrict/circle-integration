@@ -18,6 +18,9 @@ const on_notification = require('./server/on_notification.js');
 const get_public_keys = require('./server/get_public_keys.js');
 const list_sale_items = require('./server/list_sale_items.js');
 const purchase = require('./server/purchase.js');
+const purchase_history = require('./server/purchase_history.js');
+const resolve_lingering_purchases_daemon = require('./server/resolve_lingering_purchases_daemon.js');
+const parking = require('./server/parking.js');
 
 module.exports = create_server = (config, postgres, cb) => {
     const respond = (res, error, body) => {
@@ -195,7 +198,6 @@ module.exports = create_server = (config, postgres, cb) => {
                 error: 'Invalid sale_item_key'
             });
         }
-
         return purchase(
             config,
             postgres,
@@ -223,7 +225,35 @@ module.exports = create_server = (config, postgres, cb) => {
     });
     
     app.post('/purchase_history', async (req, res) => {
-        res.send({'ni': 'yet'});
+        if (!is_valid_uuid(req.body.user_id)) {
+            return respond(res, {
+                error: 'Invalid user_id'
+            });
+        }
+        if (!is_valid_skip(req.body.skip)) {
+            return respond(res, {
+                error: 'Invalid skip'
+            });
+        }
+        if (!is_valid_limit(req.body.limit)) {
+            return respond(res, {
+                error: 'Invalid limit'
+            });
+        }
+        if (limit > config.max_pagination_limit) {
+            return respond(res, {
+                error: 'Limit Too Large',
+                maximum: config.max_pagination_limit
+            });
+        }
+        return purchase_history(
+            config,
+            postgres,
+            req.body.user,
+            req.body.skip,
+            req.body.limit,
+            respond.bind(this, res)
+        );
     });
 
     // create the https server, binding the express app
@@ -257,6 +287,13 @@ module.exports = create_server = (config, postgres, cb) => {
                 if (error) {
                     return cb(error);
                 }
+
+                // start the resolve lingering purchases daemon
+                resolve_lingering_purchases_daemon(config, postgres);
+                
+                // start the parking monitor
+                // todo move this into a daemon as above
+                setInterval(parking.parking_monitor, config.parking_monitor_loop_time, config);
 
                 // server fully initialized, callback
                 const server = {

@@ -2,7 +2,12 @@ const config = {};
 
 config.dangerous = true;
 config.max_body_length = 5000;
-config.public_key_cache_duration = 1000 * 60 * 60 * 24; // 24 hours
+config.max_pagination_limit = 100;
+config.public_key_cache_duration = 60000 * 60 * 24; // 24 hours
+config.purchase_lingering_after = 60000 * 60; // 1 hour
+config.resolve_lingering_purchases_daemon_loop_time = 60000 * 5; // 5m
+config.parking_monitor_loop_time = 5000; // 5s
+config.parking_abandoned_time = 60000 * 30; // 30m
 
 config.api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
 config.api_uri_base = 'https://api-sandbox.circle.com/v1/';

@@ -138,7 +138,7 @@ const create_purchases_table = (config, query, cb) => {
     `
     CREATE TABLE "purchases" (
         "internal_purchase_id"               UUID NOT NULL,                      -- the primary key and internal representation of this purchase
-        "user_id"                   UUID NOT NULL,                      -- the foreign key of the user making this purchase
+        "user_id"                            UUID NOT NULL,                      -- the foreign key of the user making this purchase
         "sale_item_key"                      CHAR(128) NOT NULL,                 -- the key used to represent the item being purchased, essentially a sku such as "NEON_1000_PACK"
         "sale_item_price"                    CHAR(16) NOT NULL,                  -- the amount of usd currency charged for the item as a string such as "1.46" which is how circle handles dollar amounts
         "game_id"                            "GAME_IDENTIFIER" NOT NULL,         -- the id of the game making a purchase

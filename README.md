@@ -3,7 +3,6 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ## Todo
 
-+ parking cleanup for timeouts
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
 + some payment errors should never be able to happen and should lock an account, not just quarantine it
@@ -11,16 +10,10 @@ Contains documentation, demo, and back/front end components required to integrat
 + waiting to hear back on teh 5.54 amount issue on slack from circle
 + waiting to hear back on the expiry validation issue
 + AVS test letters EKLO- all return Y erroneously, circle informed, waiting to hear back
-+ need a process to clean up dead callbacks, and an endpoint to get purchases, it should check that the users auth owns that purchase
 + need deep logging by uuid
-+ if they player does some stupid back/forward stuff around redirects we should get the latest purchase or started purchase on all pages just to make sure theyre not duplicating
++ logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
 + looks like 3ds calls back with `paymentId=` in the query string which is great
-+ we do get a notification of the confirmed even though the player isnt attached waiting for a callback, we can use this to update the account. need to hook these notifications so they get processed and not parking gets cleaned up or maybe user makes request to server after to get it? 5m timeout or somethibng
-+ there could also be a period check to address any missed connections in parking which would be an extremely rare race condition that should be reported when it happens
-+ todo need to verify the behaviour if a call returns with success, and if a notification comes in for an already resolved situation which may or may not have a callback parked. a periodic sweep should also check if calls are already resolved and dismiss them, this should also, be recorded. this will have to against the db
-+ todo handle callback timeouts (like the callback never comes)
-+ todo handle the request ending before we can callback, handle dead request trying to respond?
 + when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it (this should actually happen periodically)
 + update notion
 + if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
@@ -30,10 +23,12 @@ Contains documentation, demo, and back/front end components required to integrat
 + all errors should log in full but return only useful info for user
 + part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
 + uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
-+ logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
-+ report fatal errors
-+ user is generally available, for anywhere that needs it
 + add returns to all callback entry points, or switch to promises and a better error response scheme
++ where do we credit the game? we need to credit the game in order to mark the purchase result as complete
+
+## Notes
+
++ If a purchase request is closed, dropped, or disconneted before a response can be received, and that purchase can successfully issue a 3DSecure redirect to the player, that redirect link will be lost and a new purchase must be created as the original purchase is considered abandonded. If an identical purchase request is made with the same client generated idempotency key a purchase result of abandoned will be returned as the redirect link cannot be recovered at this point.
 
 
 ## Useful Links

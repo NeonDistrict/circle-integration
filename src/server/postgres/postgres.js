@@ -64,6 +64,12 @@ module.exports = create_postgres = (config, cb) => {
         find_user_by_user_id:
             require('./find_user_by_user_id.js')
                 .bind(this, config, query),
+        paginate_lingering_purchases:
+            require('./paginate_lingering_purchases.js')
+                .bind(this, config, query),
+        paginate_purchases_by_user_id:
+            require('./paginate_purchases_by_user_id.js')
+                .bind(this, config, query),
         payment_3ds_mark_completed:         
             require('./payment_3ds_mark_completed.js')        
                 .bind(this, config, query),

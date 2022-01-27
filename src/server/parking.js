@@ -1,7 +1,6 @@
+const notify_dev = require('./notify_dev.js');
 const parked_notifications = {};
 const parked_callbacks = {};
-const cleanup_parking_interval = setInterval(parking.cleanup_parking, 3000);
-// todo will this ^ cleanup call bitch if parking isnt forward declared
 
 module.exports = parking = {
     park_callback: (id, cb) => {
@@ -52,10 +51,84 @@ module.exports = parking = {
         // handled ok
         return cb(null);
     },
-    cleanup_parking: () => {
-        // todo
+    parking_monitor: (config) => {
+        const now = new Date.getTime();
+
+        // a race condition may technically exist where a callback and notification are parked at the
+        // same time, we must regularly check to see if two matching ids are parked waiting for each other
+        // we gather race ids to not disrupt the for-in enumeration
+        const race_ids = [];
+        for (const parked_notification_id in parked_notifications) {
+            if (parked_callbacks.hasOwnProperty(parked_notification_id)) {
+                
+                // reaching here implies that a race condition was detected, add it to the race ids
+                race_ids.push(parked_notification_id);
+            }
+        }
+        for (const race_id of race_ids) {
+            
+            // unpark the notification
+            const parked_notification = parked_notifications[race_id];
+            delete parked_notifications[race_id];
+
+            // unpark the callback
+            const parked_callback = parked_callbacks[race_id];
+            delete parked_callbacks[race_id];
+
+            // return the result in the callback
+            parked_callback.callback(null, parked_notification.result);
+
+            notify_dev({
+                issue: 'Parking Race Condition',
+                t: now,
+                notification: parked_notification
+            });
+        }
+
+        // an issue may occur where a callback or a notification never arrives in parking for
+        // a myriad reasons like dropped connection, or an aws outage, etc. we must detect
+        // anything left parked, clean it up, and notify a dev.
+        // we gather ids as to not disrupt the for-in enumeration
+        const abandoned_notification_ids = [];
+        for (const parked_notification_id in parked_notifications) {
+            const parked_notification = parked_notifications[parked_notification_id];
+            if (now - parked_notification.parked_at > config.parking_abandoned_time) {
+                abandoned_notification_ids.push(parked_notification_id);
+            }
+        }
+        for (const abandoned_notification_id of abandoned_notification_ids) {
+            
+            // unpark the notification
+            const parked_notification = parked_notifications[abandoned_notification_id];
+            delete parked_notifications[abandoned_notification_id];
+
+            notify_dev({
+                issue: 'Abandoned Notification',
+                t: now,
+                notification: parked_notification
+            });
+        }
+        const abandoned_callback_ids = [];
+        for (const parked_callback_id in parked_callbacks) {
+            const parked_callback = parked_callbacks[parked_callback_id];
+            if (now - parked_callback.parked_at > config.parking_abandoned_time) {
+                abandoned_callback_ids.push(parked_callback_id);
+            }
+        }
+        for (const abandoned_callback_id of abandoned_callback_ids) {
+            
+            // unpark the callback
+            const parked_callback = parked_callbacks[abandoned_callback_id];
+            delete parked_callbacks[abandoned_callback_id];
+
+            notify_dev({
+                issue: 'Abandoned Callback',
+                t: now,
+                callback_id: abandoned_callback_id
+            });
+        }
     },
     shutdown: () => {
-        clearInterval(cleanup_parking_interval);
+        clearInterval(parking_monitor_interval);
     }
 };
