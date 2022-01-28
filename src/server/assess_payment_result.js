@@ -1,6 +1,7 @@
 const payment_status_enum = require('./enum/payment_status_enum.js');
 const assess_payment_failure = require('./assess_payment_failure.js');
 const parking = require('./parking.js');
+const credit_game = require('./credit_game.js');
 
 module.exports = assess_payment_result = (config, postgres, user, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb) => {
     switch (payment_result.status) {
@@ -10,8 +11,14 @@ module.exports = assess_payment_result = (config, postgres, user, internal_purch
                 if (error) {
                     return cb(error);
                 }
-                return cb(null, {
-                    payment_id: payment_result.id
+                // todo we gotta get sale item key in here
+                return credit_game(config, postgres, user.user_id, game_id, sale_item_key, (error) => {
+                    if (error) {
+                        return cb(error);
+                    }
+                    return cb(null, {
+                        payment_id: payment_result.id
+                    });
                 });
             });
 

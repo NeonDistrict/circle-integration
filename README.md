@@ -5,11 +5,12 @@ Contains documentation, demo, and back/front end components required to integrat
 
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
-+ some payment errors should never be able to happen and should lock an account, not just quarantine it
 + card creation does avs too
+
 + waiting to hear back on teh 5.54 amount issue on slack from circle
 + waiting to hear back on the expiry validation issue
 + AVS test letters EKLO- all return Y erroneously, circle informed, waiting to hear back
+
 + need deep logging by uuid
 + logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
@@ -21,10 +22,10 @@ Contains documentation, demo, and back/front end components required to integrat
 + some enums might not be getting used, they should all be somewhere..
 + postgres lib errors should come back as generic internal error but log in full
 + all errors should log in full but return only useful info for user
-+ part of the parking cleanup or possible another daemon should be to look at the db for any unfinished purchases and poll circle for resolutions on them
 + uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
 + add returns to all callback entry points, or switch to promises and a better error response scheme
 + where do we credit the game? we need to credit the game in order to mark the purchase result as complete
++ to many non fraud failures should lock up an account as fraud
 
 ## Notes
 
