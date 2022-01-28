@@ -13,15 +13,15 @@ module.exports = create_purchase = (
     sale_item_price,
     client_generated_idempotency_key,
     metadata_hash_email,
-    metadata_hash_phone,
+    metadata_hash_phone_number,
     metadata_hash_session_id,
     metadata_hash_ip_address,
     metadata_hash_name_on_card,
     metadata_hash_city,
     metadata_hash_country,
     metadata_hash_district,
-    metadata_hash_address_1,
-    metadata_hash_address_2,
+    metadata_hash_address_line_1,
+    metadata_hash_address_line_2,
     metadata_hash_postal_zip_code,
     metadata_hash_expiry_month,
     metadata_hash_expiry_year,
@@ -59,9 +59,9 @@ module.exports = create_purchase = (
             error: 'Invalid metadata_hash_email'
         });
     }
-    if (!is_valid_sha512_hex(metadata_hash_phone)) {
+    if (!is_valid_sha512_hex(metadata_hash_phone_number)) {
         return cb({
-            error: 'Invalid metadata_hash_phone'
+            error: 'Invalid metadata_hash_phone_number'
         });
     }
     if (!is_valid_sha512_hex(metadata_hash_session_id)) {
@@ -94,14 +94,14 @@ module.exports = create_purchase = (
             error: 'Invalid metadata_hash_district'
         });
     }
-    if (!is_valid_sha512_hex(metadata_hash_address_1)) {
+    if (!is_valid_sha512_hex(metadata_hash_address_line_1)) {
         return cb({
-            error: 'Invalid metadata_hash_address_1'
+            error: 'Invalid metadata_hash_address_line_1'
         });
     }
-    if (!is_valid_sha512_hex(metadata_hash_address_2)) {
+    if (!is_valid_sha512_hex(metadata_hash_address_line_2)) {
         return cb({
-            error: 'Invalid metadata_hash_address_2'
+            error: 'Invalid metadata_hash_address_line_2'
         });
     }
     if (!is_valid_sha512_hex(metadata_hash_postal_zip_code)) {
@@ -166,15 +166,15 @@ module.exports = create_purchase = (
             "payment_unsecure_result",
             "payment_unsecure_id",
             "metadata_hash_email",
-            "metadata_hash_phone",
+            "metadata_hash_phone_number",
             "metadata_hash_session_id",
             "metadata_hash_ip_address",
             "metadata_hash_name_on_card",
             "metadata_hash_city",
             "metadata_hash_country",
             "metadata_hash_district",
-            "metadata_hash_address_1",
-            "metadata_hash_address_2",
+            "metadata_hash_address_line_1",
+            "metadata_hash_address_line_2",
             "metadata_hash_postal_zip_code",
             "metadata_hash_expiry_month",
             "metadata_hash_expiry_year",
@@ -221,15 +221,15 @@ module.exports = create_purchase = (
         'NONE',                            // "payment_unsecure_result",
         null,                              // "payment_unsecure_id",
         metadata_hash_email,               // "metadata_hash_email",
-        metadata_hash_phone,               // "metadata_hash_phone",
+        metadata_hash_phone_number,               // "metadata_hash_phone_number",
         metadata_hash_session_id,          // "metadata_hash_session_id",
         metadata_hash_ip_address,          // "metadata_hash_ip_address",
         metadata_hash_name_on_card,        // "metadata_hash_name_on_card",
         metadata_hash_city,                // "metadata_hash_city",
         metadata_hash_country,             // "metadata_hash_country",
         metadata_hash_district,            // "metadata_hash_district",
-        metadata_hash_address_1,           // "metadata_hash_address_1",
-        metadata_hash_address_2,           // "metadata_hash_address_2",
+        metadata_hash_address_line_1,           // "metadata_hash_address_line_1",
+        metadata_hash_address_line_2,           // "metadata_hash_address_line_2",
         metadata_hash_postal_zip_code,     // "metadata_hash_postal_zip_code",
         metadata_hash_expiry_month,        // "metadata_hash_expiry_month",
         metadata_hash_expiry_year,         // "metadata_hash_expiry_year",

@@ -3,7 +3,7 @@ const assess_payment_failure = require('./assess_payment_failure.js');
 const parking = require('./parking.js');
 const credit_game = require('./credit_game.js');
 
-module.exports = assess_payment_result = (config, postgres, user, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb) => {
+module.exports = assess_payment_result = (config, postgres, user_id, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb) => {
     switch (payment_result.status) {
         case payment_status_enum.CONFIRMED:
         case payment_status_enum.PAID:
@@ -23,7 +23,7 @@ module.exports = assess_payment_result = (config, postgres, user, internal_purch
             });
 
         case payment_status_enum.FAILED:
-            return assess_payment_failure(config, postgres, user, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
+            return assess_payment_failure(config, postgres, user_id, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
         
         case payment_status_enum.PENDING:
             return mark_pending(internal_purchase_id, payment_result.id, (error) => {
@@ -34,7 +34,7 @@ module.exports = assess_payment_result = (config, postgres, user, internal_purch
                     if (error) {
                         return cb(error);
                     }
-                    return assess_payment_result(config, postgres, user, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb);
+                    return assess_payment_result(config, postgres, user_id, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb);
                 });
             });
 

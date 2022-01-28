@@ -3,6 +3,7 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ## Todo
 
++  session_id_hash has to actually be 50 chars or less meaning a uuid4 is a better idea than a sha512 hash or a shorter sha
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
 + card creation does avs too

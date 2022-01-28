@@ -201,7 +201,7 @@ module.exports = create_server = (config, postgres, cb) => {
         return purchase(
             config,
             postgres,
-            req.body.user,
+            req.user.user_id,
             req.body.client_generated_idempotency_key,
             req.body.circle_public_key_id,
             req.body.circle_encrypted_card_information,
@@ -249,7 +249,7 @@ module.exports = create_server = (config, postgres, cb) => {
         return purchase_history(
             config,
             postgres,
-            req.body.user,
+            req.user.user_id,
             req.body.skip,
             req.body.limit,
             respond.bind(this, res)

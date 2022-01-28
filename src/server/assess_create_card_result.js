@@ -2,7 +2,7 @@ const fatal_error = require('./fatal_error.js');
 const add_card_status_enum = require('./enum/add_card_status_enum.js');
 const parking = require('./parking.js');
 
-module.exports = assess_create_card_result = (config, postgres, user, internal_purchase_id, create_card_result, cb) => {    
+module.exports = assess_create_card_result = (config, postgres, user_id, internal_purchase_id, create_card_result, cb) => {    
     // todo risk/fraud/errors?
     // todo risk may come back under failed and can go in there
 
