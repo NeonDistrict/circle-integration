@@ -1,4 +1,5 @@
 const api_error_enum = require('./enum/api_error_enum.js');
+const axios = require('axios');
 
 module.exports = call_circle = async (config, accepted_response_codes, method, url, data, cb) => {
     const request = {

@@ -19,9 +19,9 @@ module.exports = create_user = (
             "user_id",
             "t_created",
             "t_modified",
-            "fraud",
+            "fraud"
         ) VALUES (
-            $1, $2, $3, $4, $5
+            $1, $2, $3, $4
         );
     `;
     const values = [

@@ -5,7 +5,7 @@ config.max_body_length = 5000;
 config.max_pagination_limit = 100;
 config.public_key_cache_duration = 60000 * 60 * 24; // 24 hours
 config.purchase_lingering_after = 60000 * 60; // 1 hour
-config.resolve_lingering_purchases_daemon_loop_time = 60000 * 5; // 5m
+config.resolve_lingering_purchases_loop_time = 60000 * 5; // 5m
 config.parking_monitor_loop_time = 5000; // 5s
 config.parking_abandoned_time = 60000 * 30; // 30m
 

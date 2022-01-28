@@ -1,15 +1,19 @@
 const assert = require('assert');
+const { v4: uuidv4 } = require('uuid');
 const axios = require('axios').default.create();
 const create_server = require('../server.js');
-const create_postgres = require('../postgres/postgres.js');
+const create_postgres = require('../server/postgres/postgres.js');
 const circle_integration_client = require('../circle_integration_client.js');
+const sha512 = require('../server/utilities/sha512.js');
 const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
 const test_cvvs = require('./test_cvvs.js');
 const test_avss = require('./test_avss.js');
-const verification_types_enum = require('../enum/verification_types_enum.js');
 
 const ok_purchase = {
+    user_id: uuidv4(),
+    session_hash: sha512(uuidv4()),
+    ip_address: '127.0.0.1',
     card_number: test_cards[0].card_number,
     cvv: 123, 
     name: 'Theo Banks',
@@ -56,8 +60,8 @@ describe('circle-integration-server', function () {
         test_postgres.shutdown();
     });
 
-    it.only('validate uuid', function () {
-        const is_valid_uuid = require('../validation/is_valid_uuid');
+    it('validate uuid', function () {
+        const is_valid_uuid = require('../server/validation/is_valid_uuid');
         let result = null;
 
         // dont allow undefined
@@ -105,8 +109,8 @@ describe('circle-integration-server', function () {
         assert.strictEqual(result, true);
     });
 
-    it.only('validate sha512_hex', function () {
-        const is_valid_sha512_hex = require('../validation/is_valid_sha512_hex');
+    it('validate sha512_hex', function () {
+        const is_valid_sha512_hex = require('../server/validation/is_valid_sha512_hex');
         let result = null;
 
         // dont allow undefined
@@ -154,8 +158,8 @@ describe('circle-integration-server', function () {
         assert.strictEqual(result, true);
     });
 
-    it.only('validate sale_item_key', function () {
-        const is_valid_sale_item_key = require('../validation/is_valid_sale_item_key');
+    it('validate sale_item_key', function () {
+        const is_valid_sale_item_key = require('../server/validation/is_valid_sale_item_key');
         let result = null;
 
         // dont allow undefined
@@ -195,8 +199,8 @@ describe('circle-integration-server', function () {
         assert.strictEqual(result, true);
     });
 
-    it.only('validate sale_item_price', function () {
-        const is_valid_sale_item_price = require('../validation/is_valid_sale_item_price');
+    it('validate sale_item_price', function () {
+        const is_valid_sale_item_price = require('../server/validation/is_valid_sale_item_price');
         let result = null;
 
         // dont allow undefined
@@ -293,9 +297,12 @@ describe('circle-integration-server', function () {
         assert.strictEqual(result.error, 'Body Too Large');
     });
 
-    it('make a purchase force 3dsecure', async function () {
+    it.only('make a normal purchase', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
+            ok_purchase.user_id,
+            ok_purchase.session_hash,
+            ok_purchase.ip_address,
             ok_purchase.card_number,
             ok_purchase.cvv,
             ok_purchase.name,
@@ -309,11 +316,9 @@ describe('circle-integration-server', function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key,
-            verification_types_enum.THREE_D_SECURE
+            ok_purchase.sale_item_key
         );
         assert(purchase_result.hasOwnProperty('redirect'));
-        console.log(purchase_result.redirect);
         
         const session_id = purchase_result.redirect.split('session/')[1];
         const three_d_secure_page = await axios.get(purchase_result.redirect);

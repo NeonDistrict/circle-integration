@@ -1,8 +1,9 @@
 const { v4: uuidv4 } = require('uuid');
-const sha512 = require('./sha512.js');
+const openpgp = require('openpgp');
+const sha512 = require('./utilities/sha512.js');
 const create_card = require('./create_card.js');
 const create_payment = require('./create_payment.js');
-const is_valid_card_number = require('../validation/is_valid_card_number.js');
+const is_valid_card_number = require('./validation/is_valid_card_number.js');
 const is_purchase_idempotent_equal = require('./utilities/is_purchase_idempotent_equal.js');
 const assess_existing_purchase_result = require('./assess_existing_purchase_result.js');
 
@@ -15,6 +16,30 @@ module.exports = purchase = async (config, postgres, user, client_generated_idem
         });
     }
 
+
+    // test zone
+    const decoded_public_key = await openpgp.readKey({armoredKey: config.pgp_public_key});
+    const message = await openpgp.createMessage({text: JSON.stringify({test: 'test'})});
+    const cipher_text = await openpgp.encrypt({
+        message: message,
+        encryptionKeys: decoded_public_key,
+    });
+    
+    
+    const message_out = await openpgp.readMessage({
+        armoredMessage: cipher_text 
+    });
+    const decryption_result = await openpgp.decrypt({
+        message: message_out,
+        decryptionKeys: config.pgp_private_key
+    });
+
+
+
+    // end test zone
+
+
+
     // decrypt card information for hashing
     let integration_decrypted_card_information = null;
     try {
@@ -23,8 +48,9 @@ module.exports = purchase = async (config, postgres, user, client_generated_idem
         });
         const decryption_result = await openpgp.decrypt({
             message: integration_card_information_message,
-            verificationKeys: public_key,
-            decryptionKeys: private_key
+            verificationKeys: config.pgp_public_key,
+            decryptionKeys: config.pgp_private_key,
+            passwords: config.pgp_passphrase
         });
         integration_decrypted_card_information = decryption_result.data;
     } catch (error) {

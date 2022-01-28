@@ -10,29 +10,24 @@ module.exports = circle_integration_client = {
     },
 
     call_circle_api: async (endpoint, data) => {
-        // form request
+        if (!data) {
+            throw new Error('Data Required');
+        }
         const request = {
             method: 'post',
             url: `${config.server_url}${endpoint}`,
             headers: {
                 'Accept': 'application/json'
             },
-            mode: 'cors'
+            mode: 'cors',
+            data: data
         };
-        if (data !== null) {
-            request.data = data;
-        }
-        
-        // make request
         let response;
         try {
             response = await axios(request);
         } catch (request_error) {
-            // axios wont return the response normally on error codes, associate it here
-            response = request_error.response;
+            throw new Error(request_error.response.data.error);
         }
-
-        // get the response body from the response
         const response_body = response.data;
         return response_body;
     },
@@ -45,11 +40,7 @@ module.exports = circle_integration_client = {
         return Buffer.from(key, 'binary').toString('base64');
     },
 
-    encrypt_card_information: async (public_key, to_encrypt) => {
-        const card_details = {
-            number: card_number,
-            cvv: card_cvv
-        };
+    circle_encrypt_card_information: async (public_key, to_encrypt) => {
         const decoded_public_key = await openpgp.readKey({armoredKey: circle_integration_client.atob(public_key)});
         const message = await openpgp.createMessage({text: JSON.stringify(to_encrypt)});
         const cipher_text = await openpgp.encrypt({
@@ -59,16 +50,30 @@ module.exports = circle_integration_client = {
         return circle_integration_client.btoa(cipher_text);
     },
 
-    purchase: async (client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry = false) => {
-        const public_keys = await circle_integration_client.call_circle_api('/get_public_keys');
-        const circle_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
-        const integration_encrypted_card_information = await circle_integration_client.encrypt_card_information(public_keys.integration_public_key, {card_number: card_number});
+    integration_encrypt_card_information: async (public_key, to_encrypt) => {
+        const decoded_public_key = await openpgp.readKey({armoredKey: public_key});
+        const message = await openpgp.createMessage({text: JSON.stringify(to_encrypt)});
+        const cipher_text = await openpgp.encrypt({
+            message: message,
+            encryptionKeys: decoded_public_key,
+        });
+        return cipher_text;
+    },
+
+    purchase: async (client_generated_idempotency_key, user_id, session_hash, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry = false) => {
+        const public_keys = await circle_integration_client.call_circle_api('/get_public_keys', {
+            user_id: user_id
+        });
+        const circle_encrypted_card_information = await circle_integration_client.circle_encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
+        const integration_encrypted_card_information = await circle_integration_client.integration_encrypt_card_information(public_keys.integration_public_key, {card_number: card_number});
         const request_body = {
             client_generated_idempotency_key: client_generated_idempotency_key,
-            verification_type: verification_type,
             circle_public_key_id: public_keys.circle_public_key.keyId,
             circle_encrypted_card_information: circle_encrypted_card_information,
             integration_encrypted_card_information: integration_encrypted_card_information,
+            user_id: user_id,
+            session_hash: session_hash,
+            ip_address: ip_address,
             name_on_card: name_on_card,
             city: city,
             country: country,

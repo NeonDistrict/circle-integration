@@ -52,7 +52,7 @@ module.exports = parking = {
         return cb(null);
     },
     parking_monitor: (config) => {
-        const now = new Date.getTime();
+        const now = new Date().getTime();
 
         // a race condition may technically exist where a callback and notification are parked at the
         // same time, we must regularly check to see if two matching ids are parked waiting for each other

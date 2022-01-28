@@ -5,21 +5,21 @@ const express = require('express');
 const fatal_error = require('./server/fatal_error.js');
 const generate_pgp_key_pair = require('./server/utilities/generate_pgp_key_pair.js');
 const create_or_find_user = require('./server/create_or_find_user.js');
-const is_valid_email = require('./validation/is_valid_email.js');
-const is_valid_expiry_month = require('./validation/is_valid_expiry_month.js');
-const is_valid_expiry_year = require('./validation/is_valid_expiry_year.js');
-const is_valid_ip_address = require('./validation/is_valid_ip_address.js');
-const is_valid_sale_item_key = require('./validation/is_valid_sale_item_key.js');
-const is_valid_sha512_hex = require('./validation/is_valid_sha512_hex.js');
-const is_valid_string = require('./validation/is_valid_string.js');
-const is_valid_uuid = require('./validation/is_valid_uuid.js');
+const is_valid_email = require('./server/validation/is_valid_email.js');
+const is_valid_expiry_month = require('./server/validation/is_valid_expiry_month.js');
+const is_valid_expiry_year = require('./server/validation/is_valid_expiry_year.js');
+const is_valid_ip_address = require('./server/validation/is_valid_ip_address.js');
+const is_valid_sale_item_key = require('./server/validation/is_valid_sale_item_key.js');
+const is_valid_sha512_hex = require('./server/validation/is_valid_sha512_hex.js');
+const is_valid_string = require('./server/validation/is_valid_string.js');
+const is_valid_uuid = require('./server/validation/is_valid_uuid.js');
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
 const on_notification = require('./server/on_notification.js');
 const get_public_keys = require('./server/get_public_keys.js');
 const list_sale_items = require('./server/list_sale_items.js');
 const purchase = require('./server/purchase.js');
 const purchase_history = require('./server/purchase_history.js');
-const resolve_lingering_purchases_daemon = require('./server/resolve_lingering_purchases_daemon.js');
+const resolve_lingering_purchases = require('./server/resolve_lingering_purchases.js');
 const parking = require('./server/parking.js');
 
 module.exports = create_server = (config, postgres, cb) => {
@@ -288,12 +288,8 @@ module.exports = create_server = (config, postgres, cb) => {
                     return cb(error);
                 }
 
-                // start the resolve lingering purchases daemon
-                resolve_lingering_purchases_daemon(config, postgres);
-                
-                // start the parking monitor
-                // todo move this into a daemon as above
-                setInterval(parking.parking_monitor, config.parking_monitor_loop_time, config);
+                const resolve_lingering_purchases_interval = setInterval(resolve_lingering_purchases, config.resolve_lingering_purchases_loop_time, config, postgres);
+                const parking_monitor_interval = setInterval(parking.parking_monitor, config.parking_monitor_loop_time, config);
 
                 // server fully initialized, callback
                 const server = {
@@ -303,7 +299,8 @@ module.exports = create_server = (config, postgres, cb) => {
                     https_server: https_server,
                     shutdown: () => {
                         server.https_server.close();
-                        server.circle_integration_server.shutdown();
+                        clearInterval(resolve_lingering_purchases_interval);
+                        clearInterval(parking_monitor_interval);
                     }
                 };
                 return cb(null, server);

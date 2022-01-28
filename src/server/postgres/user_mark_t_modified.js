@@ -13,8 +13,7 @@ module.exports = user_mark_t_modified = (config, query, user_id, cb) => {
         UPDATE "users" SET
             "t_modified" = $1
         WHERE
-            "user_id"    = $2
-        LIMIT 1;
+            "user_id"    = $2;
     `;
     const values = [
         now,    // "t_modified"
