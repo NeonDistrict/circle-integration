@@ -16,43 +16,22 @@ module.exports = purchase = async (config, postgres, user, client_generated_idem
         });
     }
 
-
-    // test zone
-    const decoded_public_key = await openpgp.readKey({armoredKey: config.pgp_public_key});
-    const message = await openpgp.createMessage({text: JSON.stringify({test: 'test'})});
-    const cipher_text = await openpgp.encrypt({
-        message: message,
-        encryptionKeys: decoded_public_key,
-    });
-    
-    
-    const message_out = await openpgp.readMessage({
-        armoredMessage: cipher_text 
-    });
-    const decryption_result = await openpgp.decrypt({
-        message: message_out,
-        decryptionKeys: config.pgp_private_key
-    });
-
-
-
-    // end test zone
-
-
-
     // decrypt card information for hashing
     let integration_decrypted_card_information = null;
     try {
-        const integration_card_information_message = await openpgp.readMessage({
-            armoredMessage: integration_encrypted_card_information 
-        });
         const decryption_result = await openpgp.decrypt({
-            message: integration_card_information_message,
+            message: await openpgp.readMessage({
+                armoredMessage: integration_encrypted_card_information 
+            }),
             verificationKeys: config.pgp_public_key,
-            decryptionKeys: config.pgp_private_key,
-            passwords: config.pgp_passphrase
+            decryptionKeys: await openpgp.decryptKey({
+                privateKey: await openpgp.readPrivateKey({ 
+                    armoredKey: config.pgp_private_key 
+                }),
+                passphrase: config.pgp_passphrase
+            })
         });
-        integration_decrypted_card_information = decryption_result.data;
+        integration_decrypted_card_information = JSON.parse(decryption_result.data);
     } catch (error) {
         return cb({
             error: 'Integration Key Failure'
