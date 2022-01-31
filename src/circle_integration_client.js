@@ -26,7 +26,7 @@ module.exports = circle_integration_client = {
         try {
             response = await axios(request);
         } catch (request_error) {
-            throw new Error(request_error.response.data.error);
+            return request_error.response.data;
         }
         const response_body = response.data;
         return response_body;
