@@ -21,8 +21,7 @@ module.exports = create_card_mark_fraud = (
             "create_card_result"          = $3,
             "purchase_result"             = $4
         WHERE
-            "internal_purchase_id"        = $5
-        LIMIT 1;
+            "internal_purchase_id"        = $5;
     `;
     const values = [
         now,                         // "t_modified_purchase"

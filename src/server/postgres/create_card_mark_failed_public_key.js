@@ -22,8 +22,7 @@ module.exports = create_card_mark_failed_public_key = (
             "public_key_result"           = $4,
             "purchase_result"             = $5
         WHERE
-            "internal_purchase_id"        = $6
-        LIMIT 1;
+            "internal_purchase_id"        = $6;
     `;
     const values = [
         now,                         // "t_modified_purchase"

@@ -10,7 +10,7 @@ const is_valid_expiry_month = require('./server/validation/is_valid_expiry_month
 const is_valid_expiry_year = require('./server/validation/is_valid_expiry_year.js');
 const is_valid_ip_address = require('./server/validation/is_valid_ip_address.js');
 const is_valid_sale_item_key = require('./server/validation/is_valid_sale_item_key.js');
-const is_valid_sha512_hex = require('./server/validation/is_valid_sha512_hex.js');
+const is_valid_sha1_hex = require('./server/validation/is_valid_sha1_hex.js');
 const is_valid_string = require('./server/validation/is_valid_string.js');
 const is_valid_uuid = require('./server/validation/is_valid_uuid.js');
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
@@ -183,9 +183,9 @@ module.exports = create_server = (config, postgres, cb) => {
                 error: 'Invalid phone_number'
             });
         }
-        if (!is_valid_sha512_hex(req.body.session_hash)) {
+        if (!is_valid_sha1_hex(req.body.metadata_hash_session_id)) {
             return respond(res, {
-                error: 'Invalid session_hash'
+                error: 'Invalid metadata_hash_session_id'
             });
         }
         if (!is_valid_ip_address(req.body.ip_address)) {
@@ -217,7 +217,7 @@ module.exports = create_server = (config, postgres, cb) => {
             req.body.expiry_year,
             req.body.email, 
             req.body.phone_number, 
-            req.body.session_hash,
+            req.body.metadata_hash_session_id,
             req.body.ip_address,
             req.body.sale_item_key,
             respond.bind(this, res)

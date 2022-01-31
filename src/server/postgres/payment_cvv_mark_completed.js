@@ -1,13 +1,7 @@
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
-module.exports = payment_cvv_mark_completed = (
-    config, 
-    query, 
-    internal_purchase_id,
-    payment_cvv_id,
-    cb
-) => {
+module.exports = payment_cvv_mark_completed = (config, query, internal_purchase_id, payment_cvv_id, cb) => {
     if (!is_valid_uuid(internal_purchase_id)) {
         return cb({
             error: 'Invalid internal_purchase_id'
@@ -28,8 +22,7 @@ module.exports = payment_cvv_mark_completed = (
             "purchase_result"             = $4,
             "payment_cvv_id"              = $5
         WHERE
-            "internal_purchase_id"        = $5
-        LIMIT 1;
+            "internal_purchase_id"        = $6;
     `;
     const values = [
         now,                         // "t_modified_purchase"

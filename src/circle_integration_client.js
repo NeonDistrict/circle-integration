@@ -60,7 +60,7 @@ module.exports = circle_integration_client = {
         return cipher_text;
     },
 
-    purchase: async (client_generated_idempotency_key, user_id, session_hash, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry = false) => {
+    purchase: async (client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry = false) => {
         const public_keys = await circle_integration_client.call_circle_api('/get_public_keys', {
             user_id: user_id
         });
@@ -72,7 +72,7 @@ module.exports = circle_integration_client = {
             circle_encrypted_card_information: circle_encrypted_card_information,
             integration_encrypted_card_information: integration_encrypted_card_information,
             user_id: user_id,
-            session_hash: session_hash,
+            metadata_hash_session_id: metadata_hash_session_id,
             ip_address: ip_address,
             name_on_card: name_on_card,
             city: city,

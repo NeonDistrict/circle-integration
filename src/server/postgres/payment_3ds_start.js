@@ -22,8 +22,7 @@ module.exports = payment_3ds_start = (config, query, internal_purchase_id, payme
             "payment_3ds_idempotency_key" = $4,
             "payment_3ds_result"          = $5
         WHERE
-            "internal_purchase_id"        = $6
-        LIMIT 1;
+            "internal_purchase_id"        = $6;
     `;
     const values = [
         now,                         // "t_modified_purchase"

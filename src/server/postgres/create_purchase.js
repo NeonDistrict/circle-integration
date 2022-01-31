@@ -2,6 +2,7 @@ const is_valid_sale_item_key = require('../validation/is_valid_sale_item_key.js'
 const is_valid_sale_item_price = require('../validation/is_valid_sale_item_price.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const is_valid_sha512_hex = require('../validation/is_valid_sha512_hex.js');
+const is_valid_sha1_hex = require('../validation/is_valid_sha1_hex.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
 module.exports = create_purchase = (
@@ -64,7 +65,7 @@ module.exports = create_purchase = (
             error: 'Invalid metadata_hash_phone_number'
         });
     }
-    if (!is_valid_sha512_hex(metadata_hash_session_id)) {
+    if (!is_valid_sha1_hex(metadata_hash_session_id)) {
         return cb({
             error: 'Invalid metadata_hash_session_id'
         });
@@ -221,15 +222,15 @@ module.exports = create_purchase = (
         'NONE',                            // "payment_unsecure_result",
         null,                              // "payment_unsecure_id",
         metadata_hash_email,               // "metadata_hash_email",
-        metadata_hash_phone_number,               // "metadata_hash_phone_number",
+        metadata_hash_phone_number,        // "metadata_hash_phone_number",
         metadata_hash_session_id,          // "metadata_hash_session_id",
         metadata_hash_ip_address,          // "metadata_hash_ip_address",
         metadata_hash_name_on_card,        // "metadata_hash_name_on_card",
         metadata_hash_city,                // "metadata_hash_city",
         metadata_hash_country,             // "metadata_hash_country",
         metadata_hash_district,            // "metadata_hash_district",
-        metadata_hash_address_line_1,           // "metadata_hash_address_line_1",
-        metadata_hash_address_line_2,           // "metadata_hash_address_line_2",
+        metadata_hash_address_line_1,      // "metadata_hash_address_line_1",
+        metadata_hash_address_line_2,      // "metadata_hash_address_line_2",
         metadata_hash_postal_zip_code,     // "metadata_hash_postal_zip_code",
         metadata_hash_expiry_month,        // "metadata_hash_expiry_month",
         metadata_hash_expiry_year,         // "metadata_hash_expiry_year",

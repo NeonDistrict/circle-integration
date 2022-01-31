@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const call_circle = require('./call_circle.js');
 const assess_create_card_result = require('./assess_create_card_result.js');
 
-module.exports = create_card = (config, postgres, user_id, internal_purchase_id, circle_public_key_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, session_id, ip_address, cb) => {
+module.exports = create_card = (config, postgres, user_id, internal_purchase_id, circle_public_key_id, encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, cb) => {
     const create_card_idempotency_key = uuidv4();
 
     postgres.create_card_start(internal_purchase_id, create_card_idempotency_key, (error) => {
@@ -27,7 +27,7 @@ module.exports = create_card = (config, postgres, user_id, internal_purchase_id,
             metadata: {
                 email: email,
                 phoneNumber: phone_number,
-                sessionId: session_id,
+                sessionId: metadata_hash_session_id,
                 ipAddress: ip_address
             }
         };

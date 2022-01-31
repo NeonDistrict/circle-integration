@@ -14,8 +14,7 @@ module.exports = user_mark_fraud = (config, query, user_id, cb) => {
             "t_modified" = $1
             "fraud"      = $2
         WHERE
-            "user_id"    = $3
-        LIMIT 1;
+            "user_id"    = $3;
     `;
     const values = [
         now,    // "t_modified"

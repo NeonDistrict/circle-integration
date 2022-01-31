@@ -16,7 +16,7 @@ module.exports = assess_create_card_result = (config, postgres, user_id, interna
             });
 
         case add_card_status_enum.FAILED:
-            return postgres.create_card_mark_failed(internal_purchase_id, create_card_result.id, (error) => {
+            return postgres.create_card_mark_failed(internal_purchase_id, (error) => {
                 if (error) {
                     return cb(error);
                 }
@@ -27,7 +27,7 @@ module.exports = assess_create_card_result = (config, postgres, user_id, interna
             });
         
         case add_card_status_enum.PENDING:
-            return postgres.create_card_mark_pending(internal_purchase_id, create_card_result.id, (error) => {
+            return postgres.create_card_mark_pending(internal_purchase_id, (error) => {
                 if (error) {
                     return cb(error);
                 }
@@ -35,7 +35,7 @@ module.exports = assess_create_card_result = (config, postgres, user_id, interna
                     if (error) {
                         return cb(error);
                     }
-                    return assess_create_card_result(postgres, internal_purchase_id, create_card_result, cb);
+                    return assess_create_card_result(config, postgres, user_id, internal_purchase_id, create_card_result, cb);
                 });
             });
 

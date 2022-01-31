@@ -15,8 +15,7 @@ module.exports = payment_3ds_mark_pending = (config, query, internal_purchase_id
             "t_modified_payment_3ds"      = $2,
             "payment_3ds_result"          = $3
         WHERE
-            "internal_purchase_id"        = $4
-        LIMIT 1;
+            "internal_purchase_id"        = $4;
     `;
     const values = [
         now,                         // "t_modified_purchase"

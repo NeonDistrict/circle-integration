@@ -18,7 +18,7 @@ module.exports = create_payment_cvv = (config, postgres, user_id, internal_purch
                 ipAddress: ip_address,
             },
             amount: {
-                amount: sale_item.amount,
+                amount: sale_item.sale_item_price,
                 currency: sale_item.currency
             },
             autoCapture: true,

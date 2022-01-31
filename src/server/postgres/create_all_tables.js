@@ -170,7 +170,7 @@ const create_purchases_table = (config, query, cb) => {
         "payment_unsecure_id"                UUID,                               -- the id returned from circle server as the result of a payment unsecure request
         "metadata_hash_email"                CHAR(128) NOT NULL,                 -- the hashed email provided by the player
         "metadata_hash_phone_number"         CHAR(128) NOT NULL,                 -- the hashed phone numbe provided by the player
-        "metadata_hash_session_id"           CHAR(128) NOT NULL,                 -- the hashed session id provided by the game server
+        "metadata_hash_session_id"           CHAR(40) NOT NULL,                  -- the hashed session id provided by the game server
         "metadata_hash_ip_address"           CHAR(128) NOT NULL,                 -- the hashed ip address provided by the game server
         "metadata_hash_name_on_card"         CHAR(128) NOT NULL,                 -- the hashed name on the payment card
         "metadata_hash_city"                 CHAR(128) NOT NULL,                 -- the hashed city from the billing address
@@ -196,15 +196,15 @@ const create_purchases_table = (config, query, cb) => {
         UNIQUE ("payment_unsecure_id"),
         CONSTRAINT "fk_user_id" FOREIGN KEY("user_id") REFERENCES "users"("user_id"),
         CONSTRAINT "metadata_hash_email_length"                CHECK (char_length("metadata_hash_email")                = 128),
-        CONSTRAINT "metadata_hash_phone_number_length"                CHECK (char_length("metadata_hash_phone_number")                = 128),
-        CONSTRAINT "metadata_hash_session_id_length"           CHECK (char_length("metadata_hash_session_id")           = 128),
+        CONSTRAINT "metadata_hash_phone_number_length"         CHECK (char_length("metadata_hash_phone_number")         = 128),
+        CONSTRAINT "metadata_hash_session_id_length"           CHECK (char_length("metadata_hash_session_id")           = 40),
         CONSTRAINT "metadata_hash_ip_address_length"           CHECK (char_length("metadata_hash_ip_address")           = 128),
         CONSTRAINT "metadata_hash_name_on_card_length"         CHECK (char_length("metadata_hash_name_on_card")         = 128),
         CONSTRAINT "metadata_hash_city_length"                 CHECK (char_length("metadata_hash_city")                 = 128),
         CONSTRAINT "metadata_hash_country_length"              CHECK (char_length("metadata_hash_country")              = 128),
         CONSTRAINT "metadata_hash_district_length"             CHECK (char_length("metadata_hash_district")             = 128),
-        CONSTRAINT "metadata_hash_address_line_1_length"            CHECK (char_length("metadata_hash_address_line_1")            = 128),
-        CONSTRAINT "metadata_hash_address_line_2_length"            CHECK (char_length("metadata_hash_address_line_2")            = 128),
+        CONSTRAINT "metadata_hash_address_line_1_length"       CHECK (char_length("metadata_hash_address_line_1")       = 128),
+        CONSTRAINT "metadata_hash_address_line_2_length"       CHECK (char_length("metadata_hash_address_line_2")       = 128),
         CONSTRAINT "metadata_hash_postal_zip_code_length"      CHECK (char_length("metadata_hash_postal_zip_code")      = 128),
         CONSTRAINT "metadata_hash_expiry_month_length"         CHECK (char_length("metadata_hash_expiry_month")         = 128),
         CONSTRAINT "metadata_hash_expiry_year_length"          CHECK (char_length("metadata_hash_expiry_year")          = 128),
