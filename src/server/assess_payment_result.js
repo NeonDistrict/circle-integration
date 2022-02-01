@@ -17,7 +17,7 @@ module.exports = assess_payment_result = (config, postgres, internal_purchase_id
                     return cb(error);
                 }
                 // todo we gotta get sale item key in here
-                return credit_game(config, postgres, internal_purchase_id, user.user_id, game_id, sale_item_key, (error) => {
+                return credit_game(config, postgres, internal_purchase_id, user_id, 'game_id', 'sale_item_key', (error) => {
                     if (error) {
                         return cb(error);
                     }
@@ -54,7 +54,9 @@ module.exports = assess_payment_result = (config, postgres, internal_purchase_id
                     return cb(error);
                 }
                 return cb(null, {
-                    redirect: payment_result.requiredAction.redirectUrl
+                    redirect: payment_result.requiredAction.redirectUrl,
+                    internal_purchase_id: internal_purchase_id,
+                    payment_id: payment_result.id
                 });
             });
             

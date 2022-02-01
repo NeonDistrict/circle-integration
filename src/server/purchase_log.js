@@ -8,6 +8,7 @@ fs.mkdirSync('./logs');
 
 let logs = {};
 module.exports = purchase_log = (internal_purchase_id, event) => {
+    console.log(event); // todo remove
     if (!logs.hasOwnProperty(internal_purchase_id)) {
         logs[internal_purchase_id] = [];
     }

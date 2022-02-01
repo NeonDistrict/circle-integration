@@ -2,6 +2,7 @@ const Pool = require('pg').Pool;
 const fatal_error = require('../fatal_error.js');
 
 module.exports = create_postgres = (config, cb) => {
+    console.log('create postgres pool');
     const pool = new Pool({
         user: config.postgres_user,
         host: config.postgres_host,
@@ -135,5 +136,6 @@ module.exports = create_postgres = (config, cb) => {
         }
     };
 
+    console.log('postgres setup complete');
     return cb(null, postgres);
 };

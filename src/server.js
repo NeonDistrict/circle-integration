@@ -18,6 +18,7 @@ const on_notification = require('./server/on_notification.js');
 const get_public_keys = require('./server/get_public_keys.js');
 const list_sale_items = require('./server/list_sale_items.js');
 const purchase = require('./server/purchase.js');
+const purchase_finalize = require('./server/purchase_finalize.js');
 const purchase_history = require('./server/purchase_history.js');
 const resolve_lingering_purchases = require('./server/resolve_lingering_purchases.js');
 const parking = require('./server/parking.js');
@@ -223,6 +224,27 @@ module.exports = create_server = (config, postgres, cb) => {
             respond.bind(this, res)
         );
     });
+
+    app.post('/purchase_finalize', async (req, res) => {
+        if (!is_valid_uuid(req.body.internal_purchase_id)) {
+            return respond(res, {
+                error: 'Invalid internal_purchase_id'
+            });
+        }
+        if (!is_valid_uuid(req.body.payment_id)) {
+            return respond(res, {
+                error: 'Invalid payment_id'
+            });
+        }
+        return purchase_finalize(
+            config,
+            postgres,
+            req.user.user_id,
+            req.body.internal_purchase_id,
+            req.body.payment_id,
+            respond.bind(this, res)
+        );
+    });
     
     app.post('/purchase_history', async (req, res) => {
         if (!is_valid_uuid(req.body.user_id)) {
@@ -271,6 +293,7 @@ module.exports = create_server = (config, postgres, cb) => {
     });
 
     // generate the pgp keypair
+    console.log('generating pgp keypair');
     generate_pgp_key_pair((error, pgp_passphrase, pgp_private_key, pgp_public_key) => {
         if (error) {
             return cb(error);
@@ -280,14 +303,17 @@ module.exports = create_server = (config, postgres, cb) => {
         config.pgp_public_key = pgp_public_key;
     
         // start the https server
+        console.log('https listen');
         https_server.listen(config.port, () => {
             
             // once the https server is listening we setup the aws sns subscription
+            console.log('setup notification subscription');
             setup_notifications_subscription(config, config.sns_endpoint_url, (error) => {
                 if (error) {
                     return cb(error);
                 }
 
+                console.log('start intervals');
                 const resolve_lingering_purchases_interval = setInterval(resolve_lingering_purchases, config.resolve_lingering_purchases_loop_time, config, postgres);
                 const parking_monitor_interval = setInterval(parking.parking_monitor, config.parking_monitor_loop_time, config);
 
@@ -303,6 +329,7 @@ module.exports = create_server = (config, postgres, cb) => {
                         clearInterval(parking_monitor_interval);
                     }
                 };
+                console.log('server setup complete');
                 return cb(null, server);
             });
         });

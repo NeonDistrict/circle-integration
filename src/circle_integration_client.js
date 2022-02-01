@@ -114,5 +114,15 @@ module.exports = circle_integration_client = {
 
         // return the failure or success result of the purchase
         return purchase_result;
+    },
+
+    purchase_finalize: async (user_id, internal_purchase_id, payment_id) => {
+        const request_body = {
+            user_id: user_id,
+            internal_purchase_id: internal_purchase_id,
+            payment_id: payment_id
+        }
+        const purchase_finalize_result = await circle_integration_client.call_circle_api('/purchase_finalize', request_body);
+        return purchase_finalize_result;
     }
 };

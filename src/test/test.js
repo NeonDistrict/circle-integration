@@ -30,7 +30,7 @@ const ok_purchase = {
     sale_item_key: 'NEON_1000'
 };
 
-const handle_redirect = async function (purchase_result) {
+const handle_redirect = async function (purchase_result, user_id) {
     assert(purchase_result.hasOwnProperty('redirect'));
     
     // get the circle session id, note this is not the session hash we create for integration
@@ -53,8 +53,7 @@ const handle_redirect = async function (purchase_result) {
     // the 3ds page goes into a spin wait while repeat polling circle, poll while processing until processeds
     let status_result;
     do {
-        console.log('wait');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
         status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
         assert(status_result.hasOwnProperty('data'));
         assert(status_result.data.hasOwnProperty('data'));
@@ -62,8 +61,12 @@ const handle_redirect = async function (purchase_result) {
     } while (status_result.status === 'processing');
     assert.strictEqual(status_result.status, 'processed');
     
-    console.log('we should be doing a get against our server to finalize the result with the purchase id that gets returned in the processed status result');
-
+    const purchase_finalize_result = await circle_integration_client.purchase_finalize(
+        user_id,
+        purchase_result.internal_purchase_id,
+        purchase_result.payment_id
+    );
+    return purchase_finalize_result;
 };
 
 describe('circle-integration-server', function () {
@@ -354,7 +357,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        await handle_redirect(purchase_result);
+        await handle_redirect(purchase_result, ok_purchase.user_id);
     });
 
     it('dont allow duplicate idempotency keys', async function () {

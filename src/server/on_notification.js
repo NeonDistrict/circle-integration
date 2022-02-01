@@ -4,12 +4,14 @@ const parking = require('./parking.js');
 module.exports = on_notification = async (notification, cb) => {
     // if this is a subscription confirmation
     if (notification.Type === 'SubscriptionConfirmation') {
+        console.log('got subscription confirmation');
         const subscribe_url = notification.SubscribeURL;
         const request = {
             method: 'get',
             url: subscribe_url
         };
         try {
+            console.log('confirming subscription');
             await axios(request);
         } catch (request_error) {
             return cb({
@@ -17,6 +19,7 @@ module.exports = on_notification = async (notification, cb) => {
             });
         }
 
+        console.log('subscription confirmed');
         return cb(null);
     }
 

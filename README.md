@@ -3,6 +3,10 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ## Todo
 
+./node_modules/.bin/_mocha -u bdd --timeout 9999999 --colors ./src/test/test.js
+
++ 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
+
 + 3ds purchases finishing need to be credited to the game, player needs verification of this
 + does circle have a way to return 3ds not available
 + need to verify notifications via aws docs or else anyone can post in there
@@ -33,6 +37,8 @@ Contains documentation, demo, and back/front end components required to integrat
 ## Notes
 
 + If a purchase request is closed, dropped, or disconneted before a response can be received, and that purchase can successfully issue a 3DSecure redirect to the player, that redirect link will be lost and a new purchase must be created as the original purchase is considered abandonded. If an identical purchase request is made with the same client generated idempotency key a purchase result of abandoned will be returned as the redirect link cannot be recovered at this point.
+
++ (this whole logic flow should be documented) 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
 
 
 ## Useful Links

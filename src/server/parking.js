@@ -89,6 +89,9 @@ module.exports = parking = {
         // a myriad reasons like dropped connection, or an aws outage, etc. we must detect
         // anything left parked, clean it up, and notify a dev.
         // we gather ids as to not disrupt the for-in enumeration
+        // todo: do we try to resolve abandons here or do we let the lingerer get it?
+        
+        // abandoned notifications...
         const abandoned_notification_ids = [];
         for (const parked_notification_id in parked_notifications) {
             const parked_notification = parked_notifications[parked_notification_id];
@@ -108,6 +111,8 @@ module.exports = parking = {
                 notification: parked_notification
             });
         }
+
+        // abandoned callbacks...
         const abandoned_callback_ids = [];
         for (const parked_callback_id in parked_callbacks) {
             const parked_callback = parked_callbacks[parked_callback_id];

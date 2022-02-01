@@ -27,7 +27,7 @@ module.exports = payment_3ds_mark_completed = (config, query, internal_purchase_
             "purchase_result"             = $4,
             "payment_3ds_id"              = $5
         WHERE
-            "internal_purchase_id"        = $5;
+            "internal_purchase_id"        = $6;
     `;
     const values = [
         now,                         // "t_modified_purchase"
