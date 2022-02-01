@@ -6,7 +6,7 @@ const create_payment = require('./create_payment.js');
 const is_valid_card_number = require('./validation/is_valid_card_number.js');
 const is_purchase_idempotent_equal = require('./utilities/is_purchase_idempotent_equal.js');
 const assess_existing_purchase_result = require('./assess_existing_purchase_result.js');
-const purchase_log = require('./server/purchase_log.js');
+const purchase_log = require('./purchase_log.js');
 
 module.exports = purchase = async (config, postgres, user_id, client_generated_idempotency_key, circle_public_key_id, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, sale_item_key, cb) => {
     // find sale item

@@ -283,7 +283,6 @@ module.exports = create_server = (config, postgres, cb) => {
         https_server.listen(config.port, () => {
             
             // once the https server is listening we setup the aws sns subscription
-            /* todo uncomment
             setup_notifications_subscription(config, config.sns_endpoint_url, (error) => {
                 if (error) {
                     return cb(error);
@@ -291,7 +290,7 @@ module.exports = create_server = (config, postgres, cb) => {
 
                 const resolve_lingering_purchases_interval = setInterval(resolve_lingering_purchases, config.resolve_lingering_purchases_loop_time, config, postgres);
                 const parking_monitor_interval = setInterval(parking.parking_monitor, config.parking_monitor_loop_time, config);
-*/
+
                 // server fully initialized, callback
                 const server = {
                     config: config,
@@ -305,7 +304,7 @@ module.exports = create_server = (config, postgres, cb) => {
                     }
                 };
                 return cb(null, server);
-           // });
+            });
         });
     });
 };

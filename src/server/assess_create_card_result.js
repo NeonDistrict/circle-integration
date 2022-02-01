@@ -40,7 +40,7 @@ module.exports = assess_create_card_result = (config, postgres, internal_purchas
                     if (error) {
                         return cb(error);
                     }
-                    return assess_create_card_result(config, postgres, user_id, internal_purchase_id, create_card_result, cb);
+                    return assess_create_card_result(config, postgres, internal_purchase_id, user_id, create_card_result, cb);
                 });
             });
 

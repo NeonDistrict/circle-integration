@@ -46,7 +46,7 @@ module.exports = create_payment_cvv = (config, postgres, internal_purchase_id, u
             const mark_redirected  = null;
             const mark_pending     = postgres.payment_cvv_mark_pending;
             const mark_completed   = postgres.payment_cvv_mark_completed;
-            assess_payment_result(config, postgres, user_id, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
+            assess_payment_result(config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
         });
     });
 };

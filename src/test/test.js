@@ -53,6 +53,8 @@ const handle_redirect = async function (purchase_result) {
     // the 3ds page goes into a spin wait while repeat polling circle, poll while processing until processeds
     let status_result;
     do {
+        console.log('wait');
+        await new Promise(resolve => setTimeout(resolve, 2000));
         status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
         assert(status_result.hasOwnProperty('data'));
         assert(status_result.data.hasOwnProperty('data'));

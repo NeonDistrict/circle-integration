@@ -1,9 +1,10 @@
 const fs = require('fs');
 
 // todo this should be s3 eventually
-if (!fs.existsSync('./logs')) {
-    fs.mkdirSync('./logs');
+if (fs.existsSync('./logs')) {
+    fs.rmSync('./logs', { recursive: true })
 }
+fs.mkdirSync('./logs');
 
 let logs = {};
 module.exports = purchase_log = (internal_purchase_id, event) => {
