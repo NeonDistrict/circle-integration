@@ -4,32 +4,12 @@ const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const is_valid_sha512_hex = require('../validation/is_valid_sha512_hex.js');
 const is_valid_sha1_hex = require('../validation/is_valid_sha1_hex.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
+const purchase_log = require('../purchase_log.js');
 
-module.exports = create_purchase = (
-    config, 
-    query, 
-    internal_purchase_id,
-    user_id,
-    sale_item_key,
-    sale_item_price,
-    client_generated_idempotency_key,
-    metadata_hash_email,
-    metadata_hash_phone_number,
-    metadata_hash_session_id,
-    metadata_hash_ip_address,
-    metadata_hash_name_on_card,
-    metadata_hash_city,
-    metadata_hash_country,
-    metadata_hash_district,
-    metadata_hash_address_line_1,
-    metadata_hash_address_line_2,
-    metadata_hash_postal_zip_code,
-    metadata_hash_expiry_month,
-    metadata_hash_expiry_year,
-    metadata_hash_card_number,
-    metadata_hash_circle_public_key_id,
-    cb
-) => {
+module.exports = create_purchase = (config, query, internal_purchase_id, user_id, sale_item_key, sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone_number, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_line_1, metadata_hash_address_line_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_circle_public_key_id, cb) => {
+    purchase_log(internal_purchase_id, {
+        event: 'create_purchase'
+    });
     if (!is_valid_uuid(internal_purchase_id)) {
         return cb({
             error: 'Invalid internal_purchase_id'

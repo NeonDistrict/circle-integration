@@ -28,6 +28,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + add returns to all callback entry points, or switch to promises and a better error response scheme
 + where do we credit the game? we need to credit the game in order to mark the purchase result as complete
 + to many non fraud failures should lock up an account as fraud
++ all requests about a certain internal purchase id could be stored in a single object with that id as the name
 
 ## Notes
 

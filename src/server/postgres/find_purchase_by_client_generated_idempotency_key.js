@@ -1,7 +1,12 @@
 const fatal_error = require('../fatal_error.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
+const purchase_log = require('../purchase_log.js');
 
-module.exports = find_purchase_by_client_generated_idempotency_key = (config, query, client_generated_idempotency_key, cb) => {
+module.exports = find_purchase_by_client_generated_idempotency_key = (config, query, internal_purchase_id, client_generated_idempotency_key, cb) => {
+    purchase_log(internal_purchase_id, {
+        event: 'find_purchase_by_client_generated_idempotency_key'
+    });
+    
     if (!is_valid_uuid(client_generated_idempotency_key)) {
         return cb({
             error: 'Invalid client_generated_idempotency_key'

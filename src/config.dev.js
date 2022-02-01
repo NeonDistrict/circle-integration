@@ -9,12 +9,12 @@ config.resolve_lingering_purchases_loop_time = 60000 * 5; // 5m
 config.parking_monitor_loop_time = 5000; // 5s
 config.parking_abandoned_time = 60000 * 30; // 30m
 
-config.api_sandbox_key = 'QVBJX0tFWTozZjk5YzRmMDdlZjJlM2RkNjlmNjVmNzk5YjU5YjE2NzowODc0NDVhMzk1NjY3YjU2MWY4OTBjODk1NjVlMTg3Mg==';
+config.api_sandbox_key = 'QVBJX0tFWTpjZjkyYTNiYjE4MGJiMjlmN2Y2YTdhZWY5NGY5MGM1Yjo2YWM5M2IzNWJiODZkZjMwZjE1YzRiN2I0NDllNTU3ZA==';
 config.api_uri_base = 'https://api-sandbox.circle.com/v1/';
 config.host = 'dev.circle-integration.neondistrict.io';
 config.port = 8443;
 config.server_url = `https://${config.host}:${config.port}`;
-config.sns_endpoint = '/aws_sns3';
+config.sns_endpoint = '/aws_sns4';
 config.sns_endpoint_url = `${config.server_url}${config.sns_endpoint}`;
 
 config.three_d_secure_server_port = 8444;

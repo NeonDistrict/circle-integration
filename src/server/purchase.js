@@ -6,6 +6,7 @@ const create_payment = require('./create_payment.js');
 const is_valid_card_number = require('./validation/is_valid_card_number.js');
 const is_purchase_idempotent_equal = require('./utilities/is_purchase_idempotent_equal.js');
 const assess_existing_purchase_result = require('./assess_existing_purchase_result.js');
+const purchase_log = require('./server/purchase_log.js');
 
 module.exports = purchase = async (config, postgres, user_id, client_generated_idempotency_key, circle_public_key_id, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, sale_item_key, cb) => {
     // find sale item
@@ -60,16 +61,38 @@ module.exports = purchase = async (config, postgres, user_id, client_generated_i
     const metadata_hash_card_number          = sha512(integration_decrypted_card_information.card_number);
     const metadata_hash_circle_public_key_id = sha512(circle_public_key_id);
 
+    purchase_log(internal_purchase_id, {
+        event: 'purchase',
+        details: {
+            user_id, client_generated_idempotency_key, circle_public_key_id, circle_encrypted_card_information, integration_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, sale_item_key,
+            metadata: {
+                metadata_hash_email,
+                metadata_hash_phone_number,
+                metadata_hash_ip_address,
+                metadata_hash_name_on_card,
+                metadata_hash_city,
+                metadata_hash_country,
+                metadata_hash_district,
+                metadata_hash_address_line_1,
+                metadata_hash_address_line_2,
+                metadata_hash_postal_zip_code,
+                metadata_hash_expiry_month,
+                metadata_hash_expiry_year,
+                metadata_hash_card_number,
+                metadata_hash_circle_public_key_id
+            }
+        }
+    });
+
     // todo all fraud checks need to happen right here and not be passed through
 
-    console.log('find_purchase_by_client_generated_idempotency_key');
-    postgres.find_purchase_by_client_generated_idempotency_key(client_generated_idempotency_key, (error, existing_purchase) => {
+    postgres.find_purchase_by_client_generated_idempotency_key(internal_purchase_id, client_generated_idempotency_key, (error, existing_purchase) => {
         if (error) {
             return cb(error);
         }
         if (existing_purchase !== null) {
             if (is_purchase_idempotent_equal(existing_purchase, user_id, sale_item.sale_item_key, sale_item.sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone_number, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_line_1, metadata_hash_address_line_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_circle_public_key_id)) {
-                return assess_existing_purchase_result(existing_purchase, cb);
+                return assess_existing_purchase_result(internal_purchase_id, existing_purchase, cb);
             } else {
                 return cb({
                     error: 'Idempotency Collision',
@@ -77,12 +100,10 @@ module.exports = purchase = async (config, postgres, user_id, client_generated_i
                 });
             }
         }
-        console.log('create_purchase');
         postgres.create_purchase(internal_purchase_id, user_id, sale_item.sale_item_key, sale_item.sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone_number, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_line_1, metadata_hash_address_line_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_circle_public_key_id, (error) => {
             if (error) {
                 return cb(error);
             }
-            console.log('create_card');
             create_card(config, postgres, user_id, internal_purchase_id, circle_public_key_id, circle_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, (error, card_id) => {
                 if (error) {
                     return cb(error);

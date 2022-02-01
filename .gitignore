@@ -105,3 +105,6 @@ dist
 
 # keys
 keys/
+
+# logs
+logs/

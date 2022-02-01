@@ -30,6 +30,40 @@ const ok_purchase = {
     sale_item_key: 'NEON_1000'
 };
 
+const handle_redirect = async function (purchase_result) {
+    assert(purchase_result.hasOwnProperty('redirect'));
+    
+    // get the circle session id, note this is not the session hash we create for integration
+    const session_id = purchase_result.redirect.split('session/')[1];
+    
+    // load the 3ds page which invokes the session with circle
+    const three_d_secure_page = await axios.get(purchase_result.redirect);
+    
+    // the 3ds page sends device information to circle, fake that 
+    const device_information_result = await axios.post('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/deviceInformation', {
+        colorDepth: 32,
+        javaEnabled: false,
+        language: 'en-US',
+        screenHeight: 1080,
+        screenWidth: 1920,
+        timeZoneOffset: 300,
+        userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'
+    });
+
+    // the 3ds page goes into a spin wait while repeat polling circle, poll while processing until processeds
+    let status_result;
+    do {
+        status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
+        assert(status_result.hasOwnProperty('data'));
+        assert(status_result.data.hasOwnProperty('data'));
+        status_result = status_result.data.data;
+    } while (status_result.status === 'processing');
+    assert.strictEqual(status_result.status, 'processed');
+    
+    console.log('we should be doing a get against our server to finalize the result with the purchase id that gets returned in the processed status result');
+
+};
+
 describe('circle-integration-server', function () {
     let test_server;
     let test_postgres;
@@ -297,7 +331,7 @@ describe('circle-integration-server', function () {
         assert.strictEqual(result.error, 'Body Too Large');
     });
 
-    it('make a normal purchase', async function () {
+    it.only('make a normal purchase', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             ok_purchase.user_id,
@@ -318,30 +352,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert(purchase_result.hasOwnProperty('redirect'));
-        
-        const session_id = purchase_result.redirect.split('session/')[1];
-        const three_d_secure_page = await axios.get(purchase_result.redirect);
-        const device_information_result = await axios.post('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/deviceInformation', {
-            colorDepth: 32,
-            javaEnabled: false,
-            language: 'en-US',
-            screenHeight: 1080,
-            screenWidth: 1920,
-            timeZoneOffset: 300,
-            userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'
-        });
-        let status_result;
-        do {
-            status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
-            assert(status_result.hasOwnProperty('data'));
-            assert(status_result.data.hasOwnProperty('data'));
-            status_result = status_result.data.data;
-        } while (status_result.status === 'processing');
-        assert.strictEqual(status_result.status, 'processed');
-        
-        console.log('we should be doing a get against our server to finalize the result with the purchase id that gets returned in the processed status result');
-
+        await handle_redirect(purchase_result);
     });
 
     it('dont allow duplicate idempotency keys', async function () {
