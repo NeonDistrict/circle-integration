@@ -1,8 +1,13 @@
 const { v4: uuidv4 } = require('uuid');
 const call_circle = require('./call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
+const purchase_log = require('./purchase_log.js');
 
-module.exports = create_payment_3ds = (config, postgres, user_id, internal_purchase_id, card_id, circle_public_key_id, encrypted_card_information, email, phone_number, metadata_hash_session_id, ip_address, sale_item, cb) => {
+module.exports = create_payment_3ds = (config, postgres, internal_purchase_id, user_id, card_id, circle_public_key_id, encrypted_card_information, email, phone_number, metadata_hash_session_id, ip_address, sale_item, cb) => {
+    purchase_log(internal_purchase_id, {
+        event: 'create_payment_3ds'
+    });
+    
     const payment_3ds_idempotency_key = uuidv4();
     postgres.payment_3ds_start(internal_purchase_id, payment_3ds_idempotency_key, (error) => {
         if (error) {

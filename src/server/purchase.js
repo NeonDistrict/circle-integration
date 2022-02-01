@@ -104,12 +104,11 @@ module.exports = purchase = async (config, postgres, user_id, client_generated_i
             if (error) {
                 return cb(error);
             }
-            create_card(config, postgres, user_id, internal_purchase_id, circle_public_key_id, circle_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, (error, card_id) => {
+            create_card(config, postgres, internal_purchase_id, user_id, circle_public_key_id, circle_encrypted_card_information, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, metadata_hash_session_id, ip_address, (error, card_id) => {
                 if (error) {
                     return cb(error);
                 }
-                console.log('create_payment');
-                create_payment(config, postgres, user_id, internal_purchase_id, card_id, circle_public_key_id, circle_encrypted_card_information, email, phone_number, metadata_hash_session_id, ip_address, sale_item, (error, assessment) => {
+                create_payment(config, postgres, internal_purchase_id, user_id, card_id, circle_public_key_id, circle_encrypted_card_information, email, phone_number, metadata_hash_session_id, ip_address, sale_item, (error, assessment) => {
                     if (error) {
                         return cb(error);
                     }

@@ -10,6 +10,7 @@ module.exports = create_purchase = (config, query, internal_purchase_id, user_id
     purchase_log(internal_purchase_id, {
         event: 'create_purchase'
     });
+    
     if (!is_valid_uuid(internal_purchase_id)) {
         return cb({
             error: 'Invalid internal_purchase_id'

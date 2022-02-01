@@ -1,8 +1,13 @@
 const fatal_error = require('./fatal_error.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
 const assess_payment_risk = require('./assess_payment_risk.js');
+const purchase_log = require('./purchase_log.js');
 
-module.exports = assess_payment_failure = (config, postgres, user_id, internal_purchase_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
+module.exports = assess_payment_failure = (config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
+    purchase_log(internal_purchase_id, {
+        event: 'assess_payment_failure'
+    });
+    
     // todo does risk come back as failed? or some other result?
     // this could go into the switch then
     // todo do we even need this is we have the below?
