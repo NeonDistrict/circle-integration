@@ -10,8 +10,9 @@ module.exports = resolve_lingering_purchases = (config, postgres, skip = 0) => {
         // todo iterate purchases, and query circle to see if they can be updated and finished
 
         if (purchases.length === config.max_pagination_limit) {
-            return resolve_lingering_purchases(config, postgres, cb, skip + config.max_pagination_limit);
+            return resolve_lingering_purchases(config, postgres, skip + config.max_pagination_limit);
         }
-        return cb(null);
+
+        return; // done!
     });
 };

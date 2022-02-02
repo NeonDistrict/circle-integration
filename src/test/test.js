@@ -338,9 +338,10 @@ describe('circle-integration-server', function () {
     });
 
     it('make a normal purchase', async function () {
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -358,14 +359,16 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
     it('dont allow duplicate idempotency keys', async function () {
-        const idempotency_key = circle_integration_client.generate_idempotency_key();
+        const idempotency_key = circle_integration_client.generate_idempotency_key();        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             idempotency_key,
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -383,12 +386,12 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
 
         const purchase_result_2 = await circle_integration_client.purchase(
             idempotency_key,
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             test_cards[1].card_number,
@@ -409,10 +412,11 @@ describe('circle-integration-server', function () {
         assert.strictEqual(purchase_result_2.error, 'Idempotency Collision');
     });
 
-    it('PAYMENT_FAILED', async function () {
+    it('PAYMENT_FAILED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -430,14 +434,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'PAYMENT_FAILED'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Failed (Unspecified)'); 
     });
 
-    it('CARD_NOT_HONORED', async function () {
+    it('CARD_NOT_HONORED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -455,14 +460,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'CARD_NOT_HONORED'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Card Not Honored (Contact Card Provider)'); 
     });
 
-    it('PAYMENT_NOT_SUPPORTED_BY_ISSUER', async function () {
+    it('PAYMENT_NOT_SUPPORTED_BY_ISSUER', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -480,14 +486,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'PAYMENT_NOT_SUPPORTED_BY_ISSUER'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Not Supported (Contact Card Provider)'); 
     });
 
-    it('PAYMENT_NOT_FUNDED', async function () {
+    it('PAYMENT_NOT_FUNDED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -505,14 +512,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'PAYMENT_NOT_FUNDED'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Insufficient Funds (Contact Card Provider)'); 
     });
 
-    it('CARD_INVALID', async function () {
+    it('CARD_INVALID', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -530,14 +538,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'CARD_INVALID'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)'); 
     });
 
-    it('CARD_LIMIT_VIOLATED', async function () {
+    it('CARD_LIMIT_VIOLATED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -555,14 +564,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'CARD_LIMIT_VIOLATED'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Limit Exceeded (Circle Limit)'); 
     });
 
-    it('PAYMENT_DENIED', async function () {
+    it('PAYMENT_DENIED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -580,14 +590,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'PAYMENT_DENIED'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Denied (Contact Card Provider)'); 
     });
 
-    it('PAYMENT_FRAUD_DETECTED', async function () {
+    it('PAYMENT_FRAUD_DETECTED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -605,14 +616,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'PAYMENT_FRAUD_DETECTED'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Fraud Detected (Contact Card Provider)'); 
     });
 
-    it('CREDIT_CARD_NOT_ALLOWED', async function () {
+    it('CREDIT_CARD_NOT_ALLOWED', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -631,14 +643,15 @@ describe('circle-integration-server', function () {
             'CREDIT_CARD_NOT_ALLOWED'
         );
         // todo circle sends the wrong response code here, waiting on their response (adrian) dec 27th 2021
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Card Not Allowed (Contact Card Provider)'); 
     });
 
-    it('PAYMENT_STOPPED_BY_ISSUER', async function () {
+    it('PAYMENT_STOPPED_BY_ISSUER', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -656,14 +669,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'PAYMENT_STOPPED_BY_ISSUER'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Stopped (Contact Card Provider)'); 
     });
 
-    it('CARD_ACCOUNT_INELIGIBLE', async function () {
+    it('CARD_ACCOUNT_INELIGIBLE', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -681,14 +695,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'CARD_ACCOUNT_INELIGIBLE'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Ineligible Account (Contact Card Provider)'); 
     });
 
-    it('BAD_CVVS', async function () {
+    it('BAD_CVVS', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -706,7 +721,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)'); 
     });
 
@@ -719,10 +734,11 @@ describe('circle-integration-server', function () {
         // fuck up the cached public key
         server.circle_integration_server.cached_public_key.keyId = 'junk';
 
-        // do a normal purchase which should correct automatically
+        // do a normal purchase which should correct automatically        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -740,14 +756,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 40);
     });
 
-    it('invalid card number', async function () {
+    it('invalid card number', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             'bogus',
@@ -765,14 +782,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid cvv string', async function () {
+    it('invalid cvv string', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -790,14 +808,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid cvv float', async function () {
+    it('invalid cvv float', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -815,14 +834,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid cvv too big', async function () {
+    it('invalid cvv too big', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -840,14 +860,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid name', async function () {
+    it('invalid name', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -865,14 +886,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid city', async function () {
+    it('invalid city', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -890,14 +912,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid country', async function () {
+    it('invalid country', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -915,14 +938,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid address 1', async function () {
+    it('invalid address 1', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -940,14 +964,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid address 2', async function () {
+    it('invalid address 2', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -965,14 +990,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid district', async function () {
+    it('invalid district', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -990,14 +1016,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid postal', async function () {
+    it('invalid postal', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1015,14 +1042,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid expiry month', async function () {
+    it('invalid expiry month', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1041,14 +1069,15 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key
         );
         // todo waiting to hear back from circle, this should be a 400 error with details
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid expiry year', async function () {
+    it('invalid expiry year', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1067,14 +1096,15 @@ describe('circle-integration-server', function () {
             ok_purchase.sale_item_key
         );
         // todo waiting to hear back from circle, this should be a 400 error with details
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid email', async function () {
+    it('invalid email', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1092,14 +1122,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid email (number)', async function () {
+    it('invalid email (number)', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1117,14 +1148,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid phone', async function () {
+    it('invalid phone', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1142,14 +1174,15 @@ describe('circle-integration-server', function () {
             'BOGUS',
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid sale item key', async function () {
+    it('invalid sale item key', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1167,14 +1200,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'BOGUS'
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Sale Item Key Not Found');
     });
 
-    it('AVS A', async function () {
+    it('AVS A', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1192,15 +1226,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'A');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS B', async function () {
+    it('AVS B', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1218,15 +1252,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'B');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS C', async function () {
+    it('AVS C', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1244,15 +1278,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'C');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS D', async function () {
+    it('AVS D', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1270,15 +1304,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'D');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS E', async function () {
+    it('AVS E', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1296,15 +1330,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'E');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS F', async function () {
+    it('AVS F', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1322,15 +1356,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'F');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS G', async function () {
+    it('AVS G', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1348,15 +1382,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'G');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS I', async function () {
+    it('AVS I', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1374,15 +1408,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'I');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS K', async function () {
+    it('AVS K', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1400,15 +1434,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'K');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS L', async function () {
+    it('AVS L', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1426,15 +1460,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'L');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS M', async function () {
+    it('AVS M', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1452,15 +1486,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'M');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS N', async function () {
+    it('AVS N', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1478,15 +1512,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'N');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS O', async function () {
+    it('AVS O', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1504,15 +1538,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'O');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS P', async function () {
+    it('AVS P', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1530,15 +1564,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'P');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS R', async function () {
+    it('AVS R', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1556,15 +1590,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'R');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS S', async function () {
+    it('AVS S', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1582,15 +1616,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'S');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS U', async function () {
+    it('AVS U', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1608,15 +1642,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'U');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS W', async function () {
+    it('AVS W', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1634,15 +1668,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'W');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS X', async function () {
+    it('AVS X', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1660,15 +1694,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'X');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS Y', async function () {
+    it('AVS Y', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1686,15 +1720,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'Y');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
     
-    it('AVS Z', async function () {
+    it('AVS Z', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1712,15 +1746,15 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, 'Z');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 
-    it('AVS -', async function () {
+    it('AVS -', async function () {        
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            uuidv4(),
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -1738,8 +1772,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, uuidv4());
-        assert.strictEqual(final_result.verification.avs, '-');
-        assert.strictEqual(final_result.status, 'confirmed');
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
     });
 });
