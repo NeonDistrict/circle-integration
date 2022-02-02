@@ -2,7 +2,7 @@ const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 const purchase_log = require('../purchase_log.js');
 
-module.exports = payment_3ds_mark_failed = (config, query, internal_purchase_id, cb) => {
+module.exports = payment_3ds_mark_failed = (config, query, internal_purchase_id, payment_3ds_id, cb) => {
     purchase_log(internal_purchase_id, {
         event: 'payment_3ds_mark_failed'
     });
@@ -12,6 +12,11 @@ module.exports = payment_3ds_mark_failed = (config, query, internal_purchase_id,
             error: 'Invalid internal_purchase_id'
         });
     }
+    if (!is_valid_uuid(payment_3ds_id)) {
+        return cb({
+            error: 'Invalid payment_3ds_id'
+        });
+    }
     const now = new Date().getTime();
     const text = 
     `
@@ -19,15 +24,17 @@ module.exports = payment_3ds_mark_failed = (config, query, internal_purchase_id,
             "t_modified_purchase"         = $1,
             "t_modified_payment_3ds"      = $2,
             "payment_3ds_result"          = $3,
-            "purchase_result"             = $4
+            "purchase_result"             = $4,
+            "payment_3ds_id"              = $5
         WHERE
-            "internal_purchase_id"        = $5;
+            "internal_purchase_id"        = $6;
     `;
     const values = [
         now,                         // "t_modified_purchase"
         now,                         // "t_modified_payment_3ds"
         'FAILED',                    // "payment_3ds_result"
         'FAILED',                    // "purchase_result"
+        payment_3ds_id,              // "payment_3ds_id"
         internal_purchase_id         // "internal_purchase_id"
     ];
 

@@ -18,66 +18,66 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
     }
     */
 
-    let error = null;
+    let payment_error = null;
     switch (payment_result.errorCode) {
         case payment_error_enum.PAYMENT_FAILED:
         case payment_error_enum.VERIFICATION_FAILED:
-            error = {
+            payment_error = {
                 error: 'Payment Failed (Unspecified)'
             };
             break;
         case payment_error_enum.PAYMENT_FRAUD_DETECTED:
         case payment_error_enum.VERIFICATION_FRAUD_DETECTED:
-            error = {
+            payment_error = {
                 error: 'Fraud Detected (Contact Card Provider)',
                 fraud: 1
             };
             break;
         case payment_error_enum.PAYMENT_DENIED:
             // todo i think this is just failure but might be fraud
-            error = {
+            payment_error = {
                 error: 'Payment Denied (Contact Card Provider)'
             };
             break;
         case payment_error_enum.RISK_DENIED:
             // todo confirm fraud
-            error = {
+            payment_error = {
                 error: 'Risk Denied (Contact Card Provider)',
                 fraud: 1
             };
             break;
         case payment_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
             // todo: is this unavailable?
-            error = {
+            payment_error = {
                 error: 'Verification Not Supported By Issuer'
             };
             break;
         case payment_error_enum.THREE_D_SECURE_FAILURE:
-            error = {
+            payment_error = {
                 error: '3DSecure Verficiation Failed'
             };
             break;
         case payment_error_enum.PAYMENT_NOT_SUPPORTED_BY_ISSUER:
         case payment_error_enum.CARD_NETWORK_UNSUPPORTED:
-            error = {
+            payment_error = {
                 error: 'Payment Not Supported (Contact Card Provider)'
             };
             break;
         case payment_error_enum.PAYMENT_NOT_FUNDED:
-            error = {
+            payment_error = {
                 error: 'Insufficient Funds (Contact Card Provider)'
             };
             break;
         case payment_error_enum.PAYMENT_STOPPED_BY_ISSUER:
         case payment_error_enum.VERIFICATION_STOPPED_BY_ISSUER:
-            error = {
+            payment_error = {
                 error: 'Payment Stopped (Contact Card Provider)',
                 fraud: 1
             };
             break;
         case payment_error_enum.UNAUTHORIZED_TRANSACTION:
             // todo: confirm fraud
-            error = {
+            payment_error = {
                 error: 'Payment Unauthorized (Contact Card Provider)',
                 fraud: 1
             };
@@ -89,54 +89,54 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
         case payment_error_enum.CARD_ZIP_MISMATCH:
         case payment_error_enum.CARD_CVV_REQUIRED:
         case payment_error_enum.CARD_FAILED:
-            error = {
+            payment_error = {
                 error: 'Invalid Details (Correct Information)'
             };
             break;
         case payment_error_enum.CARD_EXPIRED:
-            error = {
+            payment_error = {
                 error: 'Card Expired'
             };
             break;
         case payment_error_enum.CARD_LIMIT_VIOLATED:
-            error = {
+            payment_error = {
                 error: 'Limit Exceeded (Circle Limit)'
             };
             break;
         case payment_error_enum.CARD_NOT_HONORED:
-            error = {
+            payment_error = {
                 error: 'Card Not Honored (Contact Card Provider)'
             };
             break;
         case payment_error_enum.CREDIT_CARD_NOT_ALLOWED:
-            error = {
+            payment_error = {
                 error: 'Card Not Allowed (Contact Card Provider)'
             };
             break;
         case payment_error_enum.CARD_ACCOUNT_INELIGIBLE:
         case payment_error_enum.BANK_ACCOUNT_INELIGIBLE:
-            error = {
+            payment_error = {
                 error: 'Ineligible Account (Contact Card Provider)'
             };
             break;
         case payment_error_enum.PAYMENT_FAILED_BALANCE_CHECK:
-            error = {
+            payment_error = {
                 error: 'Insufficient Balance (Contact Card Provider)'
             };
             break;
         case payment_error_enum.BANK_TRANSACTION_ERROR:
-            error = {
+            payment_error = {
                 error: 'Bank Transaction Error (Contact Card Provider)'
             };
             break;
         case payment_error_enum.PAYMENT_CANCELED:
-            error = {
+            payment_error = {
                 error: 'Payment Cancelled'
             };
             break;
         case payment_error_enum.PAYMENT_UNPROCESSABLE:
             config.cached_circle_key = null;
-            error = {
+            payment_error = {
                 error: 'Circle Key Failure'
             };
             break;
@@ -155,7 +155,7 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
                 });
             });
         case payment_error_enum.THREE_D_SECURE_ACTION_EXPIRED:
-            error = {
+            payment_error = {
                 error: '3DSecure Expired'
             };
             break;
@@ -193,28 +193,23 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
                 error: 'Received Unexpected Error: ' + payment_result.errorCode 
             });
     }
-    if (failure_error) {
-        return mark_failed(internal_purchase_id, payment_result.id, (error) => {
-            if (error) {
-                return cb(error);
-            }
-            return cb(failure_error);
-        });
-    }
-    if (fraud_error) {
+    if (payment_error.fraud === 1) {
         return mark_fraud(internal_purchase_id, payment_result.id, (error) => {
             if (error) {
                 return cb(error);
             }
-            return postgres.user_mark_fraud(user.user_id, (error) => {
+            return postgres.user_mark_fraud(user_id, (error) => {
                 if (error) {
                     return cb(error);
                 }
-                return cb(fraud_error);
+                return cb(payment_error);
             });
         });
     }
-    return fatal_error({
-        error: 'Unexpected Result Assess Payment Failure'
+    return mark_failed(internal_purchase_id, payment_result.id, (error) => {
+        if (error) {
+            return cb(error);
+        }
+        return cb(payment_error);
     });
 };

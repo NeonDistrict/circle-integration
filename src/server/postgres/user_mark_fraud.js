@@ -11,7 +11,7 @@ module.exports = user_mark_fraud = (config, query, user_id, cb) => {
     const text = 
     `
         UPDATE "users" SET
-            "t_modified" = $1
+            "t_modified" = $1,
             "fraud"      = $2
         WHERE
             "user_id"    = $3;

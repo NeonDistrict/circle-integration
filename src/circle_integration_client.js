@@ -64,6 +64,9 @@ module.exports = circle_integration_client = {
         const public_keys = await circle_integration_client.call_circle_api('/get_public_keys', {
             user_id: user_id
         });
+        if (public_keys.hasOwnProperty('error')) {
+            return public_keys;
+        }
         const circle_encrypted_card_information = await circle_integration_client.circle_encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
         const integration_encrypted_card_information = await circle_integration_client.integration_encrypt_card_information(public_keys.integration_public_key, {card_number: card_number});
         const request_body = {

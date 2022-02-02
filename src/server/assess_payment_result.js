@@ -28,10 +28,10 @@ module.exports = assess_payment_result = (config, postgres, internal_purchase_id
             });
 
         case payment_status_enum.FAILED:
-            return assess_payment_failure(config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed, cb);
+            return assess_payment_failure(config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb);
         
         case payment_status_enum.PENDING:
-            return mark_pending(internal_purchase_id, (error) => {
+            return mark_pending(internal_purchase_id, payment_result.id, (error) => {
                 if (error) {
                     return cb(error);
                 }
@@ -49,7 +49,7 @@ module.exports = assess_payment_result = (config, postgres, internal_purchase_id
                     error: 'Function Not Provided: mark_redirected'
                 });
             }
-            return mark_redirected(internal_purchase_id, (error) => {
+            return mark_redirected(internal_purchase_id, payment_result.id, (error) => {
                 if (error) {
                     return cb(error);
                 }

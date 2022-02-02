@@ -24,7 +24,7 @@ module.exports = paginate_lingering_purchases = (config, query, skip, limit, cb)
     `
         SELECT * FROM "purchases"
         WHERE
-            "purchase_result" = "PENDING" AND
+            "purchase_result" = 'PENDING' AND
             "t_created_purchase" < $1
         ORDER BY "t_created_purchase" ASC
         LIMIT $2
