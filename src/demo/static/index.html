@@ -1,0 +1,80 @@
+<html>
+    <body>
+        <h1>User Information</h1>
+        <div>Name on Card</div>
+        <div><input type="text" id="name-on-card" /></div>
+        <div>Card Number</div>
+        <div><input type="text" id="card-number" /></div>
+        <div>Card CVV Code</div>
+        <div><input type="text" id="card-cvv" /></div>
+        <div>Expiry Month (XX)</div>
+        <div><input type="text" id="expiry-month" /></div>
+        <div>Expiry Year (XXXX)</div>
+        <div><input type="text" id="expiry-year" /></div>
+        <div>City</div>
+        <div><input type="text" id="city" /></div>
+        <div>District (Province / State)</div>
+        <div><input type="text" id="district" /></div>
+        <div>Country</div>
+        <div><input type="text" id="country" /></div>
+        <div>Address Line 1</div>
+        <div><input type="text" id="address-line-1" /></div>
+        <div>Address Line 2</div>
+        <div><input type="text" id="address-line-2" /></div>
+        <div>Postal / Zip Code</div>
+        <div><input type="text" id="postal-zip-code" /></div>
+        <div>Email Address</div>
+        <div><input type="text" id="email" /></div>
+        <div>Phone Number</div>
+        <div><input type="text" id="phone-number" /></div>
+        <h1>Available Sale Items</h1>
+    </body>
+    <script>
+        function make_purchase() {
+            const name_on_card = document.getElementById('name-on-card').value;
+            const card_number = document.getElementById('card-number').value;
+            const card_cvv_code = document.getElementById('card-cvv-code').value;
+            const expiry_month = document.getElementById('expiry-month').value;
+            const expiry_year = document.getElementById('expiry-year').value;
+            const city = document.getElementById('city').value;
+            const district = document.getElementById('district').value;
+            const country = document.getElementById('country').value;
+            const address_line_1 = document.getElementById('address-line-1').value;
+            const address_line_2 = document.getElementById('address-line-2').value;
+            const postal_zip_code = document.getElementById('postal-zip-code').value;
+            const email = document.getElementById('email').value;
+            const phone_number = document.getElementById('phone-number').value;
+
+            fetch('/purchase', {
+                method: 'POST',
+                mode: 'cors', 
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name_on_card: name_on_card,
+                    card_number: card_number,
+                    card_cvv_code: card_cvv_code,
+                    expiry_month: expiry_month,
+                    expiry_year: expiry_year,
+                    city: city,
+                    district: district,
+                    country: country,
+                    address_line_1: address_line_1,
+                    address_line_2: address_line_2,
+                    postal_zip_code: postal_zip_code,
+                    email: email,
+                    phone_number: phone_number,
+                    sale_item_key: sale_item_key
+                })
+            })
+            .then((response) => { 
+                return response.json(); 
+            })
+            .then((data) => {
+                console.log(data)
+            });
+        }
+    </script>
+</html>

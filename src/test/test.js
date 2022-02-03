@@ -52,14 +52,12 @@ const handle_redirect = async function (purchase_result, user_id) {
     // the 3ds page goes into a spin wait while repeat polling circle, poll while processing until processeds
     let status_result;
     do {
-        console.log('redirect processing...');
         await new Promise(resolve => setTimeout(resolve, 5000));
         status_result = await axios.get('https://web-sandbox.circle.com/v1/3ds/session/' + session_id + '/status');
         assert(status_result.hasOwnProperty('data'));
         assert(status_result.data.hasOwnProperty('data'));
         status_result = status_result.data.data;
     } while (status_result.status === 'processing');
-    console.log('redirect processed');
     assert.strictEqual(status_result.status, 'processed');
     
     const purchase_finalize_result = await circle_integration_client.purchase_finalize(
@@ -644,7 +642,7 @@ describe('circle-integration-server', function () {
         );
         // todo circle sends the wrong response code here, waiting on their response (adrian) dec 27th 2021
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Card Not Allowed (Contact Card Provider)'); 
+        assert.strictEqual(final_result.error, 'Ineligible Account (Contact Card Provider)'); 
     });
 
     it('PAYMENT_STOPPED_BY_ISSUER', async function () {        
@@ -782,8 +780,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid card_number');
     });
 
     it('invalid cvv string', async function () {        
@@ -808,8 +805,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid cvv float', async function () {        
@@ -834,8 +830,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid cvv too big', async function () {        
@@ -860,8 +855,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid name', async function () {        
@@ -886,8 +880,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid name_on_card');
     });
 
     it('invalid city', async function () {        
@@ -912,8 +905,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid city');
     });
 
     it('invalid country', async function () {        
@@ -938,8 +930,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid country');
     });
 
     it('invalid address 1', async function () {        
@@ -964,8 +955,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid address_line_1');
     });
 
     it('invalid address 2', async function () {        
@@ -990,8 +980,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid address_line_2');
     });
 
     it('invalid district', async function () {        
@@ -1016,11 +1005,10 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid district');
     });
 
-    it('invalid postal', async function () {        
+    it.only('invalid postal', async function () {        
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -1035,15 +1023,14 @@ describe('circle-integration-server', function () {
             ok_purchase.address_line_1,
             ok_purchase.address_line_2,
             ok_purchase.district,
-            'POSTAL CODE',
+            null,
             ok_purchase.expiry_month,
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid expiry month', async function () {        
@@ -1068,9 +1055,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        // todo waiting to hear back from circle, this should be a 400 error with details
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid expiry_month');
     });
 
     it('invalid expiry year', async function () {        
@@ -1095,9 +1080,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        // todo waiting to hear back from circle, this should be a 400 error with details
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid expiry_year');
     });
 
     it('invalid email', async function () {        
@@ -1122,8 +1105,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid email');
     });
 
     it('invalid email (number)', async function () {        
@@ -1148,8 +1130,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid phone', async function () {        
@@ -1174,8 +1155,7 @@ describe('circle-integration-server', function () {
             'BOGUS',
             ok_purchase.sale_item_key
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid sale item key', async function () {        
@@ -1200,8 +1180,7 @@ describe('circle-integration-server', function () {
             ok_purchase.phone,
             'BOGUS'
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert.strictEqual(final_result.error, 'Sale Item Key Not Found');
+        assert.strictEqual(purchase_result.error, 'Sale Item Key Not Found');
     });
 
     it('AVS A', async function () {        
