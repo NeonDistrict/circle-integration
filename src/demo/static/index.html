@@ -29,8 +29,12 @@
         <div><input type="text" id="phone-number" /></div>
         <h1>Available Sale Items</h1>
     </body>
+    <script src="./circle_integration_client.js"></script>
     <script>
         function make_purchase() {
+            const client_generated_idempotency_key = generate_idempotency_key();
+            const user_id = generate_idempotency_key(); // fake a user id
+            const metadata_hash_session_id = sha1(generate_idempotency_key()); // fake a session id
             const name_on_card = document.getElementById('name-on-card').value;
             const card_number = document.getElementById('card-number').value;
             const card_cvv_code = document.getElementById('card-cvv-code').value;
@@ -44,37 +48,9 @@
             const postal_zip_code = document.getElementById('postal-zip-code').value;
             const email = document.getElementById('email').value;
             const phone_number = document.getElementById('phone-number').value;
+            const sale_item_key = ;
 
-            fetch('/purchase', {
-                method: 'POST',
-                mode: 'cors', 
-                cache: 'no-cache',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name_on_card: name_on_card,
-                    card_number: card_number,
-                    card_cvv_code: card_cvv_code,
-                    expiry_month: expiry_month,
-                    expiry_year: expiry_year,
-                    city: city,
-                    district: district,
-                    country: country,
-                    address_line_1: address_line_1,
-                    address_line_2: address_line_2,
-                    postal_zip_code: postal_zip_code,
-                    email: email,
-                    phone_number: phone_number,
-                    sale_item_key: sale_item_key
-                })
-            })
-            .then((response) => { 
-                return response.json(); 
-            })
-            .then((data) => {
-                console.log(data)
-            });
-        }
+            await purchase(client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key);
+        };
     </script>
 </html>
