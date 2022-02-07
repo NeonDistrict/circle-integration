@@ -1,6 +1,5 @@
 const fatal_error = require('./fatal_error.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
-const assess_payment_risk = require('./assess_payment_risk.js');
 const purchase_log = require('./purchase_log.js');
 
 module.exports = assess_payment_failure = (config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
@@ -8,16 +7,6 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
         event: 'assess_payment_failure'
     });
     
-    // todo does risk come back as failed? or some other result?
-    // this could go into the switch then
-    // todo do we even need this is we have the below?
-    /*
-    const risk_error = assess_payment_risk(payment_result);
-    if (risk_error) {
-        return cb(risk_error);
-    }
-    */
-
     let payment_error = null;
     switch (payment_result.errorCode) {
         case payment_error_enum.PAYMENT_FAILED:
@@ -34,13 +23,11 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
             };
             break;
         case payment_error_enum.PAYMENT_DENIED:
-            // todo i think this is just failure but might be fraud
             payment_error = {
                 error: 'Payment Denied (Contact Card Provider)'
             };
             break;
         case payment_error_enum.RISK_DENIED:
-            // todo confirm fraud
             payment_error = {
                 error: 'Risk Denied (Contact Card Provider)',
                 fraud: 1
@@ -87,7 +74,6 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
         case payment_error_enum.CARD_CVV_INVALID:
         case payment_error_enum.CARD_ADDRESS_MISMATCH:
         case payment_error_enum.CARD_ZIP_MISMATCH:
-        case payment_error_enum.CARD_CVV_REQUIRED:
         case payment_error_enum.CARD_FAILED:
             payment_error = {
                 error: 'Invalid Details (Correct Information)'
@@ -162,6 +148,11 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
         case payment_error_enum.PAYMENT_RETURNED:
             return fatal_error({
                 error: 'TODO: NOT SUPPORTED YET'
+            });
+        case payment_error_enum.CARD_CVV_REQUIRED:
+            // note: we always include a cvv
+            return fatal_error({
+                error: 'Received Impossible Error: CARD_CVV_REQUIRED'
             });
         case payment_error_enum.INVALID_WIRE_RTN:
             // note: we do not use WIRE

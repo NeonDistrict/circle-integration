@@ -8,10 +8,12 @@ Contains documentation, demo, and back/front end components required to integrat
 + 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
 
 + 3ds purchases finishing need to be credited to the game, player needs verification of this
-+ does circle have a way to return 3ds not available
++ does circle have a way to return 3ds not availablef for testing
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
 + card creation does avs too
+
++ ensure assess_payment_failure uses every enum value
 
 + waiting to hear back on teh 5.54 amount issue on slack from circle
 + waiting to hear back on the expiry validation issue
