@@ -16,6 +16,7 @@ const create_purchase_status_enum = (config, query, cb) => {
         'PENDING',
         'FAILED',
         'FRAUD',
+        'ABANDONED',
         'COMPLETED'
     );
     `;

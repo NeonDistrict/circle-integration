@@ -2,8 +2,9 @@ const fatal_error = require('../fatal_error.js');
 const is_valid_uuid = require('../validation/is_valid_uuid.js');
 const purchase_log = require('../purchase_log.js');
 
-module.exports = find_purchase_by_client_generated_idempotency_key = (config, query, internal_purchase_id, client_generated_idempotency_key, cb) => {
-    purchase_log(internal_purchase_id, {
+module.exports = find_purchase_by_client_generated_idempotency_key = (config, query, client_generated_idempotency_key, cb) => {
+    // todo, maybe this just goes into an open log? since its not a purchase id to find another purchase id
+    purchase_log('none', {
         event: 'find_purchase_by_client_generated_idempotency_key'
     });
     

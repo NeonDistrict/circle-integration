@@ -122,6 +122,15 @@ module.exports = create_postgres = (config, cb) => {
         payment_unsecure_mark_pending:      
             require('./payment_unsecure_mark_pending.js')     
                 .bind(this, config, query),
+        purchase_mark_abandoned:
+            require('./purchase_mark_abandoned.js')
+                .bind(this, config, query),
+        purchase_mark_failed:
+            require('./purchase_mark_failed.js')
+                .bind(this, config, query),
+        purchase_mark_fraud:
+            require('./purchase_mark_fraud.js')
+                .bind(this, config, query),
         reset_all_tables:                   
             require('./reset_all_tables.js')                  
                 .bind(this, config, query),
