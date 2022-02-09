@@ -42,6 +42,7 @@ Contains documentation, demo, and back/front end components required to integrat
 + (this whole logic flow should be documented) 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
 
 
+
 ## Useful Links
 
 + [Circle Homepage](https://www.circle.com/en/)
