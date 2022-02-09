@@ -1,7 +1,8 @@
+const config = require('../config.js');
 const api_error_enum = require('./enum/api_error_enum.js');
 const axios = require('axios');
 
-module.exports = call_circle = async (config, accepted_response_codes, method, url, data, cb) => {
+module.exports = call_circle = async (accepted_response_codes, method, url, data) => {
     const request = {
         method: method,
         url: url,
@@ -29,16 +30,14 @@ module.exports = call_circle = async (config, accepted_response_codes, method, u
 
         // if the body is malformed, return a malformed error
         if (!response.data.hasOwnProperty('data')) {
-            return cb({
-                error: 'Malformed Circle Response'
-            });
+            throw new Error('Malformed Circle Response');
         }
 
         // get the response body from the response
         const response_body = response.data.data;
 
         // return just the response body
-        return cb(null, response_body);
+        return response_body;
     }
 
     // reaching here implies we had a bad response, attempt to identify why
@@ -71,9 +70,8 @@ module.exports = call_circle = async (config, accepted_response_codes, method, u
             case api_error_enum.UNSUPPORTED_TRANSFER:   
             case api_error_enum.PAYOUT_LIMIT_EXCEEDED:
                 // note: none of these should happen, and report as a server error, only the logs will contain details since they may be malicious
-                return cb({
-                    error: 'Server Error'
-                });
+                // todo any internal server errors should report
+                throw new Error('Internal Server Error');
             case api_error_enum.ACCOUNT_NUMBER_INVALID:
             case api_error_enum.LAST_NAME_REQUIRED:     
             case api_error_enum.INVALID_COUNTRY_FORMAT:
@@ -83,62 +81,36 @@ module.exports = call_circle = async (config, accepted_response_codes, method, u
             case api_error_enum.ADDITIONAL_BANK_DETAILS_REQUIRED:        
             case api_error_enum.ADDITIONAL_BILLING_DETAILS_REQUIRED:   
                 // note: some of these may be wire or transfer only, but we report them all with the generic invalid details anyways
-                return cb({
-                    error: 'Invalid Details (Correct Information)'
-                });
+                throw new Error('Invalid Details (Correct Information)');
             case api_error_enum.INVALID_ENTITY:
                 // note: invalid entity comes back for public key failure or just bad fields, but we only get this message for bad pk
                 if (response.data.hasOwnProperty('message') && response.data.message === 'Request body contains unprocessable entity.') {
-                    return cb({
-                        error: 'Public Key Failure'
-                    }); 
+                    throw new Error('Public Key Failure');
                 } else {
-                    return cb({
-                        error: 'Invalid Details (Correct Information)'
-                    });
+                    throw new Error('Invalid Details (Correct Information)');
                 }
             case api_error_enum.PUBLIC_KEY_ID_NOT_FOUND:
-                return cb({
-                    error: 'Public Key Failure'
-                });
+                throw new Error('Public Key Failure');
             case api_error_enum.IDEMPOTENCY_KEY_ALREADY_USED: 
-                return cb({
-                    error: 'Idempotency Key Already Used'
-                });
+                throw new Error('Idempotency Key Already Used');
             case api_error_enum.PAYMENT_NOT_FOUND:        
-                return cb({
-                    error: 'Payment Not Found'
-                });
+                throw new Error('Payment Not Found');
             case api_error_enum.PAYMENT_EXCEEDS_MERCHANT_LIMIT:
                 // note: this could be that a payment is too small, too large, or beyond a daily/weekly/monthly limit
-                return cb({
-                    error: 'Payment Exceeds Merchant Limit'
-                });
+                throw new Error('Payment Exceeds Merchant Limit');
             case api_error_enum.CANNOT_BE_CANCELLED:  
-                return cb({
-                    error: 'Cannot Cancel'
-                });
+                throw new Error('Cannot Cancel');
             case api_error_enum.CANNOT_BE_REFUNDED:
-                return cb({
-                    error: 'Cannot Refund'
-                });      
+                throw new Error('Cannot Refund');
             case api_error_enum.ALREADY_CANCELLED:
-                return cb({
-                    error: 'Already Canceled'
-                });
+                throw new Error('Already Canceled');
             case api_error_enum.REFUND_EXCEEDS_PAYMENT:
-                return cb({
-                    error: 'Refund Exceeds Payment'
-                });     
+                throw new Error('Refund Exceeds Payment');
             case api_error_enum.ORIGINAL_PAYMENT_FAILED:        
                 // note: this happens when we try to refund or cancel a payment that was originally failed, and cannot be refunded or cancelled
-                return cb({
-                    error: 'Payment Was Failed'
-                });
+                throw new Error('Original Payment Was Failed');
             case api_error_enum.UNSUPPORTED_COUNTRY:        
-                return cb({
-                    error: 'Unsupported Country'
-                });         
+                throw new Error('Unsupported Country');
             default:
                 // unknown code, continue to http response codes
                 break;
@@ -159,13 +131,9 @@ module.exports = call_circle = async (config, accepted_response_codes, method, u
     // check if its an expected error code, returning the relevant error
     if (failure_codes.hasOwnProperty(status_code)) {
         const failure = failure_codes[status_code];
-        return cb({
-            error: failure
-        });
+        throw new Error(failure);
     }
 
     // reaching here implies it was an unexpected error code
-    return cb({
-        error: 'Unknown Status Code Error'
-    });
+    throw new Error('Unknown Status Code Error');
 };

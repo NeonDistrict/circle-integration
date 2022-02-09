@@ -2,6 +2,8 @@ const notify_dev = require('./notify_dev.js');
 const parked_notifications = {};
 const parked_callbacks = {};
 
+// todo promise this
+
 module.exports = parking = {
     park_callback: (id, cb) => {
         // whenever we go to park a callback we actually have a race condition where the notification may have already arrived

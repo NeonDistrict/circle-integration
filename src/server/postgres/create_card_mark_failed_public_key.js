@@ -1,17 +1,13 @@
-const is_valid_uuid = require('../validation/is_valid_uuid.js');
+const postgres = require('./postgres.js');
+const validate_uuid = require('../validation/validate_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 const purchase_log = require('../purchase_log.js');
 
-module.exports = create_card_mark_failed_public_key = (config, query, internal_purchase_id, create_card_id, cb) => {
+module.exports = create_card_mark_failed_public_key = async (internal_purchase_id, create_card_id) => {
     purchase_log(internal_purchase_id, {
         event: 'create_card_mark_failed_public_key'
     });
-
-    if (!is_valid_uuid(internal_purchase_id)) {
-        return cb({
-            error: 'Invalid internal_purchase_id'
-        });
-    }
+    validate_uuid(internal_purchase_id);
     const now = new Date().getTime();
     const text = 
     `
@@ -36,5 +32,6 @@ module.exports = create_card_mark_failed_public_key = (config, query, internal_p
         internal_purchase_id         // "internal_purchase_id"
     ];
 
-    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
+    const result = await postgres.query(text, values);
+    return expect_one_row_count(result);
 };

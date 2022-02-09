@@ -1,15 +1,17 @@
+const config = require('../config.js');
 const fatal_error = require('./fatal_error.js');
 const notify_dev = require('./notify_dev.js');
 const purchase_log = require('./purchase_log');
 const call_circle = require('./call_circle.js');
 
-module.exports = resolve_purchase = (config, postgres, purchase, cb) => {
+// todo this whole file needs async
+module.exports = resolve_purchase = async (config, postgres, purchase) => {
     purchase_log(purchase.internal_purchase_id, {
         event: 'assess_existing_purchase_result'
     });
 
     const check_payment_result = (payment_id, verification_type, cb) => {
-        call_circle(config, [200], 'get', `${config.api_uri_base}payments/${payment_id}`, null, (error, payment_result) => {
+        call_circle([200], 'get', `${config.api_uri_base}payments/${payment_id}`, null, (error, payment_result) => {
             if (error) {
                 return cb(error);
             }

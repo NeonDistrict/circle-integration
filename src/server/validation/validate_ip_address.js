@@ -1,4 +1,4 @@
-const is_valid = require('./is_valid.js');
+const validate = require('./validate.js');
 const schema = {
     type: 'string',
     maxLength: 1024,
@@ -7,6 +7,8 @@ const schema = {
 
 // pattern taken from: https://stackoverflow.com/questions/23483855/javascript-regex-to-validate-ipv4-and-ipv6-address-no-hostnames
 
-module.exports = is_valid_ip_address = (ip_address) => {
-    return is_valid(ip_address, schema);
+module.exports = validate_ip_address = (ip_address) => {
+    if (!validate(ip_address, schema)) {
+        throw new Error('Invalid IP Address');
+    }
 };

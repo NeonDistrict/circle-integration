@@ -1,21 +1,14 @@
-const is_valid_uuid = require('../validation/is_valid_uuid.js');
+const postgres = require('./postgres.js');
+const validate_uuid = require('../validation/validate_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 const purchase_log = require('../purchase_log.js');
 
-module.exports = payment_cvv_mark_failed = (config, query, internal_purchase_id, payment_cvv_id, cb) => {
+module.exports = payment_cvv_mark_failed = async (internal_purchase_id, payment_cvv_id) => {
     purchase_log(internal_purchase_id, {
         event: 'payment_cvv_mark_failed'
     });
-    if (!is_valid_uuid(internal_purchase_id)) {
-        return cb({
-            error: 'Invalid internal_purchase_id'
-        });
-    }
-    if (!is_valid_uuid(payment_cvv_id)) {
-        return cb({
-            error: 'Invalid payment_cvv_id'
-        });
-    }
+    validate_uuid(internal_purchase_id);
+    validate_uuid(payment_cvv_id);
     const now = new Date().getTime();
     const text = 
     `
@@ -37,5 +30,6 @@ module.exports = payment_cvv_mark_failed = (config, query, internal_purchase_id,
         internal_purchase_id         // "internal_purchase_id"
     ];
 
-    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
+    const result = await postgres.query(text, values);
+    return expect_one_row_count(result);
 };

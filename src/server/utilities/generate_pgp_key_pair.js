@@ -13,7 +13,7 @@ const generate_passphrase = (length) => {
     return passphrase;
 };
 
-module.exports = generate_pgp_key_pair = async (cb) => {
+module.exports = generate_pgp_key_pair = async () => {
     const passphrase = generate_passphrase(256);
     let generated = null;
     try {
@@ -29,5 +29,9 @@ module.exports = generate_pgp_key_pair = async (cb) => {
     }
     const private_key = generated.privateKey;
     const public_key = generated.publicKey;
-    return cb(null, passphrase, private_key, public_key);
+    return {
+        passphrase: passphrase,
+        private_key: private_key,
+        public_key: public_key
+    };
 };

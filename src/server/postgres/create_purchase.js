@@ -1,117 +1,36 @@
-const is_valid_sale_item_key = require('../validation/is_valid_sale_item_key.js');
-const is_valid_sale_item_price = require('../validation/is_valid_sale_item_price.js');
-const is_valid_uuid = require('../validation/is_valid_uuid.js');
-const is_valid_sha512_hex = require('../validation/is_valid_sha512_hex.js');
-const is_valid_sha1_hex = require('../validation/is_valid_sha1_hex.js');
+const postgres = require('./postgres.js');
+const validate_sale_item_key = require('../validation/validate_sale_item_key.js');
+const validate_sale_item_price = require('../validation/validate_sale_item_price.js');
+const validate_uuid = require('../validation/validate_uuid.js');
+const validate_sha512_hex = require('../validation/validate_sha512_hex.js');
+const validate_sha1_hex = require('../validation/validate_sha1_hex.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 const purchase_log = require('../purchase_log.js');
 
-module.exports = create_purchase = (config, query, internal_purchase_id, user_id, sale_item_key, sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone_number, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_line_1, metadata_hash_address_line_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_circle_public_key_id, cb) => {
+module.exports = create_purchase = async (internal_purchase_id, user_id, sale_item_key, sale_item_price, client_generated_idempotency_key, metadata_hash_email, metadata_hash_phone_number, metadata_hash_session_id, metadata_hash_ip_address, metadata_hash_name_on_card, metadata_hash_city, metadata_hash_country, metadata_hash_district, metadata_hash_address_line_1, metadata_hash_address_line_2, metadata_hash_postal_zip_code, metadata_hash_expiry_month, metadata_hash_expiry_year, metadata_hash_card_number, metadata_hash_circle_public_key_id) => {
     purchase_log(internal_purchase_id, {
         event: 'create_purchase'
     });
-    
-    if (!is_valid_uuid(internal_purchase_id)) {
-        return cb({
-            error: 'Invalid internal_purchase_id'
-        });
-    }
-    if (!is_valid_uuid(user_id)) {
-        return cb({
-            error: 'Invalid user_id'
-        });
-    }
-    if (!is_valid_sale_item_key(sale_item_key)) {
-        return cb({
-            error: 'Invalid sale_item_key'
-        });
-    }
-    if (!is_valid_sale_item_price(sale_item_price)) {
-        return cb({
-            error: 'Invalid sale_item_price'
-        });
-    }
-    if (!is_valid_uuid(client_generated_idempotency_key)) {
-        return cb({
-            error: 'Invalid client_generated_idempotency_key'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_email)) {
-        return cb({
-            error: 'Invalid metadata_hash_email'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_phone_number)) {
-        return cb({
-            error: 'Invalid metadata_hash_phone_number'
-        });
-    }
-    if (!is_valid_sha1_hex(metadata_hash_session_id)) {
-        return cb({
-            error: 'Invalid metadata_hash_session_id'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_ip_address)) {
-        return cb({
-            error: 'Invalid metadata_hash_ip_address'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_name_on_card)) {
-        return cb({
-            error: 'Invalid metadata_hash_name_on_card'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_city)) {
-        return cb({
-            error: 'Invalid metadata_hash_city'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_country)) {
-        return cb({
-            error: 'Invalid metadata_hash_country'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_district)) {
-        return cb({
-            error: 'Invalid metadata_hash_district'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_address_line_1)) {
-        return cb({
-            error: 'Invalid metadata_hash_address_line_1'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_address_line_2)) {
-        return cb({
-            error: 'Invalid metadata_hash_address_line_2'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_postal_zip_code)) {
-        return cb({
-            error: 'Invalid metadata_hash_postal_zip_code'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_expiry_month)) {
-        return cb({
-            error: 'Invalid metadata_hash_expiry_month'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_expiry_year)) {
-        return cb({
-            error: 'Invalid metadata_hash_expiry_year'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_card_number)) {
-        return cb({
-            error: 'Invalid metadata_hash_card_number'
-        });
-    }
-    if (!is_valid_sha512_hex(metadata_hash_circle_public_key_id)) {
-        return cb({
-            error: 'Invalid metadata_hash_circle_public_key_id'
-        });
-    }
-
+    validate_uuid(internal_purchase_id);
+    validate_uuid(user_id);
+    validate_sale_item_key(sale_item_key);
+    validate_sale_item_price(sale_item_price);
+    validate_uuid(client_generated_idempotency_key);
+    validate_sha512_hex(metadata_hash_email);
+    validate_sha512_hex(metadata_hash_phone_number);
+    validate_sha1_hex(metadata_hash_session_id);
+    validate_sha512_hex(metadata_hash_ip_address);
+    validate_sha512_hex(metadata_hash_name_on_card);
+    validate_sha512_hex(metadata_hash_city);
+    validate_sha512_hex(metadata_hash_country);
+    validate_sha512_hex(metadata_hash_district);
+    validate_sha512_hex(metadata_hash_address_line_1);
+    validate_sha512_hex(metadata_hash_address_line_2);
+    validate_sha512_hex(metadata_hash_postal_zip_code);
+    validate_sha512_hex(metadata_hash_expiry_month);
+    validate_sha512_hex(metadata_hash_expiry_year);
+    validate_sha512_hex(metadata_hash_card_number);
+    validate_sha512_hex(metadata_hash_circle_public_key_id);
     const now = new Date().getTime();
     const text = 
     `
@@ -218,5 +137,6 @@ module.exports = create_purchase = (config, query, internal_purchase_id, user_id
         metadata_hash_card_number,         // "metadata_hash_card_number",
         metadata_hash_circle_public_key_id // "metadata_hash_circle_public_key_id"
     ];
-    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
+    const result = await postgres.query(text, values);
+    return expect_one_row_count(result);
 };

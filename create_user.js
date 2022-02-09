@@ -1,4 +1,4 @@
-const is_valid_uuid = require('../validation/is_valid_uuid.js');
+const validate_uuid = require('../validation/validate_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
 module.exports = create_user = (
@@ -7,7 +7,7 @@ module.exports = create_user = (
     user_id,
     cb
 ) => {
-    if (!is_valid_uuid(user_id)) {
+    validate_uuid(user_id)) {
         return cb({
             error: 'Invalid user_id'
         });
@@ -30,5 +30,6 @@ module.exports = create_user = (
         now,         // "t_modified"
         false        // "fraud"
     ];
-    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
+    const result = await postgres.query(text, values);
+    return expect_one_row_count(result);
 };

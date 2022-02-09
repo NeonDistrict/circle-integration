@@ -1,12 +1,14 @@
 const fatal_error = require('./fatal_error.js');
+const create_card_mark_fraud = require('./postgres/create_card_mark_fraud.js');
+const create_card_mark_failed = require('./postgres/create_card_mark_failed.js');
+const user_mark_fraud = require('./postgres/user_mark_fraud.js');
 const create_card_error_enum = require('./enum/create_card_error_enum.js');
 const purchase_log = require('./purchase_log.js');
 
-module.exports = assess_create_card_failure = (config, postgres, internal_purchase_id, user_id, create_card_result, cb) => {
+module.exports = assess_create_card_failure = async (internal_purchase_id, user_id, create_card_result) => {
     purchase_log(internal_purchase_id, {
         event: 'assess_payment_failure'
     });
-    
     let create_card_error = null;
     switch (create_card_result.errorCode) {
         case create_card_error_enum.VERIFICATION_FAILED:
@@ -87,22 +89,10 @@ module.exports = assess_create_card_failure = (config, postgres, internal_purcha
             });
     }
     if (create_card_error.fraud === 1) {
-        return postgres.create_card_mark_fraud(internal_purchase_id, create_card_result.id, (error) => {
-            if (error) {
-                return cb(error);
-            }
-            return postgres.user_mark_fraud(user_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb(create_card_error);
-            });
-        });
+        await create_card_mark_fraud(internal_purchase_id, create_card_result.id);
+        await user_mark_fraud(user_id);
+    } else {
+        await create_card_mark_failed(internal_purchase_id, create_card_result.id);
     }
-    return postgres.create_card_mark_failed(internal_purchase_id, create_card_result.id, (error) => {
-        if (error) {
-            return cb(error);
-        }
-        return cb(create_card_error);
-    });
+    throw new Error(create_card_error.error);
 };

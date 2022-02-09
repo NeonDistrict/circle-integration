@@ -1,12 +1,13 @@
+const config = require('../config.js');
 const fatal_error = require('./fatal_error.js');
+const user_mark_fraud = require('./postgres/user_mark_fraud.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
 const purchase_log = require('./purchase_log.js');
 
-module.exports = assess_payment_failure = (config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
+module.exports = assess_payment_failure = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable) => {
     purchase_log(internal_purchase_id, {
         event: 'assess_payment_failure'
     });
-    
     let payment_error = null;
     switch (payment_result.errorCode) {
         case payment_error_enum.PAYMENT_FAILED:
@@ -132,14 +133,10 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
                     error: 'Function Not Provided: mark_unavailable'
                 });
             }
-            return mark_unavailable(internal_purchase_id, payment_result.id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb(null, {
-                    unavailable: 1
-                });
-            });
+            await mark_unavailable(internal_purchase_id, payment_result.id);
+            return {
+                unavailable: 1
+            };
         case payment_error_enum.THREE_D_SECURE_ACTION_EXPIRED:
             payment_error = {
                 error: '3DSecure Expired'
@@ -185,22 +182,10 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
             });
     }
     if (payment_error.fraud === 1) {
-        return mark_fraud(internal_purchase_id, payment_result.id, (error) => {
-            if (error) {
-                return cb(error);
-            }
-            return postgres.user_mark_fraud(user_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb(payment_error);
-            });
-        });
+        await mark_fraud(internal_purchase_id, payment_result.id);
+        await user_mark_fraud(user_id);
+    } else {
+        await mark_failed(internal_purchase_id, payment_result.id);
     }
-    return mark_failed(internal_purchase_id, payment_result.id, (error) => {
-        if (error) {
-            return cb(error);
-        }
-        return cb(payment_error);
-    });
+    throw new Error(payment_error.error);
 };

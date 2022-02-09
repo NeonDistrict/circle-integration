@@ -1,22 +1,13 @@
-const is_valid_skip = require('../validation/is_valid_skip.js');
-const is_valid_limit = require('../validation/is_valid_limit.js');
+const config = require('../../config.js');
+const postgres = require('./postgres.js');
+const validate_skip = require('../validation/validate_skip.js');
+const validate_limit = require('../validation/validate_limit.js');
 
-module.exports = paginate_lingering_purchases = (config, query, skip, limit, cb) => {
-    if (!is_valid_skip(skip)) {
-        return cb({
-            error: 'Invalid skip'
-        });
-    }
-    if (!is_valid_limit(limit)) {
-        return cb({
-            error: 'Invalid limit'
-        });
-    }
+module.exports = paginate_lingering_purchases = async (skip, limit) => {
+    validate_skip(skip);
+    validate_limit(limit);
     if (limit > config.max_pagination_limit) {
-        return cb({
-            error: 'Limit Too Large',
-            maximum: config.max_pagination_limit
-        });
+        throw new Error('Limit Too Large, Maximum: ' + config.max_pagination_limit);
     }
     const now = new Date().getTime();
     const lingering_time = now - config.purchase_lingering_after;
@@ -35,12 +26,6 @@ module.exports = paginate_lingering_purchases = (config, query, skip, limit, cb)
         limit,          // limit
         skip            // offset (skip)
     ];
-    return query(text, values, (error, result) => {
-        if (error) {
-            return cb({
-                error: 'Server Error'
-            });
-        }
-        return cb(null, result.rows);
-    });
+    const result = await postgres.query(text, values);
+    return result.rows;
 };
