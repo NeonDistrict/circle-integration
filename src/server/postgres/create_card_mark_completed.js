@@ -4,7 +4,7 @@ const purchase_log = require('../purchase_log.js');
 
 module.exports = create_card_mark_failed = (config, query, internal_purchase_id, create_card_id, cb) => {
     purchase_log(internal_purchase_id, {
-        event: 'create_card_mark_failed'
+        event: 'create_card_mark_completed'
     });
     
     if (!is_valid_uuid(internal_purchase_id)) {
