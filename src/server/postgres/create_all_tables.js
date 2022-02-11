@@ -1,4 +1,7 @@
-const create_game_identitier_enum = (config, query, cb) => {
+const config = require('../../config.js');
+const postgres = require('./postgres.js');
+
+const create_game_identitier_enum = async () => {
     const text = 
     `
     CREATE TYPE "GAME_IDENTIFIER" AS ENUM (
@@ -6,24 +9,25 @@ const create_game_identitier_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_purchase_status_enum = (config, query, cb) => {
+const create_purchase_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "PURCHASE_STATUS" AS ENUM (
         'PENDING',
         'FAILED',
         'FRAUD',
+        'ABANDONED',
         'COMPLETED'
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_game_credited_status_enum = (config, query, cb) => {
+const create_game_credited_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "GAME_CREDITED_STATUS" AS ENUM (
@@ -34,10 +38,10 @@ const create_game_credited_status_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_create_card_status_enum = (config, query, cb) => {
+const create_create_card_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "CREATE_CARD_STATUS" AS ENUM (
@@ -50,10 +54,10 @@ const create_create_card_status_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_public_key_status_enum = (config, query, cb) => {
+const create_public_key_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "PUBLIC_KEY_STATUS" AS ENUM (
@@ -63,10 +67,10 @@ const create_public_key_status_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_payment_3ds_status_enum = (config, query, cb) => {
+const create_payment_3ds_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "PAYMENT_3DS_STATUS" AS ENUM (
@@ -81,10 +85,10 @@ const create_payment_3ds_status_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_payment_cvv_status_enum = (config, query, cb) => {
+const create_payment_cvv_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "PAYMENT_CVV_STATUS" AS ENUM (
@@ -98,10 +102,10 @@ const create_payment_cvv_status_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_payment_unsecure_status_enum = (config, query, cb) => {
+const create_payment_unsecure_status_enum = async () => {
     const text = 
     `
     CREATE TYPE "PAYMENT_UNSECURE_STATUS" AS ENUM (
@@ -114,10 +118,10 @@ const create_payment_unsecure_status_enum = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_users_table = (config, query, cb) => {
+const create_users_table = async () => {
     const text = 
     `
     CREATE TABLE "users" (
@@ -130,10 +134,10 @@ const create_users_table = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-const create_purchases_table = (config, query, cb) => {
+const create_purchases_table = async () => {
     const text = 
     `
     CREATE TABLE "purchases" (
@@ -213,36 +217,21 @@ const create_purchases_table = (config, query, cb) => {
     );
     `;
     const values = [];
-    return query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
-module.exports = create_all_tables = (config, query, cb) => {
+module.exports = create_all_tables = async () => {
     if (!config.dangerous) {
         throw new Error('Dangerous must be enabled to create_all_tables');
     }
-    const operations = [
-        create_game_identitier_enum,
-        create_purchase_status_enum,
-        create_game_credited_status_enum,
-        create_create_card_status_enum,
-        create_public_key_status_enum,
-        create_payment_3ds_status_enum,
-        create_payment_cvv_status_enum,
-        create_payment_unsecure_status_enum,
-        create_users_table,
-        create_purchases_table
-    ];
-    const recurse_operations = (operation_index, cb) => {
-        operations[operation_index](config, query, (error, result) => {
-            if (error) {
-                return cb(error);
-            }
-            if (operation_index + 1 < operations.length) {
-                return recurse_operations(operation_index + 1, cb);
-            } else {
-                return cb(null);
-            }
-        });
-    };
-    return recurse_operations(0, cb);
+    await create_game_identitier_enum();
+    await create_purchase_status_enum();
+    await create_game_credited_status_enum();
+    await create_create_card_status_enum();
+    await create_public_key_status_enum();
+    await create_payment_3ds_status_enum();
+    await create_payment_cvv_status_enum();
+    await create_payment_unsecure_status_enum();
+    await create_users_table();
+    await create_purchases_table();
 };

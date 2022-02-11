@@ -1,13 +1,10 @@
-module.exports = expect_one_row_count = (error, result, cb) => {
-    if (error) {
-        return cb({
-            error: 'Server Error'
-        });
-    }
+const fatal_error = require('../fatal_error.js');
+
+module.exports = expect_one_row_count = (result) => {
     if (result.rowCount !== 1) {
         return fatal_error({
             error: 'Query rowCount !== 1'
         });
     }
-    return cb(null);
+    return result;
 };

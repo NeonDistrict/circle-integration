@@ -1,23 +1,13 @@
+const config = require('../config.js');
 const fatal_error = require('./fatal_error.js');
+const user_mark_fraud = require('./postgres/user_mark_fraud.js');
 const payment_error_enum = require('./enum/payment_error_enum.js');
-const assess_payment_risk = require('./assess_payment_risk.js');
 const purchase_log = require('./purchase_log.js');
 
-module.exports = assess_payment_failure = (config, postgres, internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, cb) => {
+module.exports = assess_payment_failure = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable) => {
     purchase_log(internal_purchase_id, {
         event: 'assess_payment_failure'
     });
-    
-    // todo does risk come back as failed? or some other result?
-    // this could go into the switch then
-    // todo do we even need this is we have the below?
-    /*
-    const risk_error = assess_payment_risk(payment_result);
-    if (risk_error) {
-        return cb(risk_error);
-    }
-    */
-
     let payment_error = null;
     switch (payment_result.errorCode) {
         case payment_error_enum.PAYMENT_FAILED:
@@ -34,13 +24,11 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
             };
             break;
         case payment_error_enum.PAYMENT_DENIED:
-            // todo i think this is just failure but might be fraud
             payment_error = {
                 error: 'Payment Denied (Contact Card Provider)'
             };
             break;
         case payment_error_enum.RISK_DENIED:
-            // todo confirm fraud
             payment_error = {
                 error: 'Risk Denied (Contact Card Provider)',
                 fraud: 1
@@ -87,7 +75,6 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
         case payment_error_enum.CARD_CVV_INVALID:
         case payment_error_enum.CARD_ADDRESS_MISMATCH:
         case payment_error_enum.CARD_ZIP_MISMATCH:
-        case payment_error_enum.CARD_CVV_REQUIRED:
         case payment_error_enum.CARD_FAILED:
             payment_error = {
                 error: 'Invalid Details (Correct Information)'
@@ -146,14 +133,10 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
                     error: 'Function Not Provided: mark_unavailable'
                 });
             }
-            return mark_unavailable(internal_purchase_id, payment_result.id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb(null, {
-                    unavailable: 1
-                });
-            });
+            await mark_unavailable(internal_purchase_id, payment_result.id);
+            return {
+                unavailable: 1
+            };
         case payment_error_enum.THREE_D_SECURE_ACTION_EXPIRED:
             payment_error = {
                 error: '3DSecure Expired'
@@ -162,6 +145,11 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
         case payment_error_enum.PAYMENT_RETURNED:
             return fatal_error({
                 error: 'TODO: NOT SUPPORTED YET'
+            });
+        case payment_error_enum.CARD_CVV_REQUIRED:
+            // note: we always include a cvv
+            return fatal_error({
+                error: 'Received Impossible Error: CARD_CVV_REQUIRED'
             });
         case payment_error_enum.INVALID_WIRE_RTN:
             // note: we do not use WIRE
@@ -194,22 +182,10 @@ module.exports = assess_payment_failure = (config, postgres, internal_purchase_i
             });
     }
     if (payment_error.fraud === 1) {
-        return mark_fraud(internal_purchase_id, payment_result.id, (error) => {
-            if (error) {
-                return cb(error);
-            }
-            return postgres.user_mark_fraud(user_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb(payment_error);
-            });
-        });
+        await mark_fraud(internal_purchase_id, payment_result.id);
+        await user_mark_fraud(user_id);
+    } else {
+        await mark_failed(internal_purchase_id, payment_result.id);
     }
-    return mark_failed(internal_purchase_id, payment_result.id, (error) => {
-        if (error) {
-            return cb(error);
-        }
-        return cb(payment_error);
-    });
+    throw new Error(payment_error.error);
 };

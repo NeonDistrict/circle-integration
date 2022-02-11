@@ -1,12 +1,9 @@
-const is_valid_uuid = require('../validation/is_valid_uuid.js');
+const postgres = require('./postgres.js');
+const validate_uuid = require('../validation/validate_uuid.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
-module.exports = user_mark_fraud = (config, query, user_id, cb) => {
-    if (!is_valid_uuid(user_id)) {
-        return cb({
-            error: 'Invalid user_id'
-        });
-    }
+module.exports = user_mark_fraud = async (user_id) => {
+    validate_uuid(user_id);
     const now = new Date().getTime();
     const text = 
     `
@@ -21,5 +18,6 @@ module.exports = user_mark_fraud = (config, query, user_id, cb) => {
         true,   // "fraud"
         user_id // "user_id"
     ];
-    return query(text, values, (error, result) => expect_one_row_count(error, result, cb));
+    const result = await postgres.query(text, values);
+    return expect_one_row_count(result);
 };

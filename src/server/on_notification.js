@@ -1,7 +1,7 @@
 const axios = require('axios').default.create();
 const parking = require('./parking.js');
 
-module.exports = on_notification = async (notification, cb) => {
+module.exports = on_notification = async (notification) => {
     // if this is a subscription confirmation
     if (notification.Type === 'SubscriptionConfirmation') {
         console.log('got subscription confirmation');
@@ -10,26 +10,14 @@ module.exports = on_notification = async (notification, cb) => {
             method: 'get',
             url: subscribe_url
         };
-        try {
-            console.log('confirming subscription');
-            await axios(request);
-        } catch (request_error) {
-            return cb({
-                error: request_error
-            });
-        }
-
+        console.log('confirming subscription');
+        await axios(request);
         console.log('subscription confirmed');
         return cb(null);
     }
 
     // reaching here implies its a notification, get the message
-    let parsed_message = null;
-    try {
-        parsed_message = JSON.parse(notification.Message);
-    } catch (parse_error)  {
-        return cb(parse_error);
-    }
+    const parsed_message = JSON.parse(notification.Message);
 
     let result = null;
     switch (parsed_message.notificationType) {
@@ -47,18 +35,9 @@ module.exports = on_notification = async (notification, cb) => {
             break;
 
         default:
-            return cb({
-                error: 'Unexpected Notification Type'
-            });
+            throw new Error('Unexpected Notification Type: ' + parsed_message.notificationType);
     }
 
     // park the notification and dispatch the callback if its available
-    return parking.park_notification(result.id, result, (error) => {
-        if (error) {
-            return cb(error);
-        }
-
-        // close sns request success
-        return cb(null);
-    });
+    parking.park_notification(result.id, result);
 };

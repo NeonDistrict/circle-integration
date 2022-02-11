@@ -8,37 +8,39 @@ Contains documentation, demo, and back/front end components required to integrat
 + 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
 
 + 3ds purchases finishing need to be credited to the game, player needs verification of this
-+ does circle have a way to return 3ds not available
++ does circle have a way to return 3ds not availablef for testing
 + need to verify notifications via aws docs or else anyone can post in there
 + we will get notifications for refunds and shit that need handling right now they will just park eternally
-+ card creation does avs too
+
++ ensure assess_payment_failure uses every enum value
 
 + waiting to hear back on teh 5.54 amount issue on slack from circle
 + waiting to hear back on the expiry validation issue
-+ AVS test letters EKLO- all return Y erroneously, circle informed, waiting to hear back
 
 + need deep logging by uuid
 + logs need to be somehow slow queryable by uuid, maybe we use date stamps to find a region, load that region then slow sweep to find enetires
 + when the server starts if its gets any sns notifications right now i think it just dumps them, it should really be treating them correctly by updating things
 + looks like 3ds calls back with `paymentId=` in the query string which is great
-+ when a server comes up it should look at the db for anything that was left hanging or unresolved and query circle for it (this should actually happen periodically)
 + update notion
 + if we are going to just bounce invalid requests, we need to log and dashboard those, ip tracking
 + there should be safe guards in the where clause sql to only allow specific state transitions, ie a purchase cant go from failed to pending, and a cvv cant go into request unless 3ds is unavailable, this will prevent dissallowed transitions
 + some enums might not be getting used, they should all be somewhere..
 + postgres lib errors should come back as generic internal error but log in full
 + all errors should log in full but return only useful info for user
-+ uh after 3ds redirect is good or bad, the client prol needs to query the server to confirm things finished?
 + add returns to all callback entry points, or switch to promises and a better error response scheme
-+ where do we credit the game? we need to credit the game in order to mark the purchase result as complete
 + to many non fraud failures should lock up an account as fraud
-+ all requests about a certain internal purchase id could be stored in a single object with that id as the name
++ need to generate and send an email receipt
++ ugh we should be returning the internal purchase id for confirmation not the payment id
++ notify dev needs consistent format
++ make sure every switch has a default
++ why am i putting the api base in every circle call? that should get put in, inside of call_circle
 
 ## Notes
 
 + If a purchase request is closed, dropped, or disconneted before a response can be received, and that purchase can successfully issue a 3DSecure redirect to the player, that redirect link will be lost and a new purchase must be created as the original purchase is considered abandonded. If an identical purchase request is made with the same client generated idempotency key a purchase result of abandoned will be returned as the redirect link cannot be recovered at this point.
 
 + (this whole logic flow should be documented) 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
+
 
 
 ## Useful Links
