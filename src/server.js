@@ -25,13 +25,16 @@ const resolve_lingering_purchases = require('./server/resolve_lingering_purchase
 const parking = require('./server/parking.js');
 
 module.exports = server = async () => {
-    const respond = (res, error, body) => {
-        if (error) {
-            res.status(500);
-            return res.send(error);
-        }
+    const respond = (res, body) => {
         res.status(200);
         return res.send(body);
+    };
+
+    const respond_error = (res, error) => {
+        res.status(500);
+        return res.send({
+            error: error.message
+        });
     };
 
     const parse_body = (req, res, next) => {
@@ -88,88 +91,113 @@ module.exports = server = async () => {
     // todo all errors should get caught
 
     app.post('*', async (req, res, next) => {
-        validate_uuid(req.body.user_id);
-        const user = await create_or_find_user(req.body.user_id);
-        req.user = user;
-        return next();
+        try {
+            validate_uuid(req.body.user_id);
+            const user = await create_or_find_user(req.body.user_id);
+            req.user = user;
+            return next();
+        } catch (error) {
+            return respond_error(res, error);
+        } 
     });
     
     app.post('/get_public_keys', async (req, res) => {
-        const response = await get_public_keys();
-        return respond(res, response);
+        try {
+            const response = await get_public_keys();
+            return respond(res, response);
+        } catch (error) {
+            return respond_error(res, error);
+        } 
     });
 
     app.post('/get_sale_items', async (req, res) => {
-        const response = await list_sale_items();
-        return respond(res, response);
+        try {
+            const response = await list_sale_items();
+            return respond(res, response);
+        } catch (error) {
+            return respond_error(res, error);
+        } 
     });
     
     app.post('/purchase', async (req, res) => {
-        validate_uuid(req.body.client_generated_idempotency_key);
-        validate_string(req.body.circle_public_key_id);
-        validate_string(req.body.circle_encrypted_card_information);
-        validate_string(req.body.integration_encrypted_card_information);
-        validate_string(req.body.name_on_card);
-        validate_string(req.body.city);
-        validate_string(req.body.country);
-        validate_string(req.body.address_line_1);
-        validate_string(req.body.address_line_2);
-        validate_string(req.body.district);
-        validate_string(req.body.postal_zip_code);
-        validate_expiry_month(req.body.expiry_month);
-        validate_expiry_year(req.body.expiry_year);
-        validate_email(req.body.email);
-        validate_string(req.body.phone_number);
-        validate_sha1_hex(req.body.metadata_hash_session_id);
-        validate_ip_address(req.body.ip_address);
-        validate_sale_item_key(req.body.sale_item_key);
-        const response = await purchase(
-            req.user.user_id,
-            req.body.client_generated_idempotency_key,
-            req.body.circle_public_key_id,
-            req.body.circle_encrypted_card_information,
-            req.body.integration_encrypted_card_information,
-            req.body.name_on_card,
-            req.body.city,
-            req.body.country,
-            req.body.address_line_1,
-            req.body.address_line_2,
-            req.body.district,
-            req.body.postal_zip_code,
-            req.body.expiry_month,
-            req.body.expiry_year,
-            req.body.email, 
-            req.body.phone_number, 
-            req.body.metadata_hash_session_id,
-            req.body.ip_address,
-            req.body.sale_item_key
-        );
-        return respond(res, response);
+        try {
+            // todo these need to be specific types, theyre leaking through to circle
+            validate_uuid(req.body.client_generated_idempotency_key);
+            validate_string(req.body.circle_public_key_id);
+            validate_string(req.body.circle_encrypted_card_information);
+            validate_string(req.body.integration_encrypted_card_information);
+            validate_string(req.body.name_on_card);
+            validate_string(req.body.city);
+            validate_string(req.body.country);
+            validate_string(req.body.address_line_1);
+            validate_string(req.body.address_line_2);
+            validate_string(req.body.district);
+            validate_string(req.body.postal_zip_code);
+            validate_expiry_month(req.body.expiry_month);
+            validate_expiry_year(req.body.expiry_year);
+            validate_email(req.body.email);
+            validate_string(req.body.phone_number);
+            validate_sha1_hex(req.body.metadata_hash_session_id);
+            validate_ip_address(req.body.ip_address);
+            validate_sale_item_key(req.body.sale_item_key);
+            const response = await purchase(
+                req.user.user_id,
+                req.body.client_generated_idempotency_key,
+                req.body.circle_public_key_id,
+                req.body.circle_encrypted_card_information,
+                req.body.integration_encrypted_card_information,
+                req.body.name_on_card,
+                req.body.city,
+                req.body.country,
+                req.body.address_line_1,
+                req.body.address_line_2,
+                req.body.district,
+                req.body.postal_zip_code,
+                req.body.expiry_month,
+                req.body.expiry_year,
+                req.body.email, 
+                req.body.phone_number, 
+                req.body.metadata_hash_session_id,
+                req.body.ip_address,
+                req.body.sale_item_key
+            );
+            return respond(res, response);
+        } catch (error) {
+            return respond_error(res, error);
+        }   
     });
 
     app.post('/purchase_finalize', async (req, res) => {
-        validate_uuid(req.body.internal_purchase_id);
-        const response = await purchase_finalize(
-            req.user.user_id,
-            req.body.internal_purchase_id
-        );
-        return respond(res, response);
+        try {
+            validate_uuid(req.body.internal_purchase_id);
+            const response = await purchase_finalize(
+                req.user.user_id,
+                req.body.internal_purchase_id
+            );
+            return respond(res, response);
+        } catch (error) {
+            return respond_error(res, error);
+        } 
     });
     
     app.post('/purchase_history', async (req, res) => {
-        validate_uuid(req.body.user_id);
-        validate_skip(req.body.skip);
-        validate_limit(req.body.limit);
-        if (limit > config.max_pagination_limit) {
-            // todo this could be in the limit validator actually
-            throw new Error('Limit Too Large, Maximum: ' + config.max_pagination_limit);
-        }
-        const response = purchase_history(
-            req.user.user_id,
-            req.body.skip,
-            req.body.limit
-        );
-        return respond(res, response);
+        try {
+            validate_uuid(req.body.user_id);
+            validate_skip(req.body.skip);
+            validate_limit(req.body.limit);
+            if (limit > config.max_pagination_limit) {
+                // todo this could be in the limit validator actually
+                throw new Error('Limit Too Large, Maximum: ' + config.max_pagination_limit);
+            }
+            const response = purchase_history(
+                req.user.user_id,
+                req.body.skip,
+                req.body.limit
+            );
+            return respond(res, response);
+        } catch (error) {
+            return respond_error(res, error);
+        } 
     });
 
     // create the https server, binding the express app
@@ -223,17 +251,7 @@ module.exports = server = async () => {
     // server fully initialized, callback
     const server = {
         app: app,
-        https_server: https_server,
-        shutdown: async () => {
-            server.https_server.close((error) => {
-                return fatal_error({
-                    error: 'HTTPS Server Close Threw Error',
-                    details: error
-                });
-            });
-            parking.shutdown();
-            resolve_lingering_purchases.shutdown();
-        }
+        https_server: https_server
     };
     console.log('server setup complete');
     return server;

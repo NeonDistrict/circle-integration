@@ -36,10 +36,7 @@ const query = async (text, values) => {
 };
 
 const postgres = {
-    query: query,
-    shutdown: async () => {
-        await postgres.pool.end();
-    }
+    query: query
 };
 console.log('postgres setup complete');
 

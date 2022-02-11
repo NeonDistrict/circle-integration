@@ -86,8 +86,7 @@ describe('circle-integration-server', async function () {
     });
 
     after(function () {
-        test_server.shutdown();
-        postgres.shutdown();
+        process.exit(0);
     });
 
     it('validate uuid', function () {
@@ -299,7 +298,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('dont allow duplicate idempotency keys', async function () {
@@ -326,7 +325,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
 
         const purchase_result_2 = await circle_integration_client.purchase(
             idempotency_key,
@@ -696,7 +695,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 40);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 40);
     });
 
     it('invalid card number', async function () {        
@@ -799,7 +798,7 @@ describe('circle-integration-server', async function () {
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it('invalid name', async function () {        
+    it.only('invalid name', async function () {        
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -821,7 +820,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert.strictEqual(purchase_result.error, 'Invalid name_on_card');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid city', async function () {        
@@ -846,7 +845,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert.strictEqual(purchase_result.error, 'Invalid city');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid country', async function () {        
@@ -871,7 +870,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert.strictEqual(purchase_result.error, 'Invalid country');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid address 1', async function () {        
@@ -896,7 +895,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert.strictEqual(purchase_result.error, 'Invalid address_line_1');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid address 2', async function () {        
@@ -921,7 +920,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key
         );
-        assert.strictEqual(purchase_result.error, 'Invalid address_line_2');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid district', async function () {        
@@ -1147,7 +1146,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS B', async function () {        
@@ -1173,7 +1172,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS C', async function () {        
@@ -1199,7 +1198,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS D', async function () {        
@@ -1225,7 +1224,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS E', async function () {        
@@ -1251,7 +1250,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS F', async function () {        
@@ -1277,7 +1276,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS G', async function () {        
@@ -1303,7 +1302,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS I', async function () {        
@@ -1329,7 +1328,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS K', async function () {        
@@ -1355,7 +1354,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS L', async function () {        
@@ -1381,7 +1380,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS M', async function () {        
@@ -1407,7 +1406,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS N', async function () {        
@@ -1433,7 +1432,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS O', async function () {        
@@ -1459,7 +1458,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS P', async function () {        
@@ -1485,7 +1484,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS R', async function () {        
@@ -1511,7 +1510,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS S', async function () {        
@@ -1537,7 +1536,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS U', async function () {        
@@ -1563,7 +1562,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS W', async function () {        
@@ -1589,7 +1588,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS X', async function () {        
@@ -1615,7 +1614,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS Y', async function () {        
@@ -1641,7 +1640,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
     
     it('AVS Z', async function () {        
@@ -1667,7 +1666,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('AVS -', async function () {        
@@ -1693,6 +1692,6 @@ describe('circle-integration-server', async function () {
             ok_purchase.sale_item_key
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('payment_id') && final_result.payment_id.length === 36);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 });

@@ -3,15 +3,9 @@ const fatal_error = require('./fatal_error.js');
 const paginate_lingering_purchases = require('./postgres/paginate_lingering_purchases.js');
 const config = require('../config.js');
 
-let shutdown_flag = false;
-
 module.exports = resolve_lingering_purchases = {
     start: async () => {
         while (1) {
-            if (shutdown_flag) {
-                return;
-            }
-
             let skip = 0;
             let lingering_purchases = null;
             do {
@@ -36,8 +30,5 @@ module.exports = resolve_lingering_purchases = {
             
             await new Promise((resolve, reject) => { setTimeout(resolve, config.resolve_lingering_purchases_loop_time); });
         }
-    },
-    shutdown: () => {
-        shutdown_flag = true;
     }
 };
