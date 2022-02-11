@@ -220,8 +220,8 @@ module.exports = server = async () => {
     }
 
     console.log('start intervals');
-    const resolve_lingering_purchases_interval = setInterval(resolve_lingering_purchases, config.resolve_lingering_purchases_loop_time, config, postgres);
-    const parking_monitor_interval = setInterval(parking.parking_monitor, config.parking_monitor_loop_time, config);
+    resolve_lingering_purchases.start();
+    parking.parking_monitor();
 
     // server fully initialized, callback
     const server = {
@@ -234,8 +234,8 @@ module.exports = server = async () => {
                     details: error
                 });
             });
-            clearInterval(resolve_lingering_purchases_interval);
-            clearInterval(parking_monitor_interval);
+            parking.shutdown();
+            resolve_lingering_purchases.shutdown();
         }
     };
     console.log('server setup complete');
