@@ -2,7 +2,7 @@ const fatal_error = require('./fatal_error.js');
 const create_card_mark_fraud = require('./postgres/create_card_mark_fraud.js');
 const create_card_mark_failed = require('./postgres/create_card_mark_failed.js');
 const user_mark_fraud = require('./postgres/user_mark_fraud.js');
-const create_card_error_enum = require('./enum/create_card_error_enum.js');
+const create_card_failure_enum = require('./enum/create_card_failure_enum.js');
 const purchase_log = require('./purchase_log.js');
 
 module.exports = assess_create_card_failure = async (internal_purchase_id, user_id, create_card_result) => {
@@ -11,69 +11,69 @@ module.exports = assess_create_card_failure = async (internal_purchase_id, user_
     });
     let create_card_error = null;
     switch (create_card_result.errorCode) {
-        case create_card_error_enum.VERIFICATION_FAILED:
+        case create_card_failure_enum.VERIFICATION_FAILED:
             create_card_error = {
                 error: 'Create Card Failed (Unspecified)'
             };
             break;
-        case create_card_error_enum.VERIFICATION_FRAUD_DETECTED:
+        case create_card_failure_enum.VERIFICATION_FRAUD_DETECTED:
             create_card_error = {
                 error: 'Fraud Detected (Contact Card Provider)',
                 fraud: 1
             };
             break;
-        case create_card_error_enum.VERIFICATION_DENIED:
+        case create_card_failure_enum.VERIFICATION_DENIED:
             create_card_error = {
                 error: 'Verification Denied (Contact Card Provider)',
                 fraud: 1
             };
             break;
-        case create_card_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
+        case create_card_failure_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
             create_card_error = {
                 error: 'Verification Not Supported By Issuer'
             };
             break;
-        case create_card_error_enum.VERIFICATION_STOPPED_BY_ISSUER:
+        case create_card_failure_enum.VERIFICATION_STOPPED_BY_ISSUER:
             create_card_error = {
                 error: 'Verification Stopped (Contact Card Provider)',
                 fraud: 1
             };
             break;
-        case create_card_error_enum.CARD_FAILED:
-        case create_card_error_enum.CARD_ADDRESS_MISMATCH:
-        case create_card_error_enum.CARD_ZIP_MISMATCH:
-        case create_card_error_enum.CARD_CVV_INVALID:
-        case create_card_error_enum.CARD_INVALID:
+        case create_card_failure_enum.CARD_FAILED:
+        case create_card_failure_enum.CARD_ADDRESS_MISMATCH:
+        case create_card_failure_enum.CARD_ZIP_MISMATCH:
+        case create_card_failure_enum.CARD_CVV_INVALID:
+        case create_card_failure_enum.CARD_INVALID:
             create_card_error = {
                 error: 'Invalid Details (Correct Information)'
             };
             break;
-        case create_card_error_enum.CARD_EXPIRED:
+        case create_card_failure_enum.CARD_EXPIRED:
             create_card_error = {
                 error: 'Card Expired'
             };
             break;
-        case create_card_error_enum.CARD_LIMIT_VIOLATED:
+        case create_card_failure_enum.CARD_LIMIT_VIOLATED:
             create_card_error = {
                 error: 'Limit Exceeded (Circle Limit)'
             };
             break;
-        case create_card_error_enum.CARD_NOT_HONORED:
+        case create_card_failure_enum.CARD_NOT_HONORED:
             create_card_error = {
                 error: 'Card Not Honored (Contact Card Provider)'
             };
             break;
-        case create_card_error_enum.CREDIT_CARD_NOT_ALLOWED:
+        case create_card_failure_enum.CREDIT_CARD_NOT_ALLOWED:
             create_card_error = {
                 error: 'Card Not Allowed (Contact Card Provider)'
             };
             break;
-        case create_card_error_enum.CARD_ACCOUNT_INELIGIBLE:
+        case create_card_failure_enum.CARD_ACCOUNT_INELIGIBLE:
             payment_error = {
                 error: 'Ineligible Account (Contact Card Provider)'
             };
             break;
-        case create_card_error_enum.CARD_NETWORK_UNSUPPORTED:
+        case create_card_failure_enum.CARD_NETWORK_UNSUPPORTED:
             create_card_error = {
                 error: 'Card Network Not Supported (Contact Card Provider)'
             };

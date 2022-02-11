@@ -4,8 +4,8 @@ const notify_dev = require('./notify_dev.js');
 const purchase_log = require('./purchase_log');
 const call_circle = require('./call_circle.js');
 
-// todo this whole file needs async
-module.exports = resolve_purchase = async (config, postgres, purchase) => {
+// todo this whole file needs async, ugh still
+module.exports = resolve_purchase = async (purchase) => {
     purchase_log(purchase.internal_purchase_id, {
         event: 'assess_existing_purchase_result'
     });

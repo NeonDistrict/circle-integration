@@ -1,4 +1,4 @@
-const config = require('./config.dev.js');
+const config = require('./config.js');
 const { v4: uuidv4 } = require('uuid');
 const openpgp = require('openpgp');
 const axios = require('axios').default.create();
@@ -119,11 +119,10 @@ module.exports = circle_integration_client = {
         return purchase_result;
     },
 
-    purchase_finalize: async (user_id, internal_purchase_id, payment_id) => {
+    purchase_finalize: async (user_id, internal_purchase_id) => {
         const request_body = {
             user_id: user_id,
-            internal_purchase_id: internal_purchase_id,
-            payment_id: payment_id
+            internal_purchase_id: internal_purchase_id
         }
         const purchase_finalize_result = await circle_integration_client.call_circle_api('/purchase_finalize', request_body);
         return purchase_finalize_result;

@@ -27,7 +27,7 @@ module.exports = parking = {
         };
     },
 
-    park_notification: (id, result, cb) => {
+    park_notification: (id, result) => {
         // whenever we receive a normal notification (not the confirmation one) we have a race condition, sometimes a callback
         // will already be parked and waiting, and sometimes the callback may not be ready yet, first check if a callback is parked
         if (parked_callbacks.hasOwnProperty(id)) {
@@ -40,7 +40,7 @@ module.exports = parking = {
             parked_callback.callback(null, result);
 
             // handled ok
-            return cb(null);
+            return;
         }
 
         // reaching here implies that a callback was not already waiting meaning that the notification came before we could park one
@@ -51,7 +51,7 @@ module.exports = parking = {
         };
 
         // handled ok
-        return cb(null);
+        return;
     },
     parking_monitor: async () => {
         while (1) {

@@ -149,11 +149,9 @@ module.exports = server = async () => {
 
     app.post('/purchase_finalize', async (req, res) => {
         validate_uuid(req.body.internal_purchase_id);
-        validate_uuid(req.body.payment_id);
         const response = await purchase_finalize(
             req.user.user_id,
-            req.body.internal_purchase_id,
-            req.body.payment_id
+            req.body.internal_purchase_id
         );
         return respond(res, response);
     });
@@ -187,7 +185,7 @@ module.exports = server = async () => {
             details: error
         });
     });
-
+    
     // generate the pgp keypair
     console.log('generating pgp keypair');
     try {
@@ -203,7 +201,6 @@ module.exports = server = async () => {
     }
     
     // start the https server
-    console.log('https listen');
     await new Promise((resolve) => {
         https_server.listen(config.port, resolve);
     });

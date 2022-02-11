@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const config = require('../config.js');
 const call_circle = require('./call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
 const purchase_log = require('./purchase_log.js');
@@ -9,7 +10,6 @@ const payment_cvv_mark_unavailable = require('./postgres/payment_cvv_mark_unavai
 const payment_cvv_mark_pending = require('./postgres/payment_cvv_mark_pending.js');
 const payment_cvv_mark_completed = require('./postgres/payment_cvv_mark_completed.js');
 
-// todo make sure we arent including config where its not needed
 module.exports = create_payment_cvv = async (internal_purchase_id, user_id, card_id, circle_public_key_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item) => {
     purchase_log(internal_purchase_id, {
         event: 'create_payment_cvv'

@@ -1,4 +1,4 @@
-const config = require('../config.js'); // todo make sure readme is everywhere we need it
+const config = require('../config.js');
 const { v4: uuidv4 } = require('uuid');
 const call_circle = require('./call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');

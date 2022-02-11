@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const config = require('../config.js');
 const call_circle = require('./call_circle.js');
 const assess_create_card_result = require('./assess_create_card_result.js');
 const purchase_log = require('./purchase_log.js');
@@ -33,5 +34,5 @@ module.exports = create_card = async (internal_purchase_id, user_id, circle_publ
         }
     };
     const create_card_result = await call_circle([201], 'post', `${config.api_uri_base}cards`, request_body);
-    return await assess_create_card_result(config, postgres, internal_purchase_id, user_id, create_card_result);
+    return await assess_create_card_result(internal_purchase_id, user_id, create_card_result);
 };

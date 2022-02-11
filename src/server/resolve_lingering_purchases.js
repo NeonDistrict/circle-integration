@@ -13,8 +13,8 @@ module.exports = resolve_lingering_purchases = {
             }
 
             let skip = 0;
+            let lingering_purchases = null;
             do {
-                let lingering_purchases = null;
                 try {
                     lingering_purchases = await paginate_lingering_purchases(skip, config.max_pagination_limit);
                 } catch (error) {

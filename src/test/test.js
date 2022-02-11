@@ -1,11 +1,11 @@
 const assert = require('assert');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios').default.create();
-const create_server = require('../server.js');
-const create_postgres = require('../server/postgres/postgres.js');
+const server = require('../server.js');
+const postgres = require('../server/postgres/postgres.js');
 const circle_integration_client = require('../circle_integration_client.js');
+const reset_all_tables = require('../server/postgres/reset_all_tables.js');
 const sha1 = require('../server/utilities/sha1.js');
-const config_dev = require('../config.dev.js');
 const test_cards = require('./test_cards.js');
 const test_cvvs = require('./test_cvvs.js');
 const test_avss = require('./test_avss.js');
@@ -62,248 +62,189 @@ const handle_redirect = async function (purchase_result, user_id) {
     
     const purchase_finalize_result = await circle_integration_client.purchase_finalize(
         user_id,
-        purchase_result.internal_purchase_id,
-        purchase_result.payment_id
+        purchase_result.internal_purchase_id
     );
     return purchase_finalize_result;
 };
 
-describe('circle-integration-server', function () {
-    let test_server;
-    let test_postgres;
+const should_throw = (fn) => {
+    let threw = false;
+    try {
+        fn();
+    } catch (error) {
+        threw = true;
+    }
+    assert(threw);
+};
 
-    before(function (done) {
-        create_postgres(config_dev, function (error, created_postgres) {
-            if (error) {
-                throw error;
-            }
-            test_postgres = created_postgres;
-            test_postgres.reset_all_tables((error, result) => {
-                if (error) {
-                    throw error;
-                }
-                create_server(config_dev, test_postgres, function (error, created_server) {
-                    if (error) {
-                        throw error;
-                    }
-                    test_server = created_server;
-                    done();
-                });
-            });
-        });
+describe('circle-integration-server', async function () {
+    let test_server;
+
+    before(async function () {
+        await reset_all_tables();
+        test_server = await server();
     });
 
     after(function () {
         test_server.shutdown();
-        test_postgres.shutdown();
+        postgres.shutdown();
     });
 
     it('validate uuid', function () {
         const validate_uuid = require('../server/validation/validate_uuid');
-        let result = null;
 
         // dont allow undefined
-        result = validate_uuid(undefined);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid(undefined));
 
-        // dont allow undefined
-        result = validate_uuid(null);
-        assert.strictEqual(result, false);
+        // dont allow null
+        should_throw(() => validate_uuid(null));
 
         // dont allow empty string
-        result = validate_uuid('');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid(''));
 
         // dont allow number
-        result = validate_uuid(41254);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid(41254));
 
         // dont allow object
-        result = validate_uuid({test: 'test'});
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid({test: 'test'}));
 
         // dont allow array
-        result = validate_uuid(['test']);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid(['test']));
 
         // dont allow < 36 length (35)
-        result = validate_uuid('11111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid('11111111111111111111111111111111111'));
 
         // dont allow > 36 length (37)
-        result = validate_uuid('1111111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid('1111111111111111111111111111111111111'));
 
         // dont allow correct length (36) but wrong format
-        result = validate_uuid('111111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid('111111111111111111111111111111111111'));
 
         // dont allow close to uuidv4
-        result = validate_uuid('5a31c2e-8e7f8-4ba7-8def-77b5cbf7be96');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_uuid('5a31c2e-8e7f8-4ba7-8def-77b5cbf7be96'));
 
         // allow proper uuidv4
-        result = validate_uuid('5a31c2e8-e7f8-4ba7-8def-77b5cbf7be96');
-        assert.strictEqual(result, true);
+        validate_uuid('5a31c2e8-e7f8-4ba7-8def-77b5cbf7be96');
     });
 
     it('validate sha512_hex', function () {
         const validate_sha512_hex = require('../server/validation/validate_sha512_hex');
-        let result = null;
 
         // dont allow undefined
-        result = validate_sha512_hex(undefined);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex(undefined));
 
         // dont allow undefined
-        result = validate_sha512_hex(null);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex(null));
 
         // dont allow empty string
-        result = validate_sha512_hex('');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex(''));
 
         // dont allow number
-        result = validate_sha512_hex(41254);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex(41254));
 
         // dont allow object
-        result = validate_sha512_hex({test: 'test'});
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex({test: 'test'}));
 
         // dont allow array
-        result = validate_sha512_hex(['test']);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex(['test']));
 
         // dont allow < 128 length (127)
-        result = validate_sha512_hex('1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex('1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
 
         // dont allow > 128 length (129)
-        result = validate_sha512_hex('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
 
         // dont allow correct length (128) but wrong format
-        result = validate_sha512_hex('g1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex('g1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
 
         // dont allow close to sha512 hex
-        result = validate_sha512_hex('g083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sha512_hex('g083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7'));
 
         // allow proper sha512 hex
-        result = validate_sha512_hex('2083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7');
-        assert.strictEqual(result, true);
+        validate_sha512_hex('2083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7');
     });
 
     it('validate sale_item_key', function () {
         const validate_sale_item_key = require('../server/validation/validate_sale_item_key');
-        let result = null;
 
         // dont allow undefined
-        result = validate_sale_item_key(undefined);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key(undefined));
 
         // dont allow null
-        result = validate_sale_item_key(null);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key(null));
 
         // dont allow empty string
-        result = validate_sale_item_key('');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key(''));
 
         // dont allow number
-        result = validate_sale_item_key(41254);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key(41254));
 
         // dont allow object
-        result = validate_sale_item_key({test: 'test'});
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key({test: 'test'}));
 
         // dont allow array
-        result = validate_sale_item_key(['test']);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key(['test']));
 
         // dont allow < 3 length (2)
-        result = validate_sale_item_key('11');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key('11'));
 
         // dont allow > 128 length (129)
-        result = validate_sale_item_key('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_key('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
 
         // allow proper sale item key
-        result = validate_sale_item_key('big_neon_pack');
-        assert.strictEqual(result, true);
+        validate_sale_item_key('big_neon_pack');
     });
 
     it('validate sale_item_price', function () {
         const validate_sale_item_price = require('../server/validation/validate_sale_item_price');
-        let result = null;
 
         // dont allow undefined
-        result = validate_sale_item_price(undefined);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price(undefined));
 
         // dont allow null
-        result = validate_sale_item_price(null);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price(null));
 
         // dont allow empty string
-        result = validate_sale_item_price('');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price(''));
 
         // dont allow number
-        result = validate_sale_item_price(41254);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price(41254));
 
         // dont allow object
-        result = validate_sale_item_price({test: 'test'});
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price({test: 'test'}));
 
         // dont allow array
-        result = validate_sale_item_price(['test']);
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price(['test']));
 
         // dont allow < 4 length (3)
-        result = validate_sale_item_price('.11');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('.11'));
 
         // dont allow > 16 length (17)
-        result = validate_sale_item_price('11111111111111.11');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('11111111111111.11'));
 
         // dont allow $
-        result = validate_sale_item_price('$420.69');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('$420.69'));
 
         // dont allow ,
-        result = validate_sale_item_price('420,69');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('420,69'));
 
         // dont allow space
-        result = validate_sale_item_price('4 20.69');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('4 20.69'));
 
         // dont allow no decimal
-        result = validate_sale_item_price('42069');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('42069'));
 
         // dont allow no decimal places
-        result = validate_sale_item_price('420.');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('420.'));
 
         // dont allow one decimal place
-        result = validate_sale_item_price('420.6');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('420.6'));
 
         // dont allow more than two decimal places
-        result = validate_sale_item_price('420.699');
-        assert.strictEqual(result, false);
+        should_throw(() => validate_sale_item_price('420.699'));
 
         // allow proper sale item price
-        result = validate_sale_item_price('420.69');
-        assert.strictEqual(result, true);
+        validate_sale_item_price('420.69');
     });
     
     it('generate idempotency key', async function () {
@@ -1008,7 +949,7 @@ describe('circle-integration-server', function () {
         assert.strictEqual(purchase_result.error, 'Invalid district');
     });
 
-    it.only('invalid postal', async function () {        
+    it('invalid postal', async function () {        
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),

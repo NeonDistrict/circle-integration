@@ -10,7 +10,7 @@ const drop_tables = async () => {
     CASCADE;
     `;
     const values = [];
-    return await postgres.query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
 const drop_enums = async () => {
@@ -27,7 +27,7 @@ const drop_enums = async () => {
         "PAYMENT_UNSECURE_STATUS";
     `;
     const values = [];
-    return await postgres.query(text, values, cb);
+    return await postgres.query(text, values);
 };
 
 module.exports = delete_all_tables = async () => {
