@@ -37,7 +37,7 @@ module.exports = create_payment_unsecure = async (internal_purchase_id, user_id,
         description: sale_item.statement_description,
         encryptedData: encrypted_card_information
     };
-    const payment_result = await call_circle([201], 'post', `${config.api_uri_base}payments`, request_body);
+    const payment_result = await call_circle([201], 'post', `/payments`, request_body);
     // note: there is no redirect or unavailable for unsecure, these nulls are intentional
     const mark_failed      = payment_unsecure_mark_failed;
     const mark_fraud       = payment_unsecure_mark_fraud;

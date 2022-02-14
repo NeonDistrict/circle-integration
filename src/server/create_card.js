@@ -33,6 +33,6 @@ module.exports = create_card = async (internal_purchase_id, user_id, circle_publ
             ipAddress: ip_address
         }
     };
-    const create_card_result = await call_circle([201], 'post', `${config.api_uri_base}cards`, request_body);
+    const create_card_result = await call_circle([201], 'post', `/cards`, request_body);
     return await assess_create_card_result(internal_purchase_id, user_id, create_card_result);
 };
