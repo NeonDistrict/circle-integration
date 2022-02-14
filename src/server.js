@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const cors = require('cors')
 const fatal_error = require('./server/fatal_error.js');
 const generate_pgp_key_pair = require('./server/utilities/generate_pgp_key_pair.js');
 const create_or_find_user = require('./server/create_or_find_user.js');
@@ -74,6 +75,7 @@ module.exports = server = async () => {
     };
 
     const app = express();
+    app.use(cors());
     app.use(parse_body);                      
     
     app.post(config.sns_endpoint, async (req, res) => {

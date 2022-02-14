@@ -29,6 +29,8 @@ const ok_purchase = {
     sale_item_key: 'NEON_1000'
 };
 
+console.log(JSON.stringify(ok_purchase, null, 2));
+
 const handle_redirect = async function (purchase_result, user_id) {
     assert(purchase_result.hasOwnProperty('redirect'));
     
@@ -798,7 +800,7 @@ describe('circle-integration-server', async function () {
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
-    it.only('invalid name', async function () {        
+    it('invalid name', async function () {        
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
