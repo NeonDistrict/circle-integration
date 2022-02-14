@@ -11,7 +11,7 @@ module.exports = resolve_purchase = async (purchase) => {
     });
 
     const check_payment_result = (payment_id, verification_type, cb) => {
-        call_circle([200], 'get', `${config.api_uri_base}payments/${payment_id}`, null, (error, payment_result) => {
+        call_circle([200], 'get', `/payments/${payment_id}`, null, (error, payment_result) => {
             if (error) {
                 return cb(error);
             }

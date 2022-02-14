@@ -2,10 +2,10 @@ const config = require('../config.js');
 const api_error_enum = require('./enum/api_error_enum.js');
 const axios = require('axios');
 
-module.exports = call_circle = async (accepted_response_codes, method, url, data) => {
+module.exports = call_circle = async (accepted_response_codes, method, endpoint, data) => {
     const request = {
         method: method,
-        url: url,
+        url: `${config.api_uri_base}${endpoint}`,
         headers: {
             'Authorization': `Bearer ${config.api_sandbox_key}`
         }

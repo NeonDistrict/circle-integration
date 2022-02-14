@@ -41,7 +41,7 @@ module.exports = create_payment_3ds = async (internal_purchase_id, user_id, card
         description: sale_item.statement_description,
         encryptedData: encrypted_card_information
     };
-    const payment_result = await call_circle([201], 'post', `${config.api_uri_base}payments`, request_body);
+    const payment_result = await call_circle([201], 'post', `/payments`, request_body);
     const mark_failed      = payment_3ds_mark_failed;
     const mark_fraud       = payment_3ds_mark_fraud;
     const mark_unavailable = payment_3ds_mark_unavailable;
