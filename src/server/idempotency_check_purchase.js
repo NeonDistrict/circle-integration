@@ -14,6 +14,9 @@ module.exports = idempotency_check_purchase = async (request_purchase, metadata)
         throw new Error('Idempotency Collision');
     }
     const assessment = await resolve_purchase(existing_purchase);
+    if (assessment.hasOwnProperty('error')) {
+        throw new Error(assessment.error);
+    }
     if (!assessment) {
         return fatal_error({
             error: 'Expected assessment'

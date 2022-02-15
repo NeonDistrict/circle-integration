@@ -1,17 +1,27 @@
-const config = require('./config.js');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors')
+
+const config = require('./config.js');
 const fatal_error = require('./server/fatal_error.js');
-const generate_pgp_key_pair = require('./server/utilities/generate_pgp_key_pair.js');
+
+const respond = require('./server/utilities/respond.js');
+const respond_error = require('./server/utilities/respond_error.js');
+const parse_body = require('./server/utiltites/parse_body.js');
+
+const setup_pgp_key_pair = require('./server/setup_pgp_key_pair.js');
 const create_or_find_user = require('./server/create_or_find_user.js');
 
+
+const validate_request_user_id = require('./server/validation/validate_request_user_id.js');
 const validate_request_purchase = require('./server/validation/validate_request_purchase.js');
 const validate_request_purchase_finalize = require('./server/validation/validate_request_purchase_finalize.js');
+const validate_request_purchase_history = require('./server/validation/validate_request_purchase_history.js');
 
-const validate_uuid = require('./server/validation/validate_uuid.js');
+
+
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
 const on_notification = require('./server/on_notification.js');
 const get_public_keys = require('./server/get_public_keys.js');
@@ -21,56 +31,9 @@ const purchase_finalize = require('./server/purchase_finalize.js');
 const purchase_history = require('./server/purchase_history.js');
 const resolve_lingering_purchases = require('./server/resolve_lingering_purchases.js');
 const parking = require('./server/parking.js');
+const validate_request_purchase_history = require('./server/validation/validate_request_purchase_history.js');
 
 module.exports = server = async () => {
-    const respond = (res, body) => {
-        res.status(200);
-        return res.send(body);
-    };
-
-    const respond_error = (res, error) => {
-        res.status(500);
-        return res.send({
-            error: error.message
-        });
-    };
-
-    const parse_body = (req, res, next) => {
-        let body_length = 0;
-        let data_ended = false;
-        const body_parts = [];
-        req.on('data', (chunk) => {
-            if (data_ended) {
-                return;
-            } 
-            if (body_length + chunk.length > config.max_body_length) {
-                data_ended = true;
-                return respond(res, {
-                    error: 'Body Too Large'
-                });
-            }
-            body_length += chunk.length;
-            body_parts.push(chunk);
-        });
-        req.on('end', function(){
-            if (data_ended) {
-                return;
-            } 
-            data_ended = true;
-            const raw_body = body_parts.join('');
-            let parsed_body = null;
-            try {
-                parsed_body = JSON.parse(raw_body);
-            } catch (error) {
-                return respond(res, {
-                    error: 'Malformed Body'
-                });
-            }
-            req.body = parsed_body;
-            return next();
-        })
-    };
-
     const app = express();
     app.use(cors());
     app.use(parse_body);                      
@@ -87,13 +50,13 @@ module.exports = server = async () => {
         return res.end();
     });
 
-    // todo all errors should get caught
-
     app.post('*', async (req, res, next) => {
         try {
-            validate_uuid(req.body.user_id);
+            validate_request_user_id(req.body);
             const user = await create_or_find_user(req.body.user_id);
-            req.user = user;
+            if (user.fraud) {
+                throw new Error('User Locked: Fraud');
+            }
             return next();
         } catch (error) {
             return respond_error(res, error);
@@ -140,14 +103,8 @@ module.exports = server = async () => {
     
     app.post('/purchase_history', async (req, res) => {
         try {
-            validate_uuid(req.body.user_id);
-            validate_skip(req.body.skip);
-            validate_limit(req.body.limit);
-            const response = purchase_history(
-                req.user.user_id,
-                req.body.skip,
-                req.body.limit
-            );
+            validate_request_purchase_history(req.body);
+            const response = purchase_history(req.body);
             return respond(res, response);
         } catch (error) {
             return respond_error(res, error);
@@ -167,46 +124,22 @@ module.exports = server = async () => {
             details: error
         });
     });
-    
-    // generate the pgp keypair
-    console.log('generating pgp keypair');
-    try {
-        const pgp_keypair = await generate_pgp_key_pair();
-        config.pgp_passphrase = pgp_keypair.passphrase;
-        config.pgp_private_key = pgp_keypair.private_key;
-        config.pgp_public_key = pgp_keypair.public_key;
-    } catch (error) {
-        return fatal_error({
-            error: 'Generate PGP Keypair Threw Error',
-            details: error
-        });
-    }
-    
-    // start the https server
-    await new Promise((resolve) => {
-        https_server.listen(config.port, resolve);
-    });
-        
-    // once the https server is listening we setup the aws sns subscription
-    console.log('setup notification subscription');
-    try {
-        await setup_notifications_subscription(config, config.sns_endpoint_url);
-    } catch (error) {
-        return fatal_error({
-            error: 'Setup Notifications Subscription Threw Error',
-            details: error
-        });
-    }
+
+    await setup_pgp_key_pair();
+    await new Promise((resolve) => { https_server.listen(config.port, resolve); });
+    await setup_notifications_subscription(config, config.sns_endpoint_url);
 
     console.log('todo start intervals');
-    //resolve_lingering_purchases.start();
-    //parking.parking_monitor();
+    resolve_lingering_purchases.start();
+    parking.parking_monitor();
 
     // server fully initialized, callback
     const server = {
         app: app,
         https_server: https_server,
         shutdown: () => {
+            parking.shutdown();
+            resolve_lingering_purchases.shutdown();
             https_server.close();
         }
     };

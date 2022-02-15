@@ -8,11 +8,15 @@ const payment_3ds_mark_completed = require('./postgres/payment_3ds_mark_complete
 const payment_cvv_mark_completed = require('./postgres/payment_cvv_mark_completed.js');
 const payment_unsecure_mark_completed = require('./postgres/payment_unsecure_mark_completed.js');
 const purchase_mark_failed = require('./postgres/purchase_mark_failed.js');
+const purchase_mark_abandoned = require('./postgres/purchase_mark_abandoned.js');
 
 // todo this whole file needs async, ugh still
 module.exports = resolve_purchase = async (purchase) => {
     purchase_log(purchase.internal_purchase_id, {
-        event: 'assess_existing_purchase_result'
+        event: 'resolve_purchase',
+        details: {
+            purchase: purchase
+        }
     });
 
     const payment_completed = async (payment_id, verification_type) => {
@@ -109,8 +113,6 @@ module.exports = resolve_purchase = async (purchase) => {
 
     // reaching here implies the purchase is still in the pending state
 
-    // todo LEFT OF HERE
-
     // check the create card result
     switch (purchase.create_card_result) {
         case 'NONE':
@@ -118,26 +120,21 @@ module.exports = resolve_purchase = async (purchase) => {
             notify_dev({
                 issue: 'Resolve purchase had a NONE create card result'
             });
-            return postgres.purchase_mark_failed(purchase.internal_purchase_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb({
-                    error: 'Purchase Failed'
-                }, null, true);
-            });
+            await purchase_mark_failed(purchase.internal_purchase_id);
+            return {
+                error: 'Purchase Failed',
+                resolved: 1
+            };
 
         case 'REQUESTED':
         case 'PENDING':
             // note: fallthrough is intentional, the card creation never completing implies a payment never started and this purchase has expired
-            return postgres.purchase_mark_abandoned(purchase.internal_purchase_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb({
-                    error: 'Purchase Abandoned'
-                }, null, true);
-            });
+            await purchase_mark_abandoned(purchase.internal_purchase_id)
+            case 'ABANDONED':
+                return {
+                    error: 'Purchase Abandoned',
+                    resolved: 1
+                };
 
         case 'FAILED':
             // note: the purchase and create card result are marked failed at the same time, this cant happen
@@ -170,20 +167,17 @@ module.exports = resolve_purchase = async (purchase) => {
             notify_dev({
                 issue: 'Resolve purchase had a NONE create payment 3ds result'
             });
-            return postgres.purchase_mark_failed(purchase.internal_purchase_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb({
-                    error: 'Purchase Failed'
-                }, null, true);
-            });
+            await purchase_mark_failed(purchase.internal_purchase_id);
+            return {
+                error: 'Purchase Failed',
+                resolved: 1
+            };
 
         case 'REQUESTED':
         case 'PENDING':
         case 'REDIRECTED':
         case 'COMPLETED':
-            return check_payment_result(purchase.payment_3ds_id, '3ds', cb);
+            return await check_payment_result(purchase.payment_3ds_id, '3ds');
 
         case 'FAILED':
             // note: the purchase and payment result are marked failed at the same time, this cant happen
@@ -216,19 +210,16 @@ module.exports = resolve_purchase = async (purchase) => {
             notify_dev({
                 issue: 'Resolve purchase had a NONE create payment cvv result'
             });
-            return postgres.purchase_mark_failed(purchase.internal_purchase_id, (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb({
-                    error: 'Purchase Failed'
-                }, null, true);
-            });
+            await purchase_mark_failed(purchase.internal_purchase_id);
+            return {
+                error: 'Purchase Failed',
+                resolved: 1
+            };
 
         case 'REQUESTED':
         case 'PENDING':
         case 'COMPLETED':
-            return check_payment_result(purchase.payment_3ds_id, 'cvv', cb);
+            return await check_payment_result(purchase.payment_3ds_id, 'cvv');
             
         case 'FAILED':
             // note: the purchase and payment result are marked failed at the same time, this cant happen
@@ -261,19 +252,16 @@ module.exports = resolve_purchase = async (purchase) => {
             notify_dev({
                 issue: 'Resolve purchase had a NONE create payment none result'
             });
-            return postgres.purchase_mark_failed(purchase.internal_purchase_id, 'none', (error) => {
-                if (error) {
-                    return cb(error);
-                }
-                return cb({
-                    error: 'Purchase Failed'
-                }, null, true);
-            });
+            await purchase_mark_failed(purchase.internal_purchase_id);
+            return {
+                error: 'Purchase Failed',
+                resolved: 1
+            };
 
         case 'REQUESTED':
         case 'PENDING':
         case 'COMPLETED':
-            return check_payment_result(purchase.payment_3ds_id, cb);
+            return await check_payment_result(purchase.payment_3ds_id);
             
         case 'FAILED':
             // note: the purchase and payment result are marked failed at the same time, this cant happen
@@ -294,6 +282,6 @@ module.exports = resolve_purchase = async (purchase) => {
     }
 
     return fatal_error({
-        error: 'Unreached State in resolve_purchase'
+        error: 'Unreachable State in resolve_purchase'
     });
 };

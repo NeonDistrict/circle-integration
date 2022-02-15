@@ -1,11 +1,7 @@
 const config = require('../../config.js');
 const postgres = require('./postgres.js');
-const validate_skip = require('../validation/validate_skip.js');
-const validate_limit = require('../validation/validate_limit.js');
 
 module.exports = paginate_lingering_purchases = async (skip, limit) => {
-    validate_skip(skip);
-    validate_limit(limit);
     const now = new Date().getTime();
     const lingering_time = now - config.purchase_lingering_after;
     const text = 

@@ -3,6 +3,7 @@ const fatal_error = require('./fatal_error.js');
 const paginate_lingering_purchases = require('./postgres/paginate_lingering_purchases.js');
 const config = require('../config.js');
 
+let shutdown_flag = false;
 module.exports = resolve_lingering_purchases = {
     start: async () => {
         while (1) {
@@ -17,18 +18,21 @@ module.exports = resolve_lingering_purchases = {
                 let resolved_count = 0;
                 for (const lingering_purchase of lingering_purchases) {
                     const result = await resolve_purchase(lingering_purchase);
-                    if (result.is_resolved) {
+                    if (result.resolved) {
                         resolved_count++;
                     }
                 }
                 // note every purchase that is resolved will change the pageination skip, offset it backwards by how many purchases are resolved
-                skip -= resolved_count;
                 skip += lingering_purchases.length;
+                skip -= resolved_count;
 
             // if we didnt get a full page we hit the end of lingering purchases
             } while (lingering_purchases.length === config.max_pagination_limit);
             
             await new Promise((resolve, reject) => { setTimeout(resolve, config.resolve_lingering_purchases_loop_time); });
         }
+    },
+    shutdown: () => {
+        shutdown_flag = true;
     }
 };
