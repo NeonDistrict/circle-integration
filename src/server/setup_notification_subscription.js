@@ -9,7 +9,7 @@ module.exports = setup_notification_subscription = async (sns_endpoint_url) => {
 
         // list any existing subscriptions to see if one needs to be created
         console.log('get existing subscriptions');
-        const existing_subscriptions = await call_circle([200], 'get', `/notifications/subscriptions`, null);
+        const existing_subscriptions = await call_circle('none', [200], 'get', `/notifications/subscriptions`, null);
         console.log('got existing subscriptions');
 
         // look through subscriptions to see if we have a fully confirmed one
@@ -41,7 +41,7 @@ module.exports = setup_notification_subscription = async (sns_endpoint_url) => {
             endpoint: sns_endpoint_url
         };
         console.log('create subscription');
-        await call_circle([200, 201], 'post', `/notifications/subscriptions`, request_body);
+        await call_circle('none', [200, 201], 'post', `/notifications/subscriptions`, request_body);
         console.log('create sent okay');
         // creation okay, next step is to wait for confirmation to arrive in `on_notification`
         return;

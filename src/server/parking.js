@@ -94,7 +94,6 @@ module.exports = parking = {
             // a myriad reasons like dropped connection, or an aws outage, etc. we must detect
             // anything left parked, clean it up, and notify a dev.
             // we gather ids as to not disrupt the for-in enumeration
-            // todo: do we try to resolve abandons here or do we let the lingerer get it?
             
             // abandoned notifications...
             const abandoned_notification_ids = [];

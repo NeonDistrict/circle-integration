@@ -2,7 +2,7 @@ const config = require('../config.js');
 const api_error_enum = require('./enum/api_error_enum.js');
 const axios = require('axios');
 
-module.exports = call_circle = async (accepted_response_codes, method, endpoint, data) => {
+module.exports = call_circle = async (internal_purchase_id, accepted_response_codes, method, endpoint, data) => {
     const request = {
         method: method,
         url: `${config.api_uri_base}${endpoint}`,
@@ -14,6 +14,13 @@ module.exports = call_circle = async (accepted_response_codes, method, endpoint,
         request.data = data;
     }
 
+    purchase_log(internal_purchase_id, {
+        event: 'call_circle_request',
+        details: {
+            request: request
+        }
+    });
+
     let response;
     try {
         response = await axios(request);
@@ -24,6 +31,14 @@ module.exports = call_circle = async (accepted_response_codes, method, endpoint,
 
     // get status code
     const status_code = response.status || (response.data.hasOwnProperty('code') ? response.data.code : 999);
+
+    purchase_log(internal_purchase_id, {
+        event: 'call_circle_response',
+        details: {
+            response: response.data,
+            status_code: status_code
+        }
+    });
 
     // if our request has an accepted response code
     if (accepted_response_codes.includes(status_code)) {

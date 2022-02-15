@@ -9,7 +9,7 @@ const fatal_error = require('./server/fatal_error.js');
 
 const respond = require('./server/utilities/respond.js');
 const respond_error = require('./server/utilities/respond_error.js');
-const parse_body = require('./server/utiltites/parse_body.js');
+const parse_body = require('./server/utilities/parse_body.js');
 
 const setup_pgp_key_pair = require('./server/setup_pgp_key_pair.js');
 const create_or_find_user = require('./server/create_or_find_user.js');
@@ -31,7 +31,6 @@ const purchase_finalize = require('./server/purchase_finalize.js');
 const purchase_history = require('./server/purchase_history.js');
 const resolve_lingering_purchases = require('./server/resolve_lingering_purchases.js');
 const parking = require('./server/parking.js');
-const validate_request_purchase_history = require('./server/validation/validate_request_purchase_history.js');
 
 module.exports = server = async () => {
     const app = express();

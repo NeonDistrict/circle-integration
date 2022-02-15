@@ -9,7 +9,6 @@ module.exports = idempotency_check_purchase = async (request_purchase, metadata)
         return null;
     }
     if (!is_purchase_idempotent_equal(existing_purchase, request_purchase, metadata)) {
-        // todo user mark fraud here
         await user_mark_fraud(request_purchase.user_id);
         throw new Error('Idempotency Collision');
     }

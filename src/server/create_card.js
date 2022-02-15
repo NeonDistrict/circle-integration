@@ -36,6 +36,6 @@ module.exports = create_card = async (internal_purchase_id, request_purchase) =>
             ipAddress: request_purchase.ip_address
         }
     };
-    const create_card_result = await call_circle([201], 'post', `/cards`, circle_create_card_request);
+    const create_card_result = await call_circle(internal_purchase_id, [201], 'post', `/cards`, circle_create_card_request);
     return await assess_create_card_result(internal_purchase_id, request_purchase.user_id, create_card_result);
 };

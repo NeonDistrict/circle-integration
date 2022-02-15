@@ -20,7 +20,7 @@ module.exports = get_public_keys = async () => {
 
     // if we have no cached key, or the cache has reached expiry, get a new public key from circle
     // todo: prevent 429 for now 
-    //const circle_public_key = await call_circle([200], 'get', `/encryption/public`, null);
+    //const circle_public_key = await call_circle('none', [200], 'get', `/encryption/public`, null);
 
     // todo: hardcode circle pk because of rate limiting on running tests over and over
     circle_public_key = {

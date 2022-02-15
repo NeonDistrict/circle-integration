@@ -43,7 +43,7 @@ module.exports = create_payment_cvv = async (internal_purchase_id, card_id, requ
         description: sale_item.statement_description,
         encryptedData: request_purchase.circle_encrypted_card_information
     };
-    const payment_result = await call_circle([201], 'post', `/payments`, circle_payment_request);
+    const payment_result = await call_circle(internal_purchase_id, [201], 'post', `/payments`, circle_payment_request);
     // note: there is no redirect for cvv, this null is intentional
     const mark_failed      = payment_cvv_mark_failed;
     const mark_fraud       = payment_cvv_mark_fraud;

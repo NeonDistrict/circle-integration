@@ -10,7 +10,6 @@ const payment_unsecure_mark_completed = require('./postgres/payment_unsecure_mar
 const purchase_mark_failed = require('./postgres/purchase_mark_failed.js');
 const purchase_mark_abandoned = require('./postgres/purchase_mark_abandoned.js');
 
-// todo this whole file needs async, ugh still
 module.exports = resolve_purchase = async (purchase) => {
     purchase_log(purchase.internal_purchase_id, {
         event: 'resolve_purchase',
@@ -45,7 +44,7 @@ module.exports = resolve_purchase = async (purchase) => {
     };
 
     const check_payment_result = async (payment_id, verification_type) => {
-        const payment_result = await call_circle([200], 'get', `/payments/${payment_id}`, null);
+        const payment_result = await call_circle(purchase.internal_purchase_id, [200], 'get', `/payments/${payment_id}`, null);
         switch (payment_result.status) {
             case payment_status_enum.CONFIRMED:
             case payment_status_enum.PAID:
