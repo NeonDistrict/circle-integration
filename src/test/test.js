@@ -29,8 +29,6 @@ const ok_purchase = {
     sale_item_key: 'NEON_1000'
 };
 
-console.log(JSON.stringify(ok_purchase, null, 2));
-
 const handle_redirect = async function (purchase_result, user_id) {
     assert(purchase_result.hasOwnProperty('redirect'));
     
