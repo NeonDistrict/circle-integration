@@ -9,16 +9,9 @@ const generate_pgp_key_pair = require('./server/utilities/generate_pgp_key_pair.
 const create_or_find_user = require('./server/create_or_find_user.js');
 
 const validate_request_purchase = require('./server/validation/validate_request_purchase.js');
+const validate_request_purchase_finalize = require('./server/validation/validate_request_purchase_finalize.js');
 
-const validate_email = require('./server/validation/validate_email.js');
-const validate_expiry_month = require('./server/validation/validate_expiry_month.js');
-const validate_expiry_year = require('./server/validation/validate_expiry_year.js');
-const validate_ip_address = require('./server/validation/validate_ip_address.js');
-const validate_sale_item_key = require('./server/validation/validate_sale_item_key.js');
-const validate_sha1_hex = require('./server/validation/validate_sha1_hex.js');
 const validate_uuid = require('./server/validation/validate_uuid.js');
-const validate_success_url = require('./server/validation/validate_success_url.js');
-const validate_failure_url = require('./server/validation/validate_failure_url.js');
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
 const on_notification = require('./server/on_notification.js');
 const get_public_keys = require('./server/get_public_keys.js');
@@ -137,11 +130,8 @@ module.exports = server = async () => {
 
     app.post('/purchase_finalize', async (req, res) => {
         try {
-            validate_uuid(req.body.internal_purchase_id);
-            const response = await purchase_finalize(
-                req.user.user_id,
-                req.body.internal_purchase_id
-            );
+            validate_request_purchase_finalize(req.body);
+            const response = await purchase_finalize(req.body);
             return respond(res, response);
         } catch (error) {
             return respond_error(res, error);

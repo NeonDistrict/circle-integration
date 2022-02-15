@@ -9,15 +9,16 @@ const payment_3ds_mark_redirected = require('./postgres/payment_3ds_mark_redirec
 const payment_3ds_mark_pending = require('./postgres/payment_3ds_mark_pending.js');
 const payment_3ds_mark_completed = require('./postgres/payment_3ds_mark_completed.js');
 
-module.exports = purchase_finalize = async (user_id, internal_purchase_id) => {
-    purchase_log(internal_purchase_id, {
+module.exports = purchase_finalize = async (request_purchase_finalize) => {
+    purchase_log(request_purchase_finalize.internal_purchase_id, {
         event: 'purchase_finalize',
         details: {
-            internal_purchase_id: internal_purchase_id
+            internal_purchase_id: request_purchase_finalize.internal_purchase_id,
+            request_purchase_finalize: request_purchase_finalize
         }
     });
 
-    const purchase = await find_purchase_by_internal_purchase_id(internal_purchase_id);
+    const purchase = await find_purchase_by_internal_purchase_id(request_purchase_finalize.internal_purchase_id);
     if (purchase === null) {
         throw new Error('Purchase Not Found');
     }
@@ -36,6 +37,6 @@ module.exports = purchase_finalize = async (user_id, internal_purchase_id) => {
     const mark_redirected  = payment_3ds_mark_redirected;
     const mark_pending     = payment_3ds_mark_pending;
     const mark_completed   = payment_3ds_mark_completed;
-    const payment_3ds_assessment = await assess_payment_result(internal_purchase_id, request_purchase.user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed);
+    const payment_3ds_assessment = await assess_payment_result(request_purchase_finalize.internal_purchase_id, request_purchase_finalize.user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed);
     return payment_3ds_assessment;
 };

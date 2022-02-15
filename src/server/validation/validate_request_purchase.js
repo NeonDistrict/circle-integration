@@ -126,7 +126,6 @@ const schema = {
     additionalProperties: false
 };
 
-// todo this should be extended to all types for specific errors
 module.exports = validate_request_purchase = (request_purchase) => {
     validate(request_purchase, schema);
     return;
