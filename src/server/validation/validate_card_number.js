@@ -6,7 +6,5 @@ const schema = {
 };
 
 module.exports = validate_card_number = (card_number) => {
-    if (!validate(card_number, schema)) {
-        throw new Error('Invalid Card Number');
-    }
+    validate(card_number, schema);
 };

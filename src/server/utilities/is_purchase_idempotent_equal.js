@@ -5,7 +5,7 @@ module.exports = is_purchase_idempotent_equal = (existing_purchase, request_purc
         existing_purchase.client_generated_idempotency_key   === client_generated_idempotency_key &&
         existing_purchase.metadata_hash_email                === metadata.email &&
         existing_purchase.metadata_hash_phone_number         === metadata.phone_number &&
-        existing_purchase.metadata_hash_session_id           === metadata.session_id &&
+        existing_purchase.metadata_hash_session_id           === request_purchase.metadata_hash_session_id &&
         existing_purchase.metadata_hash_ip_address           === metadata.ip_address &&
         existing_purchase.metadata_hash_name_on_card         === metadata.name_on_card &&
         existing_purchase.metadata_hash_city                 === metadata.city &&

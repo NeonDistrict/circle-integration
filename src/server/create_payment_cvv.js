@@ -9,14 +9,13 @@ const payment_cvv_mark_unavailable = require('./postgres/payment_cvv_mark_unavai
 const payment_cvv_mark_pending = require('./postgres/payment_cvv_mark_pending.js');
 const payment_cvv_mark_completed = require('./postgres/payment_cvv_mark_completed.js');
 
-module.exports = create_payment_cvv = async (internal_purchase_id, card_id, request_purchase, metadata, sale_item) => {
+module.exports = create_payment_cvv = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
     purchase_log(internal_purchase_id, {
         event: 'create_payment_cvv',
         details: {
             internal_purchase_id: internal_purchase_id, 
             card_id: card_id, 
-            request_purchase: request_purchase, 
-            metadata: metadata, 
+            request_purchase: request_purchase,
             sale_item: sale_item
         }
     });
@@ -28,7 +27,7 @@ module.exports = create_payment_cvv = async (internal_purchase_id, card_id, requ
         metadata: {
             email: request_purchase.email,
             phoneNumber: request_purchase.phone_number,
-            sessionId: metadata.session_id,
+            sessionId: request_purchase.metadata_hash_session_id,
             ipAddress: request_purchase.ip_address,
         },
         amount: {
@@ -42,7 +41,7 @@ module.exports = create_payment_cvv = async (internal_purchase_id, card_id, requ
             type: 'card'
         },
         description: sale_item.statement_description,
-        encryptedData: request_purchase.encrypted_card_information
+        encryptedData: request_purchase.circle_encrypted_card_information
     };
     const payment_result = await call_circle([201], 'post', `/payments`, circle_payment_request);
     // note: there is no redirect for cvv, this null is intentional
@@ -52,5 +51,5 @@ module.exports = create_payment_cvv = async (internal_purchase_id, card_id, requ
     const mark_redirected  = null;
     const mark_pending     = payment_cvv_mark_pending;
     const mark_completed   = payment_cvv_mark_completed;
-    return await assess_payment_result(internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed);
+    return await assess_payment_result(internal_purchase_id, request_purchase.user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed);
 };

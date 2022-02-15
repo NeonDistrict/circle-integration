@@ -31,7 +31,7 @@ module.exports = purchase = async (request_purchase) => {
         return assessment;
     }
     await create_purchase(internal_purchase_id, request_purchase, metadata, sale_item);
-    const card_id = await create_card(internal_purchase_id, request_purchase, metadata);
-    const payment_assessment = await create_payment(internal_purchase_id, card_id, request_purchase, metadata, sale_item);
+    const card_id = await create_card(internal_purchase_id, request_purchase);
+    const payment_assessment = await create_payment(internal_purchase_id, card_id, request_purchase, sale_item);
     return payment_assessment;
 };

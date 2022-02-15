@@ -104,7 +104,7 @@ module.exports = create_purchase = async (internal_purchase_id, request_purchase
         null,                         // "payment_unsecure_id",
         metadata.email,               // "metadata_hash_email",
         metadata.phone_number,        // "metadata_hash_phone_number",
-        metadata.session_id,          // "metadata_hash_session_id",
+        request_purchase.metadata_hash_session_id, // "metadata_hash_session_id",
         metadata.ip_address,          // "metadata_hash_ip_address",
         metadata.name_on_card,        // "metadata_hash_name_on_card",
         metadata.city,                // "metadata_hash_city",

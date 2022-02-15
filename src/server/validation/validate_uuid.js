@@ -7,7 +7,5 @@ const schema = {
 };
 
 module.exports = validate_uuid = (uuid) => {
-    if (!validate(uuid, schema)) {
-        throw new Error('Invalid UUID');
-    }
+    validate(uuid, schema);
 };

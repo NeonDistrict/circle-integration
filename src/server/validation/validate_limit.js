@@ -7,7 +7,5 @@ const schema = {
 };
 
 module.exports = validate_limit = (limit) => {
-    if (!validate(limit, schema)) {
-        throw new Error('Invalid Limit');
-    }
+    validate(limit, schema);
 };

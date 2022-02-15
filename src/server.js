@@ -208,14 +208,17 @@ module.exports = server = async () => {
         });
     }
 
-    console.log('start intervals');
-    resolve_lingering_purchases.start();
-    parking.parking_monitor();
+    console.log('todo start intervals');
+    //resolve_lingering_purchases.start();
+    //parking.parking_monitor();
 
     // server fully initialized, callback
     const server = {
         app: app,
-        https_server: https_server
+        https_server: https_server,
+        shutdown: () => {
+            https_server.close();
+        }
     };
     console.log('server setup complete');
     return server;
