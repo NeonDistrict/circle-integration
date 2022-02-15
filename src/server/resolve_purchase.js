@@ -4,80 +4,72 @@ const notify_dev = require('./notify_dev.js');
 const purchase_log = require('./purchase_log');
 const call_circle = require('./call_circle.js');
 
+const payment_3ds_mark_completed = require('./postgres/payment_3ds_mark_completed.js');
+const payment_cvv_mark_completed = require('./postgres/payment_cvv_mark_completed.js');
+const payment_unsecure_mark_completed = require('./postgres/payment_unsecure_mark_completed.js');
+const purchase_mark_failed = require('./postgres/purchase_mark_failed.js');
+
 // todo this whole file needs async, ugh still
 module.exports = resolve_purchase = async (purchase) => {
     purchase_log(purchase.internal_purchase_id, {
         event: 'assess_existing_purchase_result'
     });
 
-    const check_payment_result = (payment_id, verification_type, cb) => {
-        call_circle([200], 'get', `/payments/${payment_id}`, null, (error, payment_result) => {
-            if (error) {
-                return cb(error);
-            }
-            switch (payment_result.status) {
-                case payment_status_enum.CONFIRMED:
-                case payment_status_enum.PAID:
-                    let postgres_mark_completed = null;
-                    switch (verification_type) {
-                        case '3ds':
-                            postgres_mark_completed = postgres.payment_3ds_mark_completed
-                            break;
-                        case 'cvv':
-                            postgres_mark_completed = postgres.payment_cvv_mark_completed
-                            break;
-                        case 'none':
-                            postgres_mark_completed = postgres.payment_none_mark_completed
-                            break;
-                        default:
-                            return cb({
-                                error: 'Unexpected Verification Type: ' + verification_type
-                            });
-                    }
-                    return postgres_mark_completed(purchase.internal_purchase_id, payment_id, (error) => {
-                        if (error) {
-                            return cb(error);
-                        }
-                        // todo crediting game should look at the purchase and determine if should credit etc switch on status
-                        return credit_game(config, postgres, purchase.internal_purchase_id, purchase.user_id, purchase.game_id, purchase.sale_item_key, (error) => {
-                            if (error) {
-                                return cb(error);
-                            }
-                            return cb(null, {
-                                internal_purchase_id: purchase.internal_purchase_id
-                            }, true);
-                        });
-                    });
-        
-                case payment_status_enum.FAILED:
-                    // todo: technically we could have a fraud in here, maybe check on that risk assessment
-                    return postgres.purchase_mark_failed(purchase.internal_purchase_id, (error) => {
-                        if (error) {
-                            return cb(error);
-                        }
-                        return cb({
-                            error: 'Purchase Failed'
-                        }, null, true);
-                    });
+    const payment_completed = async (payment_id, verification_type) => {
+        let postgres_mark_completed = null;
+        switch (verification_type) {
+            case '3ds':
+                postgres_mark_completed = payment_3ds_mark_completed
+                break;
+            case 'cvv':
+                postgres_mark_completed = payment_cvv_mark_completed
+                break;
+            case 'none':
+                postgres_mark_completed = payment_unsecure_mark_completed
+                break;
+            default:
+                throw new Error('Unexpected Verification Type: ' + verification_type)
+        }
+        await postgres_mark_completed(purchase.internal_purchase_id, payment_id);
 
-                case payment_status_enum.PENDING:
-                case payment_status_enum.ACTION_REQUIRED:
-                    // todo should cancel payment here, which will require an sns callback nonsense
-                    return postgres.purchase_mark_abandoned(purchase.internal_purchase_id, (error) => {
-                        if (error) {
-                            return cb(error);
-                        }
-                        return cb({
-                            error: 'Purchase Abandoned'
-                        }, null, true);
-                    });
-                    
-                default:
-                    return cb({
-                        error: 'Unexpected Payment Status'
-                    });
-            }
-        });
+        // todo crediting game should look at the purchase and determine if should credit etc switch on status
+        await credit_game(config, postgres, purchase.internal_purchase_id, purchase.user_id, purchase.game_id, purchase.sale_item_key);
+        return {
+            internal_purchase_id: purchase.internal_purchase_id,
+            resolved: 1
+        };
+    };
+
+    const check_payment_result = async (payment_id, verification_type) => {
+        const payment_result = await call_circle([200], 'get', `/payments/${payment_id}`, null);
+        switch (payment_result.status) {
+            case payment_status_enum.CONFIRMED:
+            case payment_status_enum.PAID:
+                return await payment_completed(payment_id, verification_type);
+    
+            case payment_status_enum.FAILED:
+                // todo: technically we could have a fraud in here, maybe check on that risk assessment
+                await purchase_mark_failed(purchase.internal_purchase_id);
+                return {
+                    error: 'Purchase Failed',
+                    resolved: 1
+                };
+
+            case payment_status_enum.PENDING:
+            case payment_status_enum.ACTION_REQUIRED:
+                // todo if purchases are marked abandoned or failed they cant be resumed
+                // todo should cancel payment here, which will require an sns callback nonsense
+                await purchase_mark_abandoned(purchase.internal_purchase_id);
+                return {
+                    error: 'Purchase Abandoned',
+                    resolved: 1
+                };
+                
+            default:
+                return fatal_error({
+                    error: 'Unexpected Payment Status'
+                });
+        }
     };
 
     // check the overall purchase result
@@ -87,20 +79,23 @@ module.exports = resolve_purchase = async (purchase) => {
             break;
         
         case 'FAILED':
-            return cb({
-                error: 'Purchase Failed'
-            }, null, true);
+            return {
+                error: 'Purchase Failed',
+                resolved: 1
+            };
         
         case 'FRAUD':
-            return cb({
+            return {
                 error: 'Fraud Detected',
-                fraud: 1
-            }, null, true);
+                fraud: 1,
+                resolved: 1
+            };
         
         case 'ABANDONED':
-            return cb({
-                error: 'Purchase Abandoned'
-            }, null, true);
+            return {
+                error: 'Purchase Abandoned',
+                resolved: 1
+            };
         
         case 'COMPLETED':
             // note: intentionally left blank to move to the next check to find the payment id and check game credit
@@ -113,6 +108,8 @@ module.exports = resolve_purchase = async (purchase) => {
     }
 
     // reaching here implies the purchase is still in the pending state
+
+    // todo LEFT OF HERE
 
     // check the create card result
     switch (purchase.create_card_result) {

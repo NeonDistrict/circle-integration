@@ -1,5 +1,4 @@
 const { v4: uuidv4 } = require('uuid');
-const config = require('../config.js');
 const call_circle = require('./call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
 const purchase_log = require('./purchase_log.js');
@@ -10,20 +9,27 @@ const payment_cvv_mark_unavailable = require('./postgres/payment_cvv_mark_unavai
 const payment_cvv_mark_pending = require('./postgres/payment_cvv_mark_pending.js');
 const payment_cvv_mark_completed = require('./postgres/payment_cvv_mark_completed.js');
 
-module.exports = create_payment_cvv = async (internal_purchase_id, user_id, card_id, circle_public_key_id, encrypted_card_information, email, phone_number, session_id, ip_address, sale_item) => {
+module.exports = create_payment_cvv = async (internal_purchase_id, card_id, request_purchase, metadata, sale_item) => {
     purchase_log(internal_purchase_id, {
-        event: 'create_payment_cvv'
+        event: 'create_payment_cvv',
+        details: {
+            internal_purchase_id: internal_purchase_id, 
+            card_id: card_id, 
+            request_purchase: request_purchase, 
+            metadata: metadata, 
+            sale_item: sale_item
+        }
     });
     const payment_cvv_idempotency_key = uuidv4();
     await payment_cvv_start(internal_purchase_id, payment_cvv_idempotency_key);
-    const request_body = {
+    const circle_payment_request = {
         idempotencyKey: payment_cvv_idempotency_key,
-        keyId: circle_public_key_id,
+        keyId: request_purchase.circle_public_key_id,
         metadata: {
-            email: email,
-            phoneNumber: phone_number,
-            sessionId: session_id,
-            ipAddress: ip_address,
+            email: request_purchase.email,
+            phoneNumber: request_purchase.phone_number,
+            sessionId: metadata.session_id,
+            ipAddress: request_purchase.ip_address,
         },
         amount: {
             amount: sale_item.sale_item_price,
@@ -36,9 +42,9 @@ module.exports = create_payment_cvv = async (internal_purchase_id, user_id, card
             type: 'card'
         },
         description: sale_item.statement_description,
-        encryptedData: encrypted_card_information
+        encryptedData: request_purchase.encrypted_card_information
     };
-    const payment_result = await call_circle([201], 'post', `/payments`, request_body);
+    const payment_result = await call_circle([201], 'post', `/payments`, circle_payment_request);
     // note: there is no redirect for cvv, this null is intentional
     const mark_failed      = payment_cvv_mark_failed;
     const mark_fraud       = payment_cvv_mark_fraud;

@@ -6,7 +6,12 @@ const purchase_log = require('./purchase_log.js');
 
 module.exports = assess_payment_result = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed) => {
     purchase_log(internal_purchase_id, {
-        event: 'assess_payment_result'
+        event: 'assess_payment_result',
+        details: {
+            internal_purchase_id: internal_purchase_id, 
+            user_id: user_id, 
+            payment_result: payment_result
+        }
     });
     switch (payment_result.status) {
         case payment_status_enum.CONFIRMED:

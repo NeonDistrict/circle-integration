@@ -8,9 +8,6 @@ module.exports = paginate_purchases_by_user_id = async (user_id, skip, limit) =>
     validate_uuid(user_id);
     validate_skip(skip);
     validate_limit(limit);
-    if (limit > config.max_pagination_limit) {
-        throw new Error('Limit Too Large, Maximum: ' + config.max_pagination_limit);
-    }
     const text = 
     `
         SELECT 

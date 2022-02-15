@@ -6,14 +6,18 @@ const express = require('express');
 const fatal_error = require('./server/fatal_error.js');
 const generate_pgp_key_pair = require('./server/utilities/generate_pgp_key_pair.js');
 const create_or_find_user = require('./server/create_or_find_user.js');
+
+const validate_request_purchase = require('./server/validation/validate_request_purchase.js');
+
 const validate_email = require('./server/validation/validate_email.js');
 const validate_expiry_month = require('./server/validation/validate_expiry_month.js');
 const validate_expiry_year = require('./server/validation/validate_expiry_year.js');
 const validate_ip_address = require('./server/validation/validate_ip_address.js');
 const validate_sale_item_key = require('./server/validation/validate_sale_item_key.js');
 const validate_sha1_hex = require('./server/validation/validate_sha1_hex.js');
-const validate_string = require('./server/validation/validate_string.js');
 const validate_uuid = require('./server/validation/validate_uuid.js');
+const validate_success_url = require('./server/validation/validate_success_url.js');
+const validate_failure_url = require('./server/validation/validate_failure_url.js');
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
 const on_notification = require('./server/on_notification.js');
 const get_public_keys = require('./server/get_public_keys.js');
@@ -121,46 +125,8 @@ module.exports = server = async () => {
     
     app.post('/purchase', async (req, res) => {
         try {
-            // todo these need to be specific types, theyre leaking through to circle
-            validate_uuid(req.body.client_generated_idempotency_key);
-            validate_string(req.body.circle_public_key_id);
-            validate_string(req.body.circle_encrypted_card_information);
-            validate_string(req.body.integration_encrypted_card_information);
-            validate_string(req.body.name_on_card);
-            validate_string(req.body.city);
-            validate_string(req.body.country);
-            validate_string(req.body.address_line_1);
-            validate_string(req.body.address_line_2);
-            validate_string(req.body.district);
-            validate_string(req.body.postal_zip_code);
-            validate_expiry_month(req.body.expiry_month);
-            validate_expiry_year(req.body.expiry_year);
-            validate_email(req.body.email);
-            validate_string(req.body.phone_number);
-            validate_sha1_hex(req.body.metadata_hash_session_id);
-            validate_ip_address(req.body.ip_address);
-            validate_sale_item_key(req.body.sale_item_key);
-            const response = await purchase(
-                req.user.user_id,
-                req.body.client_generated_idempotency_key,
-                req.body.circle_public_key_id,
-                req.body.circle_encrypted_card_information,
-                req.body.integration_encrypted_card_information,
-                req.body.name_on_card,
-                req.body.city,
-                req.body.country,
-                req.body.address_line_1,
-                req.body.address_line_2,
-                req.body.district,
-                req.body.postal_zip_code,
-                req.body.expiry_month,
-                req.body.expiry_year,
-                req.body.email, 
-                req.body.phone_number, 
-                req.body.metadata_hash_session_id,
-                req.body.ip_address,
-                req.body.sale_item_key
-            );
+            validate_request_purchase(req.body);
+            const response = await purchase(req.body);
             return respond(res, response);
         } catch (error) {
             return respond_error(res, error);
@@ -185,10 +151,6 @@ module.exports = server = async () => {
             validate_uuid(req.body.user_id);
             validate_skip(req.body.skip);
             validate_limit(req.body.limit);
-            if (limit > config.max_pagination_limit) {
-                // todo this could be in the limit validator actually
-                throw new Error('Limit Too Large, Maximum: ' + config.max_pagination_limit);
-            }
             const response = purchase_history(
                 req.user.user_id,
                 req.body.skip,

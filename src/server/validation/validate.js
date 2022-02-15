@@ -2,13 +2,14 @@ const jsonschema_validate = require('jsonschema').validate;
 
 module.exports = validate = (value, schema) => {
     if (value === undefined) {
-        return false;
+        throw new Error('Validation value undefined');
     }
     if (value === null) {
-        return false;
+        throw new Error('Validation Value null');
     }
-    if (jsonschema_validate(value, schema).errors.length > 0) {
-        return false;
+    const validation_errors = jsonschema_validate(value, schema).errors;
+    if (validation_errors.length > 0) {
+        throw new Error('Validation Error: ' + validation_errors[0]);
     }
-    return true;
+    return;
 };

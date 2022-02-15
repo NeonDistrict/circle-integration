@@ -6,9 +6,6 @@ const validate_limit = require('../validation/validate_limit.js');
 module.exports = paginate_lingering_purchases = async (skip, limit) => {
     validate_skip(skip);
     validate_limit(limit);
-    if (limit > config.max_pagination_limit) {
-        throw new Error('Limit Too Large, Maximum: ' + config.max_pagination_limit);
-    }
     const now = new Date().getTime();
     const lingering_time = now - config.purchase_lingering_after;
     const text = 
