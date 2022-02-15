@@ -4,7 +4,7 @@ const user_mark_fraud = require('./postgres/user_mark_fraud.js');
 const resolve_purchase = require('./resolve_purchase.js');
 
 module.exports = idempotency_check_purchase = async (request_purchase, metadata) => {
-    const existing_purchase = await find_purchase_by_client_generated_idempotency_key(client_generated_idempotency_key);
+    const existing_purchase = await find_purchase_by_client_generated_idempotency_key(request_purchase.client_generated_idempotency_key);
     if (existing_purchase === null) {
         return null;
     }

@@ -2,7 +2,7 @@ const openpgp = require('openpgp');
 const config = require('../config.js');
 const validate_card_number = require('./validation/validate_card_number.js');
 
-module.export = decrypt_card_number = async (integration_encrypted_card_information) => {
+module.exports = decrypt_card_number = async (integration_encrypted_card_information) => {
     let integration_decrypted_card_information = null;
     try {
         const decryption_result = await openpgp.decrypt({

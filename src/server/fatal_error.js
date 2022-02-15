@@ -6,6 +6,7 @@ module.exports = fatal_error = (error) => {
         error: error
     });
     console.log('FATAL ERROR');
+    console.log(error);
     console.log(JSON.stringify(error, null, 2));
     process.exit(1);
 };

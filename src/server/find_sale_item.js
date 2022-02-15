@@ -7,4 +7,5 @@ module.exports = find_sale_item = (sale_item_key) => {
     if (sale_item === undefined || sale_item === null) {
         throw new Error('Sale Item Key Not Found');
     }
+    return sale_item;
 };

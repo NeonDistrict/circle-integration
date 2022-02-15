@@ -88,7 +88,35 @@ describe('circle-integration-server', async function () {
     });
 
     after(function () {
-        process.exit(0);
+        test_server.shutdown();
+    });
+
+    it.only('make a normal purchase', async function () {
+        const user_id = uuidv4();
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            user_id,
+            ok_purchase.metadata_hash_session_id,
+            ok_purchase.ip_address,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_line_1,
+            ok_purchase.address_line_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
+        );
+        const final_result = await handle_redirect(purchase_result, user_id);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('validate uuid', function () {
@@ -277,33 +305,7 @@ describe('circle-integration-server', async function () {
         assert.strictEqual(result.error, 'Body Too Large');
     });
 
-    it.only('make a normal purchase', async function () {
-        const user_id = uuidv4();
-        const purchase_result = await circle_integration_client.purchase(
-            circle_integration_client.generate_idempotency_key(),
-            user_id,
-            ok_purchase.metadata_hash_session_id,
-            ok_purchase.ip_address,
-            ok_purchase.card_number,
-            ok_purchase.cvv,
-            ok_purchase.name,
-            ok_purchase.city,
-            ok_purchase.country,
-            ok_purchase.address_line_1,
-            ok_purchase.address_line_2,
-            ok_purchase.district,
-            ok_purchase.postal,
-            ok_purchase.expiry_month,
-            ok_purchase.expiry_year,
-            ok_purchase.email,
-            ok_purchase.phone,
-            ok_purchase.sale_item_key,
-            config.three_d_secure_success_url,
-            config.three_d_secure_failure_url
-        );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
-    });
+    
 
     it('dont allow duplicate idempotency keys', async function () {
         const idempotency_key = circle_integration_client.generate_idempotency_key();        

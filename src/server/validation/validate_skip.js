@@ -5,7 +5,5 @@ const schema = {
 };
 
 module.exports = validate_skip = (skip) => {
-    if (!validate(skip, schema)) {
-        throw new Error('Invalid Skip');
-    }
+    validate(skip, schema);
 };

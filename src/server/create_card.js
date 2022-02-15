@@ -4,13 +4,12 @@ const assess_create_card_result = require('./assess_create_card_result.js');
 const purchase_log = require('./purchase_log.js');
 const create_card_start = require('./postgres/create_card_start.js');
 
-module.exports = create_card = async (internal_purchase_id, request_purchase, metadata) => {
+module.exports = create_card = async (internal_purchase_id, request_purchase) => {
     purchase_log(internal_purchase_id, {
         event: 'create_card',
         details: {
             internal_purchase_id: internal_purchase_id,
-            request_purchase: request_purchase,
-            metadata: metadata
+            request_purchase: request_purchase
         }
     });
     const create_card_idempotency_key = uuidv4();
@@ -18,7 +17,7 @@ module.exports = create_card = async (internal_purchase_id, request_purchase, me
     const circle_create_card_request = {
         idempotencyKey: create_card_idempotency_key,
         keyId: request_purchase.circle_public_key_id,
-        encryptedData: request_purchase.encrypted_card_information,
+        encryptedData: request_purchase.circle_encrypted_card_information,
         billingDetails: {
             name: request_purchase.name_on_card,
             city: request_purchase.city,
@@ -33,7 +32,7 @@ module.exports = create_card = async (internal_purchase_id, request_purchase, me
         metadata: {
             email: request_purchase.email,
             phoneNumber: request_purchase.phone_number,
-            sessionId: metadata.session_id,
+            sessionId: request_purchase.metadata_hash_session_id,
             ipAddress: request_purchase.ip_address
         }
     };
