@@ -2,7 +2,7 @@ const assert = require('assert');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios').default.create();
 const server = require('../server.js');
-const postgres = require('../server/postgres/postgres.js');
+const config = require('../config.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const reset_all_tables = require('../server/postgres/reset_all_tables.js');
 const sha1 = require('../server/utilities/sha1.js');
@@ -277,7 +277,7 @@ describe('circle-integration-server', async function () {
         assert.strictEqual(result.error, 'Body Too Large');
     });
 
-    it('make a normal purchase', async function () {
+    it.only('make a normal purchase', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -297,7 +297,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
