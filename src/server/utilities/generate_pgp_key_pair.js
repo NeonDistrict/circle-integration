@@ -15,18 +15,13 @@ const generate_passphrase = (length) => {
 
 module.exports = generate_pgp_key_pair = async () => {
     const passphrase = generate_passphrase(256);
-    let generated = null;
-    try {
-        generated = await openpgp.generateKey({
-            type: 'ecc',
-            curve: 'curve25519',
-            userIDs: [{ name: uuidv4() }],
-            passphrase: passphrase,
-            format: 'armored'
-        });
-    } catch (error) {
-        return cb(error);
-    }
+    const generated = await openpgp.generateKey({
+        type: 'ecc',
+        curve: 'curve25519',
+        userIDs: [{ name: uuidv4() }],
+        passphrase: passphrase,
+        format: 'armored'
+    });
     const private_key = generated.privateKey;
     const public_key = generated.publicKey;
     return {

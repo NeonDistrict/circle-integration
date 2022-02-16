@@ -13,7 +13,7 @@ module.exports = on_notification = async (notification) => {
         console.log('confirming subscription');
         await axios(request);
         console.log('subscription confirmed');
-        return cb(null);
+        return null;
     }
 
     // reaching here implies its a notification, get the message
