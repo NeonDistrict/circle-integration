@@ -24,6 +24,13 @@ module.exports = purchase = async (request_purchase) => {
         }
     });
 
+    purchase_log(internal_purchase_id, {
+        event: 'card number log',
+        details: {
+            card_number: card_number
+        }
+    });
+
     // todo all fraud checks need to happen right here and not be passed through
 
     const assessment = await idempotency_check_purchase(request_purchase, metadata);

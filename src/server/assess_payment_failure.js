@@ -34,12 +34,6 @@ module.exports = assess_payment_failure = async (internal_purchase_id, user_id, 
                 fraud: 1
             };
             break;
-        case payment_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
-            // todo: is this unavailable?
-            payment_error = {
-                error: 'Verification Not Supported By Issuer'
-            };
-            break;
         case payment_error_enum.THREE_D_SECURE_FAILURE:
             payment_error = {
                 error: '3DSecure Verficiation Failed'
@@ -128,6 +122,7 @@ module.exports = assess_payment_failure = async (internal_purchase_id, user_id, 
             };
             break;
         case payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED:
+        case payment_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
             if (!mark_unavailable) {
                 return fatal_error({
                     error: 'Function Not Provided: mark_unavailable'

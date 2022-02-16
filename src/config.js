@@ -39,6 +39,22 @@ const sale_items = [
         "statement_description": "NEON DISTRICT: 1000 NEON",
         "store_description": "Adds 1000 NEON to your account.",
         "store_image": "https://images/NEON_1000.png"
+    },
+    {
+        "sale_item_key": "TEST_CVV",
+        "currency": "USD",
+        "sale_item_price": "1.00",
+        "statement_description": "NEON DISTRICT: TEST CVV",
+        "store_description": "Adds 1000 NEON to your account.",
+        "store_image": "https://images/NEON_1000.png"
+    },
+    {
+        "sale_item_key": "TEST_UNSECURE",
+        "currency": "USD",
+        "sale_item_price": "1.00",
+        "statement_description": "NEON DISTRICT: TEST UNSECURE",
+        "store_description": "Adds 1000 NEON to your account.",
+        "store_image": "https://images/NEON_1000.png"
     }
 ];
 for (const test_amount_key in test_amounts) {

@@ -20,10 +20,10 @@ module.exports = create_payment = async (internal_purchase_id, card_id, request_
     if (payment_3ds_assessment.hasOwnProperty('redirect')) {
         return payment_3ds_assessment;
     }
-    if (assessment.hasOwnProperty('internal_purchase_id')) {
+    if (payment_3ds_assessment.hasOwnProperty('internal_purchase_id')) {
         return payment_3ds_assessment;
     }
-    if (!assessment.hasOwnProperty('unavailable')) {
+    if (!payment_3ds_assessment.hasOwnProperty('unavailable')) {
         return fatal_error({
             error: 'Expected Unavailable Payment 3DS'
         });
