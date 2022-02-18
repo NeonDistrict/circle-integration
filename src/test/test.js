@@ -89,7 +89,7 @@ describe('circle-integration-server', async function () {
         test_server.shutdown();
     });
 
-    it('make a normal purchase', async function () {
+    it.only('make a normal purchase', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -111,7 +111,8 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key,
             config.three_d_secure_success_url,
-            config.three_d_secure_failure_url
+            'https://localhost.com/',//config.three_d_secure_success_url,
+            'https://localhost.com/'//config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
