@@ -1,5 +1,4 @@
 const postgres = require('./postgres.js');
-const expect_one_row_count = require('./expect_one_row_count.js');
 
 module.exports = users_mark_fraud = async (user_ids) => {
     const now = new Date().getTime();
@@ -9,7 +8,7 @@ module.exports = users_mark_fraud = async (user_ids) => {
             "t_modified" = $1,
             "fraud"      = $2
         WHERE
-            "user_id" IN ($3::string[])
+            "user_id" = ANY ($3)
     `;
     const values = [
         now,     // "t_modified"

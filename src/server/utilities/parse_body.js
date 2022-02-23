@@ -1,5 +1,5 @@
 const config = require('../../config.js');
-const respond_error = require('./respond_error.js');
+const respond_error = require('../endpoints/respond_error.js');
 
 module.exports = parse_body = (req, res, next) => {
     let body_length = 0;

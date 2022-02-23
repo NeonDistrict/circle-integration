@@ -8,8 +8,8 @@ module.exports = fraud_card_number_used_by_another_user_id = async (user_id, met
     `
         SELECT DISTINCT "user_id" FROM "purchases"
         WHERE
-            "user_id" != $1 AND
-            "metadata_hash_card_number" = $2;
+            "user_id"                   != $1 AND
+            "metadata_hash_card_number"  = $2;
     `;
     const values = [
         user_id,                  // "user_id"

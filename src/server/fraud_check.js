@@ -7,8 +7,9 @@ const users_mark_fraud = require('./postgres/users_mark_fraud.js');
 
 module.exports = fraud_check = async (request_purchase, metadata) => {
     // if other users are already using this same credit card number, fraud everyone with the card number
-    const user_ids = await fraud_card_number_used_by_another_user_id(request_purchase.user_id, metadata.card_number);
+    let user_ids = await fraud_card_number_used_by_another_user_id(request_purchase.user_id, metadata.card_number);
     if (user_ids !== null) {
+        user_ids = user_ids.map((row) => { return row.user_id});
         user_ids.push(request_purchase.user_id);
         await users_mark_fraud(user_ids);
         throw new Error('Fraud Detected');

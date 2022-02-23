@@ -13,6 +13,7 @@ const test_cvvs = require('./test_cvvs.js');
 const test_avss = require('./test_avss.js');
 const sha512 = require('../server/utilities/sha512.js');
 
+const default_user_id = uuidv4();
 const ok_purchase = {
     metadata_hash_session_id: sha1(uuidv4()),
     ip_address: '127.0.0.1',
@@ -92,11 +93,10 @@ describe('circle-integration-server', async function () {
         test_server.shutdown();
     });
 
-    it('make a normal purchase', async function () {
-        const user_id = uuidv4();
+    it.only('make a normal purchase', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            user_id,
+            default_user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -117,15 +117,14 @@ describe('circle-integration-server', async function () {
             'https://localhost.com/',//config.three_d_secure_success_url,
             'https://localhost.com/'//config.three_d_secure_failure_url
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
+        const final_result = await handle_redirect(purchase_result, default_user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
-    it('make a normal purchase (force cvv)', async function () {
-        const user_id = uuidv4();
+    it.only('make a normal purchase (force cvv)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            user_id,
+            default_user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -149,11 +148,10 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it('make a normal purchase (force unsecure)', async function () {
-        const user_id = uuidv4();
+    it.only('make a normal purchase (force unsecure)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            user_id,
+            default_user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -177,7 +175,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it.only('test monthly limit', async function () {
+    it.only('test monthly user limit', async function () {
         const now = new Date().getTime();
         const two_weeks_ago = now - (604800000 * 2);
         const user_id = uuidv4();
@@ -267,7 +265,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Monthly Limit For User');
     });
 
-    it.only('test weekly limit', async function () {
+    it.only('test weekly user limit', async function () {
         const now = new Date().getTime();
         const two_days_ago = now - (86400000 * 2);
         const user_id = uuidv4();
@@ -357,7 +355,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Weekly Limit For User');
     });
 
-    it.only('test daily limit', async function () {
+    it.only('test daily user limit', async function () {
         const now = new Date().getTime();
         const user_id = uuidv4();
         await test_create_user({
@@ -445,6 +443,8 @@ describe('circle-integration-server', async function () {
         );
         assert(purchase_result.error, 'Purchase Would Exceed Daily Limit For User');
     });
+
+    // todo need to test card limits, but requires crm whitelist first
 
     it('validate uuid', function () {
         const validate_uuid = require('../server/validation/validate_uuid');
