@@ -20,7 +20,8 @@ const create_purchase_status_enum = async () => {
         'FAILED',
         'FRAUD',
         'ABANDONED',
-        'COMPLETED'
+        'COMPLETED',
+        'REFUNDED'
     );
     `;
     const values = [];

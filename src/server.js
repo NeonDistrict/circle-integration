@@ -19,7 +19,7 @@ const validate_request_user_id = require('./server/validation/validate_request_u
 const validate_request_purchase = require('./server/validation/validate_request_purchase.js');
 const validate_request_purchase_finalize = require('./server/validation/validate_request_purchase_finalize.js');
 const validate_request_purchase_history = require('./server/validation/validate_request_purchase_history.js');
-
+const validate_request_crm_refund_payment = require('./server/endpoints/crm/refund_payment/validate_request_crm_refund_payment.js');
 
 
 const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
@@ -29,8 +29,12 @@ const list_sale_items = require('./server/list_sale_items.js');
 const purchase = require('./server/purchase.js');
 const purchase_finalize = require('./server/purchase_finalize.js');
 const purchase_history = require('./server/purchase_history.js');
+const crm_refund_payment = require('./server/endpoints/crm/refund_payment/crm_refund_payment.js');
+
 const resolve_lingering_purchases = require('./server/resolve_lingering_purchases.js');
 const parking = require('./server/parking.js');
+
+const mount = require('./server/endpoints/mount.js');
 
 module.exports = server = async () => {
     const app = express();
@@ -48,6 +52,14 @@ module.exports = server = async () => {
         }
         return res.end();
     });
+
+    app.post('/crm/*', async (req, res, next) => {
+        // todo: authenticate crm requests
+        return next();
+    });
+
+    mount(app, 'post', '/crm/get_payment', path.join(__dirname,'/server/endpoints/crm/get_payment'));
+    mount(app, 'post', '/crm/refund_payment', path.join(__dirname,'/server/endpoints/crm/refund_payment'));
 
     app.post('*', async (req, res, next) => {
         try {
