@@ -3,7 +3,7 @@ const find_limits_by_user_id = require('./postgres/find_limits_by_user_id.js');
 const find_limits_by_metadata_hash_card_number = require('./postgres/find_limits_by_metadata_hash_card_number.js');
 
 module.exports = limits_check = async (internal_purchase_id, request_purchase, metadata, sale_item) => {
-    const now = new Date.getTime();
+    const now = new Date().getTime();
     const one_week_ago = now - 604800000;
     const one_day_ago = now - 86400000;
     
