@@ -2,7 +2,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const cors = require('cors')
+const cors = require('cors');
 
 const config = require('./config.js');
 const fatal_error = require('./server/fatal_error.js');

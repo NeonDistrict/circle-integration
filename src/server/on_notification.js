@@ -1,7 +1,18 @@
 const axios = require('axios').default.create();
 const parking = require('./parking.js');
+const sns_validator = new (require('sns-validator'))();
 
 module.exports = on_notification = async (notification) => {
+    await new Promise((resolve, reject) => {
+        sns_validator(notification, (error) => {
+            if (error) {
+                return reject(error);
+            }
+            return resolve();
+        });
+    });
+
+
     // if this is a subscription confirmation
     if (notification.Type === 'SubscriptionConfirmation') {
         console.log('got subscription confirmation');

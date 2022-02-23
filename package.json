@@ -24,6 +24,7 @@
     "jsonschema": "^1.4.0",
     "openpgp": "^5.0.1",
     "pg": "^8.7.1",
+    "sns-validator": "^0.3.4",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
