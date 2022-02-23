@@ -5,10 +5,12 @@ const server = require('../server.js');
 const config = require('../config.js');
 const circle_integration_client = require('../circle_integration_client.js');
 const reset_all_tables = require('../server/postgres/reset_all_tables.js');
+const test_create_custom_purchase = require('../server/postgres/test_create_custom_purchase.js');
 const sha1 = require('../server/utilities/sha1.js');
 const test_cards = require('./test_cards.js');
 const test_cvvs = require('./test_cvvs.js');
 const test_avss = require('./test_avss.js');
+const sha512 = require('../server/utilities/sha512.js');
 
 const ok_purchase = {
     metadata_hash_session_id: sha1(uuidv4()),
@@ -89,7 +91,7 @@ describe('circle-integration-server', async function () {
         test_server.shutdown();
     });
 
-    it.only('make a normal purchase', async function () {
+    it('make a normal purchase', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -118,7 +120,7 @@ describe('circle-integration-server', async function () {
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
-    it.only('make a normal purchase (force cvv)', async function () {
+    it('make a normal purchase (force cvv)', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -146,7 +148,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it.only('make a normal purchase (force unsecure)', async function () {
+    it('make a normal purchase (force unsecure)', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -167,6 +169,90 @@ describe('circle-integration-server', async function () {
             ok_purchase.email,
             ok_purchase.phone,
             'TEST_UNSECURE',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
+        );
+        assert(!purchase_result.hasOwnProperty('redirect'));
+        assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
+    });
+
+    it.only('test monthly limit', async function () {
+        const now = new Date().getTime();
+        const user_id = uuidv4();
+        
+        // create a purchase 99 cents away from the limit for the month
+        const fake_purchase = {
+            internal_purchase_id: uuidv4(), 
+            user_id: user_id, 
+            sale_item_key: 'debug', 
+            sale_item_price: (config.purchase_limits.monthly - 0.99).toString(), 
+            game_id: 'NEON_DISTRICT', 
+            t_created_purchase: now, 
+            t_modified_purchase: now, 
+            client_generated_idempotency_key: uuidv4(), 
+            game_credited_result: 'NONE', 
+            purchase_result: 'COMPLETED', 
+            t_created_create_card: null, 
+            t_modified_create_card: null, 
+            create_card_idempotency_key: null, 
+            create_card_result: 'NONE', 
+            public_key_result: 'NONE', 
+            create_card_id: null, 
+            t_created_payment_3ds: null, 
+            t_modified_payment_3ds: null, 
+            payment_3ds_idempotency_key: null, 
+            payment_3ds_result: 'NONE', 
+            payment_3ds_id: null, 
+            t_created_payment_cvv: null, 
+            t_modified_payment_cvv: null, 
+            payment_cvv_idempotency_key: null, 
+            payment_cvv_result: 'NONE', 
+            payment_cvv_id: null, 
+            t_created_payment_unsecure: null, 
+            t_modified_payment_unsecure: null, 
+            payment_unsecure_idempotency_key: null, 
+            payment_unsecure_result: 'NONE', 
+            payment_unsecure_id: null, 
+            metadata: {
+                email: sha512('debug'),
+                phone_number: sha512('debug'),
+                session_id: sha1('debug'),
+                ip_address: sha512('debug'),
+                name_on_card: sha512('debug'),
+                city: sha512('debug'),
+                country: sha512('debug'),
+                district: sha512('debug'),
+                address_line_1: sha512('debug'),
+                address_line_2: sha512('debug'),
+                postal_zip_code: sha512('debug'),
+                expiry_month: sha512('debug'),
+                expiry_year: sha512('debug'),
+                card_number: sha512('debug'),
+                circle_public_key_id: sha512('debug')
+            }
+        };
+        await test_create_custom_purchase(fake_purchase);
+
+        // attempt to make a purchase for 1$ putting us over the montly limit
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            user_id,
+            ok_purchase.metadata_hash_session_id,
+            ok_purchase.ip_address,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_line_1,
+            ok_purchase.address_line_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            'TEST_CVV',
             config.three_d_secure_success_url,
             config.three_d_secure_failure_url
         );

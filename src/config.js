@@ -9,6 +9,12 @@ config.resolve_lingering_purchases_loop_time = 5000; // 5s
 config.parking_monitor_loop_time = 5000; // 5s
 config.parking_abandoned_time = 60000 * 30; // 30m
 
+config.purchase_limits = {
+    daily: 50,
+    weekly: 200,
+    monthly: 500
+};
+
 config.api_sandbox_key = 'QVBJX0tFWTpjZjkyYTNiYjE4MGJiMjlmN2Y2YTdhZWY5NGY5MGM1Yjo2YWM5M2IzNWJiODZkZjMwZjE1YzRiN2I0NDllNTU3ZA==';
 config.api_uri_base = 'https://api-sandbox.circle.com/v1';
 config.host = 'dev.circle-integration.neondistrict.io';

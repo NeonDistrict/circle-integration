@@ -7,6 +7,9 @@ const create_purchase = require('./postgres/create_purchase.js');
 const hash_purchase_metadata = require('./hash_purchase_metadata.js');
 const decrypt_card_number = require('./decrypt_card_number.js');
 const idempotency_check_purchase = require('./idempotency_check_purchase.js');
+const fraud_check = require('./fraud_check.js');
+const limits_check = require('./limits_check.js');
+const config = require('../config.js');
 
 module.exports = purchase = async (request_purchase) => {
     const internal_purchase_id = uuidv4();
@@ -24,19 +27,23 @@ module.exports = purchase = async (request_purchase) => {
         }
     });
 
-    purchase_log(internal_purchase_id, {
-        event: 'card number log',
-        details: {
-            card_number: card_number
-        }
-    });
-
-    // todo all fraud checks need to happen right here and not be passed through
+    if (config.dangerous) {
+        purchase_log(internal_purchase_id, {
+            event: 'debug card number log',
+            details: {
+                card_number: card_number
+            }
+        });
+    }
 
     const assessment = await idempotency_check_purchase(request_purchase, metadata);
     if (assessment !== null) {
         return assessment;
     }
+
+    await fraud_check(request_purchase, metadata);
+    await limits_check(internal_purchase_id, request_purchase, metadata, sale_item);
+
     await create_purchase(internal_purchase_id, request_purchase, metadata, sale_item);
     const card_id = await create_card(internal_purchase_id, request_purchase);
     const payment_assessment = await create_payment(internal_purchase_id, card_id, request_purchase, sale_item);

@@ -5,6 +5,11 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ./node_modules/.bin/_mocha -u bdd --timeout 9999999 --colors ./src/test/test.js
 
++ need a crm table for fraud reasons so when a user calls when we can give tghem a reason as to whyh theve been locked up. that will also give us an ongoing record of all fraud on an account
+
++ there isnt logs on everything that need logs
++ need indexes everywhere
+
 + 3ds redirect sends a notification and the player needs to do a check call to get the result and credit the game. should they not do this the notification will remain parked. once the attendent cleans up the notification it will check for a resolution of the notification crediting the game. if the server crashes and loses the parked notification the lingering purchases daemon will detect the unresolved transaction and attempt to check for a resolution
 
 + 3ds purchases finishing need to be credited to the game, player needs verification of this
