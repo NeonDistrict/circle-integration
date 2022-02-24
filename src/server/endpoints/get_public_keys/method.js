@@ -1,5 +1,5 @@
 const config = require('../../../config.js');
-const call_circle = require('../../call_circle.js');
+const call_circle = require('../../utilities/call_circle.js');
 
 module.exports = async (body) => {
     const public_keys = {

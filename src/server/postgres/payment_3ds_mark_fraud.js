@@ -1,13 +1,10 @@
 const postgres = require('./postgres.js');
-const validate_uuid = require('../validation/validate_uuid.js');
-const purchase_log = require('../purchase_log.js');
+const purchase_log = require('../utilities/purchase_log.js');
 
 module.exports = payment_3ds_mark_fraud = async (internal_purchase_id, payment_3ds_id) => {
     purchase_log(internal_purchase_id, {
         event: 'payment_3ds_mark_fraud'
     });
-    validate_uuid(internal_purchase_id);
-    validate_uuid(payment_3ds_id);
     const now = new Date().getTime();
     const text = 
     `

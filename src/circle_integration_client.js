@@ -92,7 +92,7 @@ module.exports = circle_integration_client = {
             success_url: success_url,
             failure_url: failure_url
         };
-        const purchase_result = await circle_integration_client.call_circle_api('/purchase', request_body);
+        const purchase_result = await circle_integration_client.call_circle_api('/purchase/create', request_body);
 
         // if we recieve a redirect it means we are going through the 3dsecure flow return the redirect url for the implementor to go to
         if (purchase_result.hasOwnProperty('redirect')) {
@@ -126,7 +126,7 @@ module.exports = circle_integration_client = {
             user_id: user_id,
             internal_purchase_id: internal_purchase_id
         }
-        const purchase_finalize_result = await circle_integration_client.call_circle_api('/purchase_finalize', request_body);
+        const purchase_finalize_result = await circle_integration_client.call_circle_api('/purchase/finalize', request_body);
         return purchase_finalize_result;
     }
 };

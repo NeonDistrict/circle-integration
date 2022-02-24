@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
-const purchase_log = require('../purchase_log.js');
+const purchase_log = require('../utilities/purchase_log.js');
 
 module.exports = create_card_start = async (internal_purchase_id, create_card_idempotency_key) => {
     purchase_log(internal_purchase_id, {

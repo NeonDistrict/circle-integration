@@ -5,12 +5,12 @@ const express = require('express');
 const cors = require('cors');
 
 const config = require('./config.js');
-const fatal_error = require('./server/fatal_error.js');
+const fatal_error = require('./server/utilities/fatal_error.js');
 const parse_body = require('./server/utilities/parse_body.js');
-const setup_pgp_key_pair = require('./server/setup_pgp_key_pair.js');
-const setup_notifications_subscription = require('./server/setup_notification_subscription.js');
-const resolve_lingering_purchases = require('./server/resolve_lingering_purchases.js');
-const parking = require('./server/parking.js');
+const setup_pgp_key_pair = require('./server/utilities/setup_pgp_key_pair.js');
+const setup_notifications_subscription = require('./server/utilities/setup_notification_subscription.js');
+const resolve_lingering_purchases = require('./server/purchase/resolve_lingering_purchases.js');
+const parking = require('./server/utilities/parking.js');
 const mount = require('./server/endpoints/mount.js');
 const mount_wildcard = require('./server/endpoints/mount_wildcard.js');
 

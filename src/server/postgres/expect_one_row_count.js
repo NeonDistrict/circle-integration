@@ -1,4 +1,4 @@
-const fatal_error = require('../fatal_error.js');
+const fatal_error = require('../utilities/fatal_error.js');
 
 module.exports = expect_one_row_count = (result) => {
     if (result.rowCount !== 1) {

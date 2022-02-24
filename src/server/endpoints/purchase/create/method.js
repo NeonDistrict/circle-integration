@@ -9,7 +9,7 @@ const decrypt_card_number = require('../../../card/decrypt_card_number.js');
 const idempotency_check_purchase = require('../../../purchase/idempotency_check_purchase.js');
 const fraud_check = require('../../../purchase/fraud_check.js');
 const limits_check = require('../../../purchase/limits_check.js');
-const config = require('../../../config.js');
+const config = require('../../../../config.js');
 
 module.exports = async (body) => {
     const internal_purchase_id = uuidv4();

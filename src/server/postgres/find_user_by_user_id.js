@@ -1,9 +1,7 @@
 const postgres = require('./postgres.js');
-const fatal_error = require('../fatal_error.js');
-const validate_uuid = require('../validation/validate_uuid.js');
+const fatal_error = require('../utilities/fatal_error.js');
 
 module.exports = find_user_by_user_id = async (user_id) => {
-    validate_uuid(user_id);
     const text = 
     `
         SELECT * FROM "users"

@@ -1,6 +1,6 @@
 const config = require('../../config.js');
 const Pool = require('pg').Pool;
-const fatal_error = require('../fatal_error.js');
+const fatal_error = require('../utilities/fatal_error.js');
 
 console.log('create postgres pool');
 const pool = new Pool({

@@ -1,5 +1,6 @@
 const axios = require('axios').default.create();
 const parking = require('../../utilities/parking.js');
+const fatal_error = require('../../utilities/fatal_error.js');
 const sns_validator = new (require('sns-validator'))();
 sns_validator.encoding = 'utf8';
 
@@ -31,7 +32,7 @@ module.exports = async (body) => {
     const parsed_message = JSON.parse(body.Message);
 
     let result = null;
-    switch (parsed_message.bodyType) {
+    switch (parsed_message.notificationType) {
         case 'cards':
             result = parsed_message.card;
             break;
@@ -46,9 +47,11 @@ module.exports = async (body) => {
             break;
 
         default:
-            throw new Error('Unexpected body Type: ' + parsed_message.bodyType);
+            return fatal_error({
+                error: 'Unexpected notification Type: ' + parsed_message.notificationType
+            });
     }
 
     // park the body and dispatch the callback if its available
-    parking.park_body(result.id, result);
+    parking.park_notification(result.id, result);
 };

@@ -2,7 +2,6 @@ const postgres = require('./postgres.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
 module.exports = test_create_custom_purchase = async (purchase) => {
-    const now = new Date().getTime();
     const text = 
     `
         INSERT INTO "purchases" (
