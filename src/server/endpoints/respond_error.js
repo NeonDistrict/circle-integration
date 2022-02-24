@@ -1,4 +1,4 @@
-module.exports = respond = (res, error) => {
+module.exports = (res, error) => {
     res.status(500);
     res.send({
         error: error.message
