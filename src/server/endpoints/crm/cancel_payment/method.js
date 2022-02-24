@@ -1,23 +1,15 @@
 const call_circle = require('../../../utilities/call_circle.js');
 const parking = require('../../../utilities/parking.js');
 const find_purchase_by_internal_purchase_id = require('../../../postgres/find_purchase_by_internal_purchase_id.js');
-const purchase_mark_refunded = require('../../../postgres/purchase_mark_refunded.js');
+const purchase_mark_cancelled = require('../../../postgres/purchase_mark_cancelled.js');
 
 module.exports = async (body) => {
     const purchase = await find_purchase_by_internal_purchase_id(body.internal_purchase_id);
     if (purchase === null) {
         throw new Error('Purchase Not Found');
     }
-    if (purchase.purchase_result !== 'COMPLETED') {
-        throw new Error('Cannot Refund a Non-Completed Purchase');
-    }
-    const purchase_amount = purchase.sale_item_price;
-    let circle_response = await call_circle('none', [200, 201], 'post', `/payments/${body.payment_id}/refund`, {
+    let circle_response = await call_circle('none', [200, 201], 'post', `/payments/${body.payment_id}/cancel`, {
         idempotencyKey: body.idempotency_key,
-        amount: {
-            amount: purchase_amount,
-            currency: 'USD'
-        },
         reason: body.reason
     });
     if (circle_response.status === 'pending') {
@@ -31,8 +23,8 @@ module.exports = async (body) => {
         });
     }
     if (circle_response.status !== 'paid' && circle_response.status !== 'confirmed') {
-        throw new Error('Refund Failed');
+        throw new Error('Cancel Failed');
     }
-    await purchase_mark_refunded(body.internal_purchase_id);
-    return {refunded: 1};
+    await purchase_mark_cancelled(internal_purchase_id);
+    return {cancelled: 1};
 };

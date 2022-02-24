@@ -4,6 +4,7 @@ const axios = require('axios').default.create();
 const server = require('../server.js');
 const config = require('../config.js');
 const circle_integration_client = require('../circle_integration_client.js');
+const circle_integration_crm_client = require('../circle_integration_crm_client.js');
 const reset_all_tables = require('../server/postgres/reset_all_tables.js');
 const test_create_custom_purchase = require('../server/postgres/test_create_custom_purchase.js');
 const test_create_user = require('../server/postgres/test_create_user.js');
@@ -93,7 +94,7 @@ describe('circle-integration-server', async function () {
         test_server.shutdown();
     });
 
-    it.only('make a normal purchase', async function () {
+    it('make a normal purchase', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -121,7 +122,7 @@ describe('circle-integration-server', async function () {
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
-    it.only('make a normal purchase (force cvv)', async function () {
+    it('make a normal purchase (force cvv)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -148,7 +149,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it.only('make a normal purchase (force unsecure)', async function () {
+    it('make a normal purchase (force unsecure)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -175,7 +176,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it.only('test monthly user limit', async function () {
+    it('test monthly user limit', async function () {
         const now = new Date().getTime();
         const two_weeks_ago = now - (604800000 * 2);
         const user_id = uuidv4();
@@ -265,7 +266,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Monthly Limit For User');
     });
 
-    it.only('test weekly user limit', async function () {
+    it('test weekly user limit', async function () {
         const now = new Date().getTime();
         const two_days_ago = now - (86400000 * 2);
         const user_id = uuidv4();
@@ -355,7 +356,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Weekly Limit For User');
     });
 
-    it.only('test daily user limit', async function () {
+    it('test daily user limit', async function () {
         const now = new Date().getTime();
         const user_id = uuidv4();
         await test_create_user({
@@ -442,6 +443,105 @@ describe('circle-integration-server', async function () {
             config.three_d_secure_failure_url
         );
         assert(purchase_result.error, 'Purchase Would Exceed Daily Limit For User');
+    });
+
+    it('crm refund a payment', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            default_user_id,
+            ok_purchase.metadata_hash_session_id,
+            ok_purchase.ip_address,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_line_1,
+            ok_purchase.address_line_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            'https://localhost.com/',//config.three_d_secure_success_url,
+            'https://localhost.com/'//config.three_d_secure_failure_url
+        );
+        const final_result = await handle_redirect(purchase_result, default_user_id);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
+
+        const purchase = await circle_integration_crm_client.purchase_get(final_result.internal_purchase_id);
+        assert(purchase.hasOwnProperty('internal_purchase_id') && purchase.hasOwnProperty('payment_3ds_id'));
+        const refund_result = await circle_integration_crm_client.payment_refund(purchase.internal_purchase_id, purchase.payment_3ds_id, 'requested_by_customer');
+        assert(refund_result.refunded === 1);
+    });
+
+    it.only('crm cancel a payment', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            default_user_id,
+            ok_purchase.metadata_hash_session_id,
+            ok_purchase.ip_address,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_line_1,
+            ok_purchase.address_line_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            'https://localhost.com/',//config.three_d_secure_success_url,
+            'https://localhost.com/'//config.three_d_secure_failure_url
+        );
+        const final_result = await handle_redirect(purchase_result, default_user_id);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
+
+        const purchase = await circle_integration_crm_client.purchase_get(final_result.internal_purchase_id);
+        assert(purchase.hasOwnProperty('internal_purchase_id') && purchase.hasOwnProperty('payment_3ds_id'));
+        const cancel_result = await circle_integration_crm_client.payment_cancel(purchase.internal_purchase_id, purchase.payment_3ds_id, 'requested_by_customer');
+        assert(cancel_result.cancelled === 1);
+    });
+
+    it.only('crm get payment', async function () {
+        const purchase_result = await circle_integration_client.purchase(
+            circle_integration_client.generate_idempotency_key(),
+            default_user_id,
+            ok_purchase.metadata_hash_session_id,
+            ok_purchase.ip_address,
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            ok_purchase.name,
+            ok_purchase.city,
+            ok_purchase.country,
+            ok_purchase.address_line_1,
+            ok_purchase.address_line_2,
+            ok_purchase.district,
+            ok_purchase.postal,
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            'https://localhost.com/',//config.three_d_secure_success_url,
+            'https://localhost.com/'//config.three_d_secure_failure_url
+        );
+        const final_result = await handle_redirect(purchase_result, default_user_id);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
+
+        const purchase = await circle_integration_crm_client.purchase_get(final_result.internal_purchase_id);
+        assert(purchase.hasOwnProperty('internal_purchase_id') && purchase.hasOwnProperty('payment_3ds_id'));
+        const payment = await circle_integration_crm_client.payment_get(purchase.payment_3ds_id);
+        assert(payment.id === purchase.payment_3ds_id);
     });
 
     // todo need to test card limits, but requires crm whitelist first

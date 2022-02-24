@@ -31,6 +31,8 @@ module.exports = async (body) => {
     // reaching here implies its a body, get the message
     const parsed_message = JSON.parse(body.Message);
 
+    console.log(body.Message);
+
     let result = null;
     switch (parsed_message.notificationType) {
         case 'cards':
