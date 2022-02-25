@@ -14,7 +14,7 @@ module.exports = async (body) => {
     });
     if (circle_response.status === 'pending') {
         circle_response = await new Promise((resolve, reject) => {
-            parking.park_callback(circle_response.id, (error, circle_response) => {
+            parking.park_callback(body.payment_id, (error, circle_response) => {
                 if (error) {
                     return reject(error);
                 }
@@ -22,7 +22,7 @@ module.exports = async (body) => {
             });
         });
     }
-    if (circle_response.status !== 'paid' && circle_response.status !== 'confirmed') {
+    if (circle_response.status !== 'confirmed') {
         throw new Error('Cancel Failed');
     }
     await purchase_mark_cancelled(internal_purchase_id);

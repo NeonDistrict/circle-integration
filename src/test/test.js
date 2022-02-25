@@ -86,15 +86,19 @@ describe('circle-integration-server', async function () {
     let test_server;
 
     before(async function () {
-        await reset_all_tables();
+        
         test_server = await server();
+    });
+
+    beforeEach(async function () {
+        await reset_all_tables();
     });
 
     after(function () {
         test_server.shutdown();
     });
 
-    it('make a normal purchase', async function () {
+    it.only('make a normal purchase', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -122,7 +126,7 @@ describe('circle-integration-server', async function () {
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
-    it('make a normal purchase (force cvv)', async function () {
+    it.only('make a normal purchase (force cvv)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -149,7 +153,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it('make a normal purchase (force unsecure)', async function () {
+    it.only('make a normal purchase (force unsecure)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -176,7 +180,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it('test monthly user limit', async function () {
+    it.only('test monthly user limit', async function () {
         const now = new Date().getTime();
         const two_weeks_ago = now - (604800000 * 2);
         const user_id = uuidv4();
@@ -225,7 +229,7 @@ describe('circle-integration-server', async function () {
                 phone_number: sha512('debug'),
                 session_id: sha1('debug'),
                 ip_address: sha512('debug'),
-                name_on_card: sha512('debug'),
+                name_on_card: sha512(ok_purchase.name),
                 city: sha512('debug'),
                 country: sha512('debug'),
                 district: sha512('debug'),
@@ -234,7 +238,7 @@ describe('circle-integration-server', async function () {
                 postal_zip_code: sha512('debug'),
                 expiry_month: sha512('debug'),
                 expiry_year: sha512('debug'),
-                card_number: sha512('debug'),
+                card_number: sha512( ok_purchase.card_number),
                 circle_public_key_id: sha512('debug')
             }
         };
@@ -248,7 +252,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.ip_address,
             ok_purchase.card_number,
             ok_purchase.cvv,
-            'debug',
+            ok_purchase.name,
             ok_purchase.city,
             ok_purchase.country,
             ok_purchase.address_line_1,
@@ -266,7 +270,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Monthly Limit For User');
     });
 
-    it('test weekly user limit', async function () {
+    it.only('test weekly user limit', async function () {
         const now = new Date().getTime();
         const two_days_ago = now - (86400000 * 2);
         const user_id = uuidv4();
@@ -315,7 +319,7 @@ describe('circle-integration-server', async function () {
                 phone_number: sha512('debug'),
                 session_id: sha1('debug'),
                 ip_address: sha512('debug'),
-                name_on_card: sha512('debug'),
+                name_on_card: sha512(ok_purchase.name),
                 city: sha512('debug'),
                 country: sha512('debug'),
                 district: sha512('debug'),
@@ -324,7 +328,7 @@ describe('circle-integration-server', async function () {
                 postal_zip_code: sha512('debug'),
                 expiry_month: sha512('debug'),
                 expiry_year: sha512('debug'),
-                card_number: sha512('debug'),
+                card_number: sha512(ok_purchase.card_number),
                 circle_public_key_id: sha512('debug')
             }
         };
@@ -338,7 +342,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.ip_address,
             ok_purchase.card_number,
             ok_purchase.cvv,
-            'debug',
+            ok_purchase.name,
             ok_purchase.city,
             ok_purchase.country,
             ok_purchase.address_line_1,
@@ -356,7 +360,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Weekly Limit For User');
     });
 
-    it('test daily user limit', async function () {
+    it.only('test daily user limit', async function () {
         const now = new Date().getTime();
         const user_id = uuidv4();
         await test_create_user({
@@ -404,7 +408,7 @@ describe('circle-integration-server', async function () {
                 phone_number: sha512('debug'),
                 session_id: sha1('debug'),
                 ip_address: sha512('debug'),
-                name_on_card: sha512('debug'),
+                name_on_card: sha512(ok_purchase.name),
                 city: sha512('debug'),
                 country: sha512('debug'),
                 district: sha512('debug'),
@@ -413,7 +417,7 @@ describe('circle-integration-server', async function () {
                 postal_zip_code: sha512('debug'),
                 expiry_month: sha512('debug'),
                 expiry_year: sha512('debug'),
-                card_number: sha512('debug'),
+                card_number: sha512(ok_purchase.card_number),
                 circle_public_key_id: sha512('debug')
             }
         };
@@ -427,7 +431,7 @@ describe('circle-integration-server', async function () {
             ok_purchase.ip_address,
             ok_purchase.card_number,
             ok_purchase.cvv,
-            'debug',
+            ok_purchase.name,
             ok_purchase.city,
             ok_purchase.country,
             ok_purchase.address_line_1,
@@ -445,10 +449,11 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Daily Limit For User');
     });
 
-    it('crm refund a payment', async function () {
+    it.only('crm refund a payment', async function () {
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            default_user_id,
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -469,7 +474,7 @@ describe('circle-integration-server', async function () {
             'https://localhost.com/',//config.three_d_secure_success_url,
             'https://localhost.com/'//config.three_d_secure_failure_url
         );
-        const final_result = await handle_redirect(purchase_result, default_user_id);
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
 
         const purchase = await circle_integration_crm_client.purchase_get(final_result.internal_purchase_id);
@@ -479,9 +484,10 @@ describe('circle-integration-server', async function () {
     });
 
     it.only('crm cancel a payment', async function () {
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            default_user_id,
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -502,7 +508,7 @@ describe('circle-integration-server', async function () {
             'https://localhost.com/',//config.three_d_secure_success_url,
             'https://localhost.com/'//config.three_d_secure_failure_url
         );
-        const final_result = await handle_redirect(purchase_result, default_user_id);
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
 
         const purchase = await circle_integration_crm_client.purchase_get(final_result.internal_purchase_id);
@@ -512,9 +518,10 @@ describe('circle-integration-server', async function () {
     });
 
     it.only('crm get payment', async function () {
+        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
-            default_user_id,
+            user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -535,7 +542,7 @@ describe('circle-integration-server', async function () {
             'https://localhost.com/',//config.three_d_secure_success_url,
             'https://localhost.com/'//config.three_d_secure_failure_url
         );
-        const final_result = await handle_redirect(purchase_result, default_user_id);
+        const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
 
         const purchase = await circle_integration_crm_client.purchase_get(final_result.internal_purchase_id);
@@ -545,178 +552,21 @@ describe('circle-integration-server', async function () {
     });
 
     // todo need to test card limits, but requires crm whitelist first
-
-    it('validate uuid', function () {
-        const validate_uuid = require('../server/validation/validate_uuid');
-
-        // dont allow undefined
-        should_throw(() => validate_uuid(undefined));
-
-        // dont allow null
-        should_throw(() => validate_uuid(null));
-
-        // dont allow empty string
-        should_throw(() => validate_uuid(''));
-
-        // dont allow number
-        should_throw(() => validate_uuid(41254));
-
-        // dont allow object
-        should_throw(() => validate_uuid({test: 'test'}));
-
-        // dont allow array
-        should_throw(() => validate_uuid(['test']));
-
-        // dont allow < 36 length (35)
-        should_throw(() => validate_uuid('11111111111111111111111111111111111'));
-
-        // dont allow > 36 length (37)
-        should_throw(() => validate_uuid('1111111111111111111111111111111111111'));
-
-        // dont allow correct length (36) but wrong format
-        should_throw(() => validate_uuid('111111111111111111111111111111111111'));
-
-        // dont allow close to uuidv4
-        should_throw(() => validate_uuid('5a31c2e-8e7f8-4ba7-8def-77b5cbf7be96'));
-
-        // allow proper uuidv4
-        validate_uuid('5a31c2e8-e7f8-4ba7-8def-77b5cbf7be96');
-    });
-
-    it('validate sha512_hex', function () {
-        const validate_sha512_hex = require('../server/validation/validate_sha512_hex');
-
-        // dont allow undefined
-        should_throw(() => validate_sha512_hex(undefined));
-
-        // dont allow undefined
-        should_throw(() => validate_sha512_hex(null));
-
-        // dont allow empty string
-        should_throw(() => validate_sha512_hex(''));
-
-        // dont allow number
-        should_throw(() => validate_sha512_hex(41254));
-
-        // dont allow object
-        should_throw(() => validate_sha512_hex({test: 'test'}));
-
-        // dont allow array
-        should_throw(() => validate_sha512_hex(['test']));
-
-        // dont allow < 128 length (127)
-        should_throw(() => validate_sha512_hex('1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
-
-        // dont allow > 128 length (129)
-        should_throw(() => validate_sha512_hex('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
-
-        // dont allow correct length (128) but wrong format
-        should_throw(() => validate_sha512_hex('g1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
-
-        // dont allow close to sha512 hex
-        should_throw(() => validate_sha512_hex('g083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7'));
-
-        // allow proper sha512 hex
-        validate_sha512_hex('2083f7dbaa9fd7872d61ce28896939ab6cdbb9f6f7d3a28b52e54991e5b75594ff5a2ca2d00f3429934cb92cf1833d37fb5d5cd921a2577953b87ed71ac410e7');
-    });
-
-    it('validate sale_item_key', function () {
-        const validate_sale_item_key = require('../server/validation/validate_sale_item_key');
-
-        // dont allow undefined
-        should_throw(() => validate_sale_item_key(undefined));
-
-        // dont allow null
-        should_throw(() => validate_sale_item_key(null));
-
-        // dont allow empty string
-        should_throw(() => validate_sale_item_key(''));
-
-        // dont allow number
-        should_throw(() => validate_sale_item_key(41254));
-
-        // dont allow object
-        should_throw(() => validate_sale_item_key({test: 'test'}));
-
-        // dont allow array
-        should_throw(() => validate_sale_item_key(['test']));
-
-        // dont allow < 3 length (2)
-        should_throw(() => validate_sale_item_key('11'));
-
-        // dont allow > 128 length (129)
-        should_throw(() => validate_sale_item_key('111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111'));
-
-        // allow proper sale item key
-        validate_sale_item_key('big_neon_pack');
-    });
-
-    it('validate sale_item_price', function () {
-        const validate_sale_item_price = require('../server/validation/validate_sale_item_price');
-
-        // dont allow undefined
-        should_throw(() => validate_sale_item_price(undefined));
-
-        // dont allow null
-        should_throw(() => validate_sale_item_price(null));
-
-        // dont allow empty string
-        should_throw(() => validate_sale_item_price(''));
-
-        // dont allow number
-        should_throw(() => validate_sale_item_price(41254));
-
-        // dont allow object
-        should_throw(() => validate_sale_item_price({test: 'test'}));
-
-        // dont allow array
-        should_throw(() => validate_sale_item_price(['test']));
-
-        // dont allow < 4 length (3)
-        should_throw(() => validate_sale_item_price('.11'));
-
-        // dont allow > 16 length (17)
-        should_throw(() => validate_sale_item_price('11111111111111.11'));
-
-        // dont allow $
-        should_throw(() => validate_sale_item_price('$420.69'));
-
-        // dont allow ,
-        should_throw(() => validate_sale_item_price('420,69'));
-
-        // dont allow space
-        should_throw(() => validate_sale_item_price('4 20.69'));
-
-        // dont allow no decimal
-        should_throw(() => validate_sale_item_price('42069'));
-
-        // dont allow no decimal places
-        should_throw(() => validate_sale_item_price('420.'));
-
-        // dont allow one decimal place
-        should_throw(() => validate_sale_item_price('420.6'));
-
-        // dont allow more than two decimal places
-        should_throw(() => validate_sale_item_price('420.699'));
-
-        // allow proper sale item price
-        validate_sale_item_price('420.69');
-    });
     
-    it('generate idempotency key', async function () {
+    it.only('generate idempotency key', async function () {
         const idempotency_key = circle_integration_client.generate_idempotency_key();
         assert.strictEqual(typeof idempotency_key, 'string');
         assert.strictEqual(idempotency_key.length, 36);
     });
 
-    it('reject malformed json', async function () {
+    it.only('reject malformed json', async function () {
         const malformed_json = '{"key": "value';
         const result = await circle_integration_client.call_circle_api('/purchase', malformed_json);
         assert(result.hasOwnProperty('error'));
         assert.strictEqual(result.error, 'Malformed Body');
     });
 
-    it('reject body to large', async function () {
+    it.only('reject body to large', async function () {
         const big_object = [];
         for (let i = 0; i < 1000; i++) {
             big_object.push({
