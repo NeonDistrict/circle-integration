@@ -1,7 +1,13 @@
+const log = require('../../utilities/log.js');
 const config = require('../../../config.js');
 const call_circle = require('../../utilities/call_circle.js');
 
 module.exports = async (body) => {
+    log({
+        event: 'get public keys', 
+        body: body
+    });
+
     const public_keys = {
         integration_public_key: config.pgp_public_key
     };
@@ -14,13 +20,21 @@ module.exports = async (body) => {
         config.cached_circle_key_timestamp && 
         new Date().getTime() - config.cached_circle_key_timestamp <= config.public_key_cache_duration;
     if (cache_valid) {
+        log({
+            event: 'get public keys cache was valid', 
+            body: body
+        });
         public_keys.circle_public_key = config.cached_circle_key;
         return public_keys;
     }
+    log({
+        event: 'get public keys cache was invalid', 
+        body: body
+    });
 
     // if we have no cached key, or the cache has reached expiry, get a new public key from circle
     // todo: prevent 429 for now 
-    //const circle_public_key = await call_circle('none', [200], 'get', `/encryption/public`, null);
+    //const circle_public_key = await call_circle(null, [200], 'get', `/encryption/public`, null);
 
     // todo: hardcode circle pk because of rate limiting on running tests over and over
     circle_public_key = {

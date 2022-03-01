@@ -1,24 +1,23 @@
 const { v4: uuidv4 } = require('uuid');
+const log = require('../utilities/log.js');
 const call_circle = require('../utilities/call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
-const purchase_log = require('../utilities/purchase_log.js');
 const payment_unsecure_start = require('../postgres/payment_unsecure_start.js');
 const payment_unsecure_mark_failed = require('../postgres/payment_unsecure_mark_failed.js');
 const payment_unsecure_mark_fraud = require('../postgres/payment_unsecure_mark_fraud.js');
 const payment_unsecure_mark_pending = require('../postgres/payment_unsecure_mark_pending.js');
 const payment_unsecure_mark_completed = require('../postgres/payment_unsecure_mark_completed.js');
 
-module.exports = create_payment_unsecure = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
-    purchase_log(internal_purchase_id, {
-        event: 'create_payment_unsecure',
-        details: {
-            internal_purchase_id, internal_purchase_id, 
-            card_id, card_id, 
-            request_purchase, request_purchase,
-            sale_item, sale_item
-        }
-    });
+module.exports = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
     const payment_unsecure_idempotency_key = uuidv4();
+    log({
+        event: 'create payment unsecure',
+        internal_purchase_id: internal_purchase_id,
+        card_id: card_id,
+        request_purchase: request_purchase,
+        sale_item: sale_item,
+        payment_unsecure_idempotency_key: payment_unsecure_idempotency_key
+    });
     await payment_unsecure_start(internal_purchase_id, payment_unsecure_idempotency_key);
     const circle_payment_request = {
         idempotencyKey: payment_unsecure_idempotency_key,

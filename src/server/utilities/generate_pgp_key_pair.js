@@ -13,7 +13,7 @@ const generate_passphrase = (length) => {
     return passphrase;
 };
 
-module.exports = generate_pgp_key_pair = async () => {
+module.exports = async () => {
     const passphrase = generate_passphrase(256);
     const generated = await openpgp.generateKey({
         type: 'ecc',

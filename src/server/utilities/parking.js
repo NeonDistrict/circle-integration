@@ -1,5 +1,5 @@
+const log = require('./log.js');
 const config = require('../../config.js');
-const notify_dev = require('./notify_dev.js');
 const parked_notifications = {};
 const parked_callbacks = {};
 let shutdown_flag = false;
@@ -14,6 +14,12 @@ module.exports = parking = {
             const parked_notification = parked_notifications[id];
             delete parked_notifications[id];
 
+            log({
+                event: 'parked callback with notification waiting',
+                id: id,
+                result: parked_notification.result
+            });
+
             // return the notification in the callback
             return cb(null, parked_notification.result);
         }
@@ -25,6 +31,10 @@ module.exports = parking = {
             callback: cb,
             parked_at: new Date().getTime()
         };
+        log({
+            event: 'parked callback with no notification waiting',
+            id: id
+        });
     },
 
     park_notification: (id, result) => {
@@ -35,6 +45,12 @@ module.exports = parking = {
             // reaching here implies a callback was parked and already waiting for this result, get that callback and remove it from parking
             const parked_callback = parked_callbacks[id];
             delete parked_callbacks[id];
+
+            log({
+                event: 'parked notification with callback waiting',
+                id: id,
+                result: result
+            });
 
             // return the result in the callback
             parked_callback.callback(null, result);
@@ -50,12 +66,24 @@ module.exports = parking = {
             parked_at: new Date().getTime()
         };
 
+        log({
+            event: 'parked notification with no callback waiting',
+            id: id,
+            result: result
+        });
+
         // handled ok
         return;
     },
     parking_monitor: async () => {
+        log({
+            event: 'parking monitor loop started'
+        });
         while (1) {
             if (shutdown_flag) {
+                log({
+                    event: 'parking monitor loop shut down successfully'
+                });
                 return;
             }
             const now = new Date().getTime();
@@ -81,13 +109,14 @@ module.exports = parking = {
                 const parked_callback = parked_callbacks[race_id];
                 delete parked_callbacks[race_id];
 
+                log({
+                    event: 'parking monitor detected a race condition',
+                    id: race_id,
+                    result: parked_notification.result
+                }, true);
+
                 // return the result in the callback
                 parked_callback.callback(null, parked_notification.result);
-
-                notify_dev({
-                    issue: 'Parking Race Condition',
-                    notification: parked_notification
-                });
             }
 
             // an issue may occur where a callback or a notification never arrives in parking for
@@ -109,10 +138,11 @@ module.exports = parking = {
                 const parked_notification = parked_notifications[abandoned_notification_id];
                 delete parked_notifications[abandoned_notification_id];
 
-                notify_dev({
-                    issue: 'Abandoned Notification',
-                    notification: parked_notification
-                });
+                log({
+                    event: 'parking monitor detected an abandoned notification',
+                    id: race_id,
+                    result: parked_notification.result
+                }, true);
             }
 
             // abandoned callbacks...
@@ -129,15 +159,18 @@ module.exports = parking = {
                 const parked_callback = parked_callbacks[abandoned_callback_id];
                 delete parked_callbacks[abandoned_callback_id];
 
-                notify_dev({
-                    issue: 'Abandoned Callback',
-                    callback_id: abandoned_callback_id
-                });
+                log({
+                    event: 'parking monitor detected an abandoned callback',
+                    id: abandoned_callback_id
+                }, true);
             }
             await new Promise((resolve, reject) => { setTimeout(resolve, config.parking_monitor_loop_time); });
         }
     },
     shutdown: () => {
+        log({
+            event: 'parking monitor loop flagged for shutdown'
+        });
         shutdown_flag = true;
     }
 };

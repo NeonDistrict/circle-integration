@@ -6,7 +6,6 @@ const cors = require('cors');
 
 const log = require('./server/utilities/log.js');
 const config = require('./config.js');
-const fatal_error = require('./server/utilities/fatal_error.js');
 const parse_body = require('./server/utilities/parse_body.js');
 const setup_pgp_key_pair = require('./server/utilities/setup_pgp_key_pair.js');
 const setup_notifications_subscription = require('./server/utilities/setup_notification_subscription.js');
@@ -16,7 +15,9 @@ const mount = require('./server/endpoints/mount.js');
 const mount_wildcard = require('./server/endpoints/mount_wildcard.js');
 
 module.exports = async () => {
-    log({server_event: 'server setup begin'});
+    log({
+        event: 'server setup begin'
+    });
 
     const app = express();
     
@@ -46,10 +47,11 @@ module.exports = async () => {
     }, app);
 
     https_server.on('error', (error) => {
-        return fatal_error({
-            error: 'HTTPS Server Threw Error',
-            details: error
-        });
+        log({
+            event: 'https server error',
+            error: error
+        }, true);
+        throw new Error('Internal Server Error');
     });
 
     await setup_pgp_key_pair();
@@ -62,11 +64,16 @@ module.exports = async () => {
         app: app,
         https_server: https_server,
         shutdown: () => {
+            log({
+                event: 'server shutting down'
+            });
             parking.shutdown();
             resolve_lingering_purchases.shutdown();
             https_server.close();
         }
     };
-    log({server_event: 'server setup complete'});
+    log({
+        event: 'server setup complete'
+    });
     return server;
 };

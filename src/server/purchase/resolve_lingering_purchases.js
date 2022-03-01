@@ -1,19 +1,30 @@
-const resolve_purchase = require('./resolve_purchase.js');
-const fatal_error = require('../utilities/fatal_error.js');
-const paginate_lingering_purchases = require('../postgres/paginate_lingering_purchases.js');
+const log = require('../utilities/log.js');
 const config = require('../../config.js');
+const resolve_purchase = require('./resolve_purchase.js');
+const paginate_lingering_purchases = require('../postgres/paginate_lingering_purchases.js');
 
 let shutdown_flag = false;
-module.exports = resolve_lingering_purchases = {
+module.exports = {
     start: async () => {
+        log({
+            event: 'paginate lingering purchases loop started'
+        });
         while (1) {
+            if (shutdown_flag) {
+                log({
+                    event: 'paginate lingering purchases loop shut down successfully'
+                });
+                return;
+            }
             let skip = 0;
             let lingering_purchases = null;
             do {
-                try {
-                    lingering_purchases = await paginate_lingering_purchases(skip, config.max_pagination_limit);
-                } catch (error) {
-                    return fatal_error(error);
+                lingering_purchases = await paginate_lingering_purchases(skip, config.max_pagination_limit);
+                if (lingering_purchases.length > 0) {
+                    log({
+                        event: 'paginate lingering purchases has results',
+                        lingering_purchases: lingering_purchases
+                    });
                 }
                 let resolved_count = 0;
                 for (const lingering_purchase of lingering_purchases) {
@@ -33,6 +44,9 @@ module.exports = resolve_lingering_purchases = {
         }
     },
     shutdown: () => {
+        log({
+            event: 'paginate lingering purchases loop flagged for shutdown'
+        });
         shutdown_flag = true;
     }
 };

@@ -1,5 +1,5 @@
 const postgres = require('./postgres.js');
-const fatal_error = require('../utilities/fatal_error.js');
+const single_row_or_null = require('./single_row_or_null.js');
 
 module.exports = async (user_id) => {
     const text = 
@@ -13,14 +13,5 @@ module.exports = async (user_id) => {
         user_id // "user_id"
     ];
     const result = await postgres.query(text, values);
-    // todo we have a couple of these 0 or 1s make it a function like expect 1
-    if (result.rows.length === 0) {
-        return null;
-    }
-    if (result.rows.length === 1) {
-        return result.rows[0];
-    }
-    return fatal_error({
-        error: 'Query rows.length !== 1 or 0'
-    });
+    return single_row_or_null(result);
 };

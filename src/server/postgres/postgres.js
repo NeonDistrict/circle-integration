@@ -1,8 +1,10 @@
+const log = require('../utilities/log.js');
 const config = require('../../config.js');
 const Pool = require('pg').Pool;
-const fatal_error = require('../utilities/fatal_error.js');
 
-console.log('create postgres pool');
+log({
+    event: 'setting up postgres'
+});
 const pool = new Pool({
     user: config.postgres_user,
     host: config.postgres_host,
@@ -12,32 +14,40 @@ const pool = new Pool({
 });
 
 pool.on('error', (error, client) => {
-    return fatal_error({
-        error: 'Postgres Error On Idle Client',
-        details: error
-    });
+    log({
+        event: 'postgres pool error', 
+        error: error
+    }, true);
+    throw new Error('Internal Server Error');
 });
 
 const query = async (text, values) => {
-    // todo hook logs
     let result = null;
-
     try {
         result = await pool.query(text, values);
+        log({
+            event: 'postgres query', 
+            text: text, 
+            values: values, 
+            result: result
+        });
     } catch (error) {
-        console.log('DB ERROR');
-        console.log(error);
-        // todo log db error
+        log({
+            event: 'postgres query', 
+            text: text, 
+            values: values, 
+            error: error
+        }, true);
         throw new Error('Internal Server Error');
     }
-    
-    // todo hook logs
     return result;
 };
 
 const postgres = {
     query: query
 };
-console.log('postgres setup complete');
+log({
+    event: 'postgres setup complete'
+});
 
 module.exports = postgres;

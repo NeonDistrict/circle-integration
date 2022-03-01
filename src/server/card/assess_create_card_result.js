@@ -1,14 +1,16 @@
-const fatal_error = require('../utilities/fatal_error.js');
+const log = require('../utilities/log.js');
 const create_card_mark_completed = require('../postgres/create_card_mark_completed.js');
 const create_card_mark_pending = require('../postgres/create_card_mark_pending.js');
 const create_card_status_enum = require('../enum/create_card_status_enum.js');
 const assess_create_card_failure = require('./assess_create_card_failure.js');
 const parking = require('../utilities/parking.js');
-const purchase_log = require('../utilities/purchase_log.js');
 
-module.exports = assess_create_card_result = async (internal_purchase_id, user_id, create_card_result) => {    
-    purchase_log(internal_purchase_id, {
-        event: 'assess_create_card_result'
+module.exports = async (internal_purchase_id, user_id, create_card_result) => {    
+    log({
+        event: 'assess create card result',
+        internal_purchase_id: internal_purchase_id,
+        user_id: user_id,
+        create_card_result: create_card_result
     });
     switch (create_card_result.status) {
         case create_card_status_enum.COMPLETE:
@@ -31,8 +33,13 @@ module.exports = assess_create_card_result = async (internal_purchase_id, user_i
             return await assess_create_card_result(internal_purchase_id, user_id, create_card_result_from_notification);
 
         default:
-            return fatal_error({
-                error: 'Unexpected Create Card Status: ' + create_card_result.status
-            });
+            log({
+                event: 'assess create card result unexpected status',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                create_card_result: create_card_result,
+                status: create_card_result.status
+            }, true);
+            throw new Error('Internal Server Error');
     }
 };

@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
+const log = require('../../../utilities/log.js');
 const create_card = require('../../../card/create_card.js');
 const create_payment = require('../../../payment/create_payment.js');
-const purchase_log = require('../../../utilities/purchase_log.js');
 const find_sale_item = require('../../../purchase/find_sale_item.js');
 const create_purchase = require('../../../postgres/create_purchase.js');
 const hash_purchase_metadata = require('../../../purchase/hash_purchase_metadata.js');
@@ -13,26 +13,19 @@ const config = require('../../../../config.js');
 
 module.exports = async (body) => {
     const internal_purchase_id = uuidv4();
+    log({
+        event: 'create purchase',
+        body: body,
+        internal_purchase_id: internal_purchase_id
+    });
     const sale_item = find_sale_item(body.sale_item_key);
     const card_number = await decrypt_card_number(body.integration_encrypted_card_information);
     const metadata = hash_purchase_metadata(body, card_number);
 
-    purchase_log(internal_purchase_id, {
-        event: 'purchase',
-        details: {
-            internal_purchase_id: internal_purchase_id,
-            sale_item: sale_item,
-            body: body,
-            metadata: metadata
-        }
-    });
-
     if (config.dangerous) {
-        purchase_log(internal_purchase_id, {
-            event: 'debug card number log',
-            details: {
-                card_number: card_number
-            }
+        log({
+            event: 'create purchase debug card number log',
+            card_number: card_number
         });
     }
 
@@ -43,7 +36,6 @@ module.exports = async (body) => {
 
     await fraud_check(body, metadata);
     await limits_check(internal_purchase_id, body, metadata, sale_item);
-
     await create_purchase(internal_purchase_id, body, metadata, sale_item);
     const card_id = await create_card(internal_purchase_id, body);
     const payment_assessment = await create_payment(internal_purchase_id, card_id, body, sale_item);

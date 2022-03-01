@@ -1,3 +1,4 @@
+const log = require('../utilities/log.js');
 const postgres = require('./postgres.js');
 
 module.exports = async (user_ids) => {
@@ -17,9 +18,13 @@ module.exports = async (user_ids) => {
     ];
     const result = await postgres.query(text, values);
     if (result.rowCount !== user_ids.length) {
-        return fatal_error({
-            error: 'Query rowCount !== user_ids.length'
-        });
+        log({
+            event: 'users mark fraud user_ids / rowCount mismatch',
+            note: 'somehow not all users were marked fraud, perhaps there was a duplicate or those users were deleted',
+            user_ids: user_ids,
+            result: result
+        }, true);
+        throw new Error('Internal Server Error');
     }
     return result;
 };

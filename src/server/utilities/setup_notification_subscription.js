@@ -1,16 +1,26 @@
-const fatal_error = require('./fatal_error.js');
+const log = require('../utilities/log.js');
 const call_circle = require('./call_circle.js');
 
-module.exports = setup_notification_subscription = async (sns_endpoint_url) => {
+module.exports = async (sns_endpoint_url) => {
+    log({
+        event: 'setting up aws sns subscription', 
+        sns_endpoint_url: sns_endpoint_url
+    });
     try {
         // many calls to circle such as adding a card, or creating a payment can take time to process
         // rather than hammering circle with polling requests they provide an aws sns hook that we can
         // use to listen for all responses when they complete so that we dont need to poll
 
         // list any existing subscriptions to see if one needs to be created
-        console.log('get existing subscriptions');
+        log({
+            event: 'getting existing aws sns subscriptions'
+        });
         const existing_subscriptions = await call_circle('none', [200], 'get', `/notifications/subscriptions`, null);
-        console.log('got existing subscriptions');
+        
+        log({
+            event: 'got existing aws sns subscriptions',
+            existing_subscriptions: existing_subscriptions
+        });
 
         // look through subscriptions to see if we have a fully confirmed one
         for (const existing_subscription of existing_subscriptions) {
@@ -28,27 +38,36 @@ module.exports = setup_notification_subscription = async (sns_endpoint_url) => {
 
             // if we got a good subscription we can return without creating one
             if (subscription_good) {
-                console.log('subscription in place');
+                log({
+                    event: 'aws sns subscription was already in place'
+                });
                 return;
             }
         }
 
         // reaching here implies we do not have an existing, confirmed, subscription and it must be created
-        console.log('subscription needed');
+        log({
+            event: 'aws sns subscription must be created'
+        });
 
         // create the notification subscription
         const request_body = { 
             endpoint: sns_endpoint_url
         };
-        console.log('create subscription');
-        await call_circle('none', [200, 201], 'post', `/notifications/subscriptions`, request_body);
-        console.log('create sent okay');
+        log({
+            event: 'creating aws sns subscription'
+        });
+        await call_circle(null, [200, 201], 'post', `/notifications/subscriptions`, request_body);
+        log({
+            event: 'created aws sns subscription'
+        });
         // creation okay, next step is to wait for confirmation to arrive in `on_notification`
         return;
     } catch (error) {
-        return fatal_error({
-            error: 'Setup Notifications Subscription Threw Error',
-            details: error
-        });
+        log({
+            event: 'aws sns subscription setup error',
+            error: error
+        }, true);
+        throw new Error('Internal Server Error');
     }
 };

@@ -1,4 +1,4 @@
-module.exports = is_purchase_idempotent_equal = (existing_purchase, request_purchase, metadata) => {
+module.exports = (existing_purchase, request_purchase, metadata) => {
     const is_equal = 
         existing_purchase.user_id                            === request_purchase.user_id &&
         existing_purchase.sale_item_key                      === request_purchase.sale_item_key &&

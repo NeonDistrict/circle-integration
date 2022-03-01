@@ -1,6 +1,6 @@
 const sha512 = require('../utilities/sha512.js');
 
-module.exports = hash_purchase_metadata = (request_purchase, card_number) => {
+module.exports = (request_purchase, card_number) => {
     const metadata = {
         email:                sha512(request_purchase.email),
         phone_number:         sha512(request_purchase.phone_number),

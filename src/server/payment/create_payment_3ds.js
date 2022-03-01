@@ -1,8 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
+const log = require('../utilities/log.js');
 const config = require('../../config.js');
 const call_circle = require('../utilities/call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
-const purchase_log = require('../utilities/purchase_log.js');
 const payment_3ds_start = require('../postgres/payment_3ds_start.js');
 const payment_3ds_mark_failed = require('../postgres/payment_3ds_mark_failed.js');
 const payment_3ds_mark_fraud = require('../postgres/payment_3ds_mark_fraud.js');
@@ -13,17 +13,16 @@ const payment_3ds_mark_completed = require('../postgres/payment_3ds_mark_complet
 const payment_status_enum = require('../enum/payment_status_enum.js');
 const payment_error_enum = require('../enum/payment_error_enum.js');
 
-module.exports = create_payment_3ds = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
-    purchase_log(internal_purchase_id, {
-        event: 'create_payment_3ds',
-        details: {
-            internal_purchase_id: internal_purchase_id, 
-            card_id: card_id, 
-            request_purchase: request_purchase,
-            sale_item: sale_item
-        }
-    });
+module.exports = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
     const payment_3ds_idempotency_key = uuidv4();
+    log({
+        event: 'create payment 3ds',
+        internal_purchase_id: internal_purchase_id,
+        card_id: card_id,
+        request_purchase: request_purchase,
+        sale_item: sale_item,
+        payment_3ds_idempotency_key: payment_3ds_idempotency_key
+    });
     await payment_3ds_start(internal_purchase_id, payment_3ds_idempotency_key);
     const circle_payment_request = {
         idempotencyKey: payment_3ds_idempotency_key,
@@ -57,6 +56,14 @@ module.exports = create_payment_3ds = async (internal_purchase_id, card_id, requ
             errorCode: payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED,
             id: uuidv4()
         };
+        log({
+            event: 'create payment 3ds dangerous mode shimming in fallback response to allow cvv and unsecure testing',
+            internal_purchase_id: internal_purchase_id,
+            card_id: card_id,
+            request_purchase: request_purchase,
+            sale_item: sale_item,
+            payment_3ds_idempotency_key: payment_3ds_idempotency_key
+        });
     } else {
         payment_result = await call_circle(internal_purchase_id, [201], 'post', `/payments`, circle_payment_request);
     }

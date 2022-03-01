@@ -1,8 +1,9 @@
+const log = require('./log.js');
 const config = require('../../config.js');
 const api_error_enum = require('../enum/api_error_enum.js');
 const axios = require('axios');
 
-module.exports = call_circle = async (internal_purchase_id, accepted_response_codes, method, endpoint, data) => {
+module.exports = async (internal_purchase_id, accepted_response_codes, method, endpoint, data) => {
     const request = {
         method: method,
         url: `${config.api_uri_base}${endpoint}`,
@@ -14,13 +15,6 @@ module.exports = call_circle = async (internal_purchase_id, accepted_response_co
         request.data = data;
     }
 
-    purchase_log(internal_purchase_id, {
-        event: 'call_circle_request',
-        details: {
-            request: request
-        }
-    });
-
     let response;
     try {
         response = await axios(request);
@@ -29,22 +23,29 @@ module.exports = call_circle = async (internal_purchase_id, accepted_response_co
         response = request_error.response;
     }
 
+    log({
+        event: 'call circle',
+        request: request,
+        response: response,
+        internal_purchase_id: internal_purchase_id,
+        accepted_response_codes: accepted_response_codes
+    })
+
     // get status code
     const status_code = response.status || (response.data.hasOwnProperty('code') ? response.data.code : 999);
-
-    purchase_log(internal_purchase_id, {
-        event: 'call_circle_response',
-        details: {
-            response: response.data,
-            status_code: status_code
-        }
-    });
 
     // if our request has an accepted response code
     if (accepted_response_codes.includes(status_code)) {
 
         // if the body is malformed, return a malformed error
         if (!response.data.hasOwnProperty('data')) {
+            log({
+                event: 'call circle returned a malformed response',
+                request: request,
+                response: response,
+                internal_purchase_id: internal_purchase_id,
+                accepted_response_codes: accepted_response_codes
+            }, true);
             throw new Error('Malformed Circle Response');
         }
 
@@ -149,6 +150,12 @@ module.exports = call_circle = async (internal_purchase_id, accepted_response_co
         throw new Error(failure);
     }
 
-    // reaching here implies it was an unexpected error code
+    log({
+        event: 'call circle returned an unexepected error code',
+        request: request,
+        response: response,
+        internal_purchase_id: internal_purchase_id,
+        accepted_response_codes: accepted_response_codes
+    }, true);
     throw new Error('Unknown Status Code Error');
 };

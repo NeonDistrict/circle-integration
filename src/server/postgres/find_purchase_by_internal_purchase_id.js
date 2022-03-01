@@ -1,12 +1,7 @@
 const postgres = require('./postgres.js');
-const fatal_error = require('../utilities/fatal_error.js');
-const purchase_log = require('../utilities/purchase_log.js');
+const single_row_or_null = require('./single_row_or_null.js');
 
 module.exports = async (internal_purchase_id) => {
-    // todo, maybe this just goes into an open log? since its not a purchase id to find another purchase id
-    purchase_log('none', {
-        event: 'find_purchase_by_internal_purchase_id'
-    });
     const text = 
     `
         SELECT 
@@ -20,14 +15,5 @@ module.exports = async (internal_purchase_id) => {
         internal_purchase_id // "internal_purchase_id"
     ];
     const result = await postgres.query(text, values);
-    // todo we need a 0/1 function
-    if (result.rows.length === 0) {
-        return null;
-    }
-    if (result.rows.length === 1) {
-        return result.rows[0];
-    }
-    return fatal_error({
-        error: 'Query rows.length !== 1 or 0'
-    });
+    return single_row_or_null(result);
 };

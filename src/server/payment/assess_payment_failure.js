@@ -1,12 +1,14 @@
+const log = require('../utilities/log.js');
 const config = require('../../config.js');
-const fatal_error = require('../utilities/fatal_error.js');
 const user_mark_fraud = require('../postgres/user_mark_fraud.js');
 const payment_error_enum = require('../enum/payment_error_enum.js');
-const purchase_log = require('../utilities/purchase_log.js');
 
-module.exports = assess_payment_failure = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable) => {
-    purchase_log(internal_purchase_id, {
-        event: 'assess_payment_failure'
+module.exports = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable) => {
+    log({
+        event: 'assess payment failure',
+        internal_purchase_id: internal_purchase_id,
+        user_id: user_id,
+        payment_result: payment_result
     });
     let payment_error = null;
     switch (payment_result.errorCode) {
@@ -58,7 +60,6 @@ module.exports = assess_payment_failure = async (internal_purchase_id, user_id, 
             };
             break;
         case payment_error_enum.UNAUTHORIZED_TRANSACTION:
-            // todo: confirm fraud
             payment_error = {
                 error: 'Payment Unauthorized (Contact Card Provider)',
                 fraud: 1
@@ -123,12 +124,23 @@ module.exports = assess_payment_failure = async (internal_purchase_id, user_id, 
             break;
         case payment_error_enum.THREE_D_SECURE_NOT_SUPPORTED:
         case payment_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER:
-            if (!mark_unavailable) {
-                return fatal_error({
-                    error: 'Function Not Provided: mark_unavailable'
-                });
+            if (mark_unavailable === null) {
+                log({
+                    event: 'assess payment failure payment required unavailable but mark_unavailable was not provided',
+                    internal_purchase_id: internal_purchase_id,
+                    user_id: user_id,
+                    payment_result: payment_result,
+                    note: 'only 3ds and cvv payments can be an unavailable type for accounts, this implies unsecure returned unavailable after trying both 3ds and cvv, which should never happen'
+                }, true);
+                throw new Error('Internal Server Error');
             }
             await mark_unavailable(internal_purchase_id, payment_result.id);
+            log({
+                event: 'assess payment failure 3ds or cvv not available',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result
+            });
             return {
                 unavailable: 1
             };
@@ -138,44 +150,92 @@ module.exports = assess_payment_failure = async (internal_purchase_id, user_id, 
             };
             break;
         case payment_error_enum.PAYMENT_RETURNED:
-            return fatal_error({
-                error: 'TODO: NOT SUPPORTED YET'
-            });
+            log({
+                event: 'assess payment failure should not have payment returned error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'cant think of any situation where a payment resolution would come to this state'
+            }, true);
+            throw new Error('Internal Server Error');
         case payment_error_enum.CARD_CVV_REQUIRED:
-            // note: we always include a cvv
-            return fatal_error({
-                error: 'Received Impossible Error: CARD_CVV_REQUIRED'
-            });
+            log({
+                event: 'assess payment failure should not have card cvv required error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'we always include a cvv it should be impossible to get this error response'
+            }, true);
+            throw new Error('Internal Server Error');
         case payment_error_enum.INVALID_WIRE_RTN:
-            // note: we do not use WIRE
-            return fatal_error({
-                error: 'Received Impossible Error: INVALID_WIRE_RTN'
-            });
+            log({
+                event: 'assess payment failure should not have invalid wire rtn error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'we dont support wire'
+            }, true);
+            throw new Error('Internal Server Error');
         case payment_error_enum.INVALID_ACH_RTN:
-            // note: we do not use ACH
-            return fatal_error({
-                error: 'Received Impossible Error: INVALID_ACH_RTN'
-            });
+            log({
+                event: 'assess payment failure should not have invalid ach rtn error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'we dont support ach'
+            }, true);
+            throw new Error('Internal Server Error');
         case payment_error_enum.CHANNEL_INVALID:
-            // note: we do not use channels
-            return fatal_error({
-                error: 'Received Impossible Error: CHANNEL_INVALID'
-            });
+            log({
+                event: 'assess payment failure should not have channel invalid error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'we dont use circle channels'
+            }, true);
+            throw new Error('Internal Server Error');
         case payment_error_enum.THREE_D_SECURE_REQUIRED:
-            // note: we step down from 3ds -> cvv -> none, receiving this error implies 3ds was skipped or stepped down innapropriately both of which should never happen
-            return fatal_error({
-                error: 'Received Impossible Error: THREE_D_SECURE_REQUIRED'
-            });
+            log({
+                event: 'assess payment failure should not have three d secure required error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'we step from from 3ds to cvv to unsecure, receiving this error implies 3ds was skipped or stepped down innapropriately both of which should never happen'
+            }, true);
+            throw new Error('Internal Server Error');
         case payment_error_enum.THREE_D_SECURE_INVALID_REQUEST:
-            // note: this implies we passed bad redirects or parameters for 3ds, which implies a bad configuration
-            return fatal_error({
-                error: 'Received Impossible Error: THREE_D_SECURE_INVALID_REQUEST'
-            });
+            log({
+                event: 'assess payment failure should not have three d secure invalid request error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode,
+                note: 'this implies either a redirect was invalid (they dont allow localhost but i think 127.0.0.1 is fine) or some other parameter for 3ds that is set in config was invalid'
+            }, true);
+            throw new Error('Internal Server Error');
         default:
-            return fatal_error({
-                error: 'Received Unexpected Error: ' + payment_result.errorCode 
-            });
+            log({
+                event: 'assess payment failure unexpected error code',
+                internal_purchase_id: internal_purchase_id,
+                user_id: user_id,
+                payment_result: payment_result,
+                error_code: payment_result.errorCode
+            }, true);
+            throw new Error('Internal Server Error');
     }
+    log({
+        event: 'assess payment failure result',
+        internal_purchase_id: internal_purchase_id,
+        user_id: user_id,
+        payment_result: payment_result,
+        error: payment_error
+    });
     if (payment_error.fraud === 1) {
         await mark_fraud(internal_purchase_id, payment_result.id);
         await user_mark_fraud(user_id);

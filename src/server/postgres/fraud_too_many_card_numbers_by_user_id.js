@@ -15,8 +15,5 @@ module.exports = async (user_id, metadata_hash_card_number) => {
         metadata_hash_card_number // "metadata_hash_card_number"
     ];
     const result = await postgres.query(text, values);
-    if (result.rows.length === 0) {
-        return null;
-    }
     return result.rows;
 };

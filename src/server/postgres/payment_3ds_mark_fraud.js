@@ -1,10 +1,6 @@
 const postgres = require('./postgres.js');
-const purchase_log = require('../utilities/purchase_log.js');
 
 module.exports = async (internal_purchase_id, payment_3ds_id) => {
-    purchase_log(internal_purchase_id, {
-        event: 'payment_3ds_mark_fraud'
-    });
     const now = new Date().getTime();
     const text = 
     `

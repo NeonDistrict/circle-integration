@@ -1,18 +1,17 @@
 const { v4: uuidv4 } = require('uuid');
+const log = require('../utilities/log.js');
 const call_circle = require('../utilities/call_circle.js');
 const assess_create_card_result = require('./assess_create_card_result.js');
-const purchase_log = require('../utilities/purchase_log.js');
 const create_card_start = require('../postgres/create_card_start.js');
 
-module.exports = create_card = async (internal_purchase_id, request_purchase) => {
-    purchase_log(internal_purchase_id, {
-        event: 'create_card',
-        details: {
-            internal_purchase_id: internal_purchase_id,
-            request_purchase: request_purchase
-        }
-    });
+module.exports = async (internal_purchase_id, request_purchase) => {
     const create_card_idempotency_key = uuidv4();
+    log({
+        event: 'create card',
+        internal_purchase_id: internal_purchase_id,
+        request_purchase: request_purchase,
+        create_card_idempotency_key: create_card_idempotency_key
+    });
     await create_card_start(internal_purchase_id, create_card_idempotency_key);
     const circle_create_card_request = {
         idempotencyKey: create_card_idempotency_key,

@@ -1,8 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
+const log = require('../utilities/log.js');
 const config = require('../../config.js');
 const call_circle = require('../utilities/call_circle.js');
 const assess_payment_result = require('./assess_payment_result.js');
-const purchase_log = require('../utilities/purchase_log.js');
 const payment_cvv_start = require('../postgres/payment_cvv_start.js');
 const payment_cvv_mark_failed = require('../postgres/payment_cvv_mark_failed.js');
 const payment_cvv_mark_fraud = require('../postgres/payment_cvv_mark_fraud.js');
@@ -12,17 +12,16 @@ const payment_cvv_mark_completed = require('../postgres/payment_cvv_mark_complet
 const payment_status_enum = require('../enum/payment_status_enum.js');
 const payment_error_enum = require('../enum/payment_error_enum.js');
 
-module.exports = create_payment_cvv = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
-    purchase_log(internal_purchase_id, {
-        event: 'create_payment_cvv',
-        details: {
-            internal_purchase_id: internal_purchase_id, 
-            card_id: card_id, 
-            request_purchase: request_purchase,
-            sale_item: sale_item
-        }
-    });
+module.exports = async (internal_purchase_id, card_id, request_purchase, sale_item) => {
     const payment_cvv_idempotency_key = uuidv4();
+    log({
+        event: 'create payment cvv',
+        internal_purchase_id: internal_purchase_id,
+        card_id: card_id,
+        request_purchase: request_purchase,
+        sale_item: sale_item,
+        payment_cvv_idempotency_key: payment_cvv_idempotency_key
+    });
     await payment_cvv_start(internal_purchase_id, payment_cvv_idempotency_key);
     const circle_payment_request = {
         idempotencyKey: payment_cvv_idempotency_key,
@@ -54,6 +53,14 @@ module.exports = create_payment_cvv = async (internal_purchase_id, card_id, requ
             errorCode: payment_error_enum.VERIFICATION_NOT_SUPPORTED_BY_ISSUER,
             id: uuidv4()
         };
+        log({
+            event: 'create payment cvv dangerous mode shimming in fallback response to allow unsecure testing',
+            internal_purchase_id: internal_purchase_id,
+            card_id: card_id,
+            request_purchase: request_purchase,
+            sale_item: sale_item,
+            payment_cvv_idempotency_key: payment_cvv_idempotency_key
+        });
     } else {
         payment_result = await call_circle(internal_purchase_id, [201], 'post', `/payments`, circle_payment_request);
     }
