@@ -1,5 +1,6 @@
 const config = {};
 
+config.app_name = 'circle-integration-dev'; // used by logging to papertrail
 config.dangerous = true;
 config.max_body_length = 5000;
 config.max_pagination_limit = 100;

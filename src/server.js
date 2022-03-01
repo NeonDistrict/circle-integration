@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
+const log = require('./server/utilities/log.js');
 const config = require('./config.js');
 const fatal_error = require('./server/utilities/fatal_error.js');
 const parse_body = require('./server/utilities/parse_body.js');
@@ -14,7 +15,9 @@ const parking = require('./server/utilities/parking.js');
 const mount = require('./server/endpoints/mount.js');
 const mount_wildcard = require('./server/endpoints/mount_wildcard.js');
 
-module.exports = server = async () => {
+module.exports = async () => {
+    log({server_event: 'server setup begin'});
+
     const app = express();
     
     app.use(cors());
@@ -64,6 +67,6 @@ module.exports = server = async () => {
             https_server.close();
         }
     };
-    console.log('server setup complete');
+    log({server_event: 'server setup complete'});
     return server;
 };

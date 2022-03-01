@@ -25,7 +25,8 @@
     "openpgp": "^5.0.1",
     "pg": "^8.7.1",
     "sns-validator": "^0.3.4",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "winston": "^3.6.0"
   },
   "devDependencies": {
     "mocha": "^9.1.3"
