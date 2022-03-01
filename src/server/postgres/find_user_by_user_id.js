@@ -1,7 +1,7 @@
 const postgres = require('./postgres.js');
 const fatal_error = require('../utilities/fatal_error.js');
 
-module.exports = find_user_by_user_id = async (user_id) => {
+module.exports = async (user_id) => {
     const text = 
     `
         SELECT * FROM "users"

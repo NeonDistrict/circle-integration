@@ -9,7 +9,9 @@ module.exports = find_purchase_by_internal_purchase_id = async (internal_purchas
     });
     const text = 
     `
-        SELECT * FROM "purchases"
+        SELECT 
+            * 
+        FROM "purchases"
         WHERE
             "internal_purchase_id" = $1
         LIMIT 1;
