@@ -1,19 +1,11 @@
 const validate = require('../../../validation/validate.js');
+const type_uuid = require('../../../validation/type_uuid.js');
+
 const schema = {
     type: 'object',
     properties: {
-        user_id: {
-            type: 'string',
-            minLength: 36,
-            maxLength: 36,
-            pattern: /[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}/i
-        },
-        client_generated_idempotency_key: {
-            type: 'string',
-            minLength: 36,
-            maxLength: 36,
-            pattern: /[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}/i
-        },
+        user_id: type_uuid,
+        client_generated_idempotency_key: type_uuid,
         circle_public_key_id: {
             type: 'string',
             maxLength: 1024

@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 
-module.exports = fraud_different_names_on_card = async (user_id, metadata_hash_name_on_card) => {
+module.exports = async (user_id, metadata_hash_name_on_card) => {
     // note: finds OTHER names on card other than the one provided, any rows implies another name
     // was used than the one provided and is fraud
     const text = 

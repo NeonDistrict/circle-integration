@@ -1,16 +1,12 @@
-const validate = require('../../../validation/validate.js');
+const validate = require('../../../../../validation/validate.js');
+const type_skip = require('../../../../../validation/type_skip.js');
+const type_limit = require('../../../../../validation/type_limit.js');
+
 const schema = {
     type: 'object',
     properties: {
-        skip: {
-            type: 'integer',
-            minimum: 0
-        },
-        limit: {
-            type: 'integer',
-            minimum: 1,
-            maximum: config.max_pagination_limit
-        }
+        skip: type_skip,
+        limit: type_limit
     },
     required: [
         'user_id',

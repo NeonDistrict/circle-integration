@@ -2,7 +2,7 @@ const postgres = require('./postgres.js');
 const fatal_error = require('../utilities/fatal_error.js');
 const purchase_log = require('../utilities/purchase_log.js');
 
-module.exports = find_purchase_by_internal_purchase_id = async (internal_purchase_id) => {
+module.exports = async (internal_purchase_id) => {
     // todo, maybe this just goes into an open log? since its not a purchase id to find another purchase id
     purchase_log('none', {
         event: 'find_purchase_by_internal_purchase_id'

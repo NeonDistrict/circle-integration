@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 
-module.exports = paginate_purchases_by_user_id = async (user_id, skip, limit) => {
+module.exports = async (skip, limit) => {
     const text = 
     `
         SELECT 

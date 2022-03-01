@@ -1,13 +1,10 @@
-const validate = require('../../../validation/validate.js');
+const validate = require('../../../../validation/validate.js');
+const type_uuid = require('../../../../validation/type_uuid.js');
+
 const schema = {
     type: 'object',
     properties: {
-        payment_id: {
-            type: 'string',
-            minLength: 36,
-            maxLength: 36,
-            pattern: /[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}/i
-        }
+        payment_id: type_uuid
     },
     required: [
         'payment_id'

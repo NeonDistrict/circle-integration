@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 
-module.exports = users_mark_fraud = async (user_ids) => {
+module.exports = async (user_ids) => {
     const now = new Date().getTime();
     const text = 
     `

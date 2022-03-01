@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 
-module.exports = find_limits_by_metadata_hash_card_number = async (metadata_hash_card_number) => {
+module.exports = async (metadata_hash_card_number) => {
     // get the last 31 days of purchases that completed
     const now = new Date().getTime();
     const one_month_ago = now - 2678400000;

@@ -30,7 +30,7 @@ const drop_enums = async () => {
     return await postgres.query(text, values);
 };
 
-module.exports = delete_all_tables = async () => {
+module.exports =  async () => {
     if (!config.dangerous) {
         throw new Error('Dangerous must be enabled to delete_all_tables');
     }

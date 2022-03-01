@@ -1,7 +1,7 @@
 const postgres = require('./postgres.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
-module.exports = create_user = async (user) => {
+module.exports = async (user) => {
     const text = 
     `
         INSERT INTO "users" (

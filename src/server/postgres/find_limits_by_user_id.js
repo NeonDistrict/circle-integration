@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 
-module.exports = find_limits_by_user_id = async (user_id) => {
+module.exports = async (user_id) => {
     // get the last 31 days of purchases that completed
     const now = new Date().getTime();
     const one_month_ago = now - 2678400000;

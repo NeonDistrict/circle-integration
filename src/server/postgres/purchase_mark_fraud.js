@@ -2,7 +2,7 @@ const postgres = require('./postgres.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 const purchase_log = require('../utilities/purchase_log.js');
 
-module.exports = purchase_mark_fraud = async (internal_purchase_id) => {
+module.exports = async (internal_purchase_id) => {
     purchase_log(internal_purchase_id, {
         event: 'purchase_mark_fraud'
     });

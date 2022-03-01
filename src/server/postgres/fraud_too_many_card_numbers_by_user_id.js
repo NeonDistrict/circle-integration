@@ -1,6 +1,6 @@
 const postgres = require('./postgres.js');
 
-module.exports = fraud_too_many_card_numbers_by_user_id = async (user_id, metadata_hash_card_number) => {
+module.exports = async (user_id, metadata_hash_card_number) => {
     // note: finds all distinct card numbers used by a user id that arent the current card number
     // this means the total card numbers on the account is rows + 1
     const text = 

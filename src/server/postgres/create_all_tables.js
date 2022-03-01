@@ -222,7 +222,7 @@ const create_purchases_table = async () => {
     return await postgres.query(text, values);
 };
 
-module.exports = create_all_tables = async () => {
+module.exports = async () => {
     if (!config.dangerous) {
         throw new Error('Dangerous must be enabled to create_all_tables');
     }

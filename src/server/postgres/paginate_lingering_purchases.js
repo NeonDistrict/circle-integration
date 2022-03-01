@@ -1,7 +1,7 @@
 const config = require('../../config.js');
 const postgres = require('./postgres.js');
 
-module.exports = paginate_lingering_purchases = async (skip, limit) => {
+module.exports = async (skip, limit) => {
     const now = new Date().getTime();
     const lingering_time = now - config.purchase_lingering_after;
     const text = 

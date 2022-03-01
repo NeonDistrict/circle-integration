@@ -44,8 +44,8 @@ module.exports = async (body) => {
             break;
 
         case 'settlements':
-            // todo wut?
             result = parsed_message.settlement;
+            // todo we can log this but we dont need to do anything with them, we dont store settlement data
             break;
 
         default:

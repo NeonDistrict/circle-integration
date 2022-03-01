@@ -1,7 +1,7 @@
 const postgres = require('./postgres.js');
 const expect_one_row_count = require('./expect_one_row_count.js');
 
-module.exports = create_user = async (user_id) => {
+module.exports = async (user_id) => {
     const now = new Date().getTime();
     const text = 
     `
