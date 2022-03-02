@@ -18,7 +18,7 @@ config.purchase_limits = {
     monthly: 500
 };
 
-config.circle_key = fs.readFileSync('../keys/circle_key_dev', 'utf8');
+config.circle_key = fs.readFileSync('./keys/circle_key_dev', 'utf8');
 config.api_uri_base = 'https://api-sandbox.circle.com/v1';
 config.host = 'dev.circle-integration.neondistrict.io';
 config.port = 8443;

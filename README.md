@@ -60,8 +60,13 @@ Contains documentation, demo, and back/front end components required to integrat
 ## Setting up an EC2 Instance
 
 1. Create an amazon linux ec2 instance
+1. Add to security group `neon-district-circle-integration-dev` or `neon-district-circle-integration-prod`
+1. Make sure you have access to the appropriate keypair namely `neon-district-circle-integration-dev.pem` or `neon-district-circle-integration-prod.pem`
+1. When the instance is created provide is a meaningful name like `neon-district-circle-integration-dev` (are you sensing the pattern here yet?)
+1. If an old machine exists, dissassociate the existing elastic IP
+1. Go to elastic IPs and assign the appropriate IP to your new instance, it should already exist and be called `neon-district-circle-integration-dev` or `neon-district-circle-integration-prod`
 1. SSH in
-1. Install dependencies using yum
+1. Run the following to prep the machine:
 
 ```
 sudo yum groupinstall 'Development Tools' -y
@@ -72,11 +77,14 @@ sudo amazon-linux-extras install epel
 sudo yum install certbot-apache -y
 ```
 
+1. Copy all keys to the `./keys` directory at the root of the project, for the love of god make sure you dont put the prod keys in dev, or the dev keys on prod
+1. 
+
 ## Configuring deployment
 
 1. Create an elastic IP and point it at the ec2 instance
 1. In Route53 setup a subdomain and point it at the elastic IP
-1. Copy all keys to the `./keys` directory at the root of the project
+
 
 ## Renewing SSL Certificates
 
