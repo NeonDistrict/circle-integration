@@ -76,8 +76,29 @@ sudo yum install certbot-apache -y
 
 1. Create an elastic IP and point it at the ec2 instance
 1. In Route53 setup a subdomain and point it at the elastic IP
-1. Use let's encrypt to acquire an ssl certificate for the subdomain using manual DNS verification
-1. Place `fullchain.pem` and `privkey.pem` in a directory `keys` in the root of project
+1. Copy all keys to the `./keys` directory at the root of the project
+
+## Renewing SSL Certificates
+
+1. Stop the server
+1. Run `sudo certbot certonly --standalone`
+1. Follow prompts, for dev use `dev.circle-integration.neondistrict.io`
+1. Certs will be placed at:
+
+```
+/etc/letsencrypt/live/dev.circle-integration.neondistrict.io/fullchain.pem
+/etc/letsencrypt/live/dev.circle-integration.neondistrict.io/privkey.pem
+```
+
+1. Copy these to the keys directory:
+
+```
+sudo cp /etc/letsencrypt/live/dev.circle-integration.neondistrict.io/fullchain.pem ~/circle-integration/keys/fullchain.pem
+sudo cp /etc/letsencrypt/live/dev.circle-integration.neondistrict.io/privkey.pem ~/circle-integration/keys/privkey.pem
+```
+
+1. Restart the server 
+
 
 ## Setting up your local workspace
 
