@@ -5,7 +5,7 @@ const create_card_status_enum = require('../enum/create_card_status_enum.js');
 const assess_create_card_failure = require('./assess_create_card_failure.js');
 const parking = require('../utilities/parking.js');
 
-module.exports = async (internal_purchase_id, user_id, create_card_result) => {    
+module.exports = assess_create_card_result = async (internal_purchase_id, user_id, create_card_result) => {    
     log({
         event: 'assess create card result',
         internal_purchase_id: internal_purchase_id,

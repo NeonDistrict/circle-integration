@@ -4,7 +4,7 @@ const assess_payment_failure = require('./assess_payment_failure.js');
 const parking = require('../utilities/parking.js');
 const credit_game = require('../purchase/credit_game.js');
 
-module.exports = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed) => {
+module.exports = assess_payment_result = async (internal_purchase_id, user_id, payment_result, mark_failed, mark_fraud, mark_unavailable, mark_redirected, mark_pending, mark_completed) => {
     log({
         event: 'assess payment result',
         internal_purchase_id: internal_purchase_id,
