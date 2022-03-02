@@ -14,7 +14,8 @@ module.exports = setup_pgp_key_pair = async () => {
     } catch (error) {
         log({
             event: 'generating pgp keypair error',
-            error: error
+            error: error.message,
+            stack: error.stack
         }, true);
     }
     log({

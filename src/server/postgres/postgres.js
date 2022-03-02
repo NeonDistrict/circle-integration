@@ -21,7 +21,7 @@ pool.on('error', (error, client) => {
     throw new Error('Internal Server Error');
 });
 
-const clean_whitespace_from_query = (text) => {
+const clean_whitespace_from_query_for_log = (text) => {
     // todo: optimize crimes
     text = text.split('\n').join('');
     while (text.includes('  ')) {
@@ -30,20 +30,27 @@ const clean_whitespace_from_query = (text) => {
     return text;
 };
 
+const clean_result_from_query_for_log = (result) => {
+    return {
+        rows: result.rows,
+        row_count: result.rowCount
+    };
+};
+
 const query = async (text, values) => {
     let result = null;
     try {
         result = await pool.query(text, values);
         log({
             event: 'postgres query', 
-            text: clean_whitespace_from_query(text), 
+            text: clean_whitespace_from_query_for_log(text), 
             values: values, 
-            result: result
+            result: clean_result_from_query_for_log(result)
         });
     } catch (error) {
         log({
             event: 'postgres query error', 
-            text: clean_whitespace_from_query(text), 
+            text: clean_whitespace_from_query_for_log(text), 
             values: values, 
             error: error.message,
             stack: error.stack
