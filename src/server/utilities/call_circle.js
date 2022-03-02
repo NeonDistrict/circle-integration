@@ -8,7 +8,7 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
         method: method,
         url: `${config.api_uri_base}${endpoint}`,
         headers: {
-            'Authorization': `Bearer ${config.api_sandbox_key}`
+            'Authorization': `Bearer ${config.circle_key}`
         }
     };
     if (data !== null) {

@@ -1,10 +1,11 @@
 const log = require('../utilities/log.js');
 const call_circle = require('./call_circle.js');
+const config = require('../../config.js');
 
-module.exports = async (sns_endpoint_url) => {
+module.exports = async () => {
     log({
         event: 'setting up aws sns subscription', 
-        sns_endpoint_url: sns_endpoint_url
+        sns_endpoint_url: config.sns_endpoint_url
     });
     try {
         // many calls to circle such as adding a card, or creating a payment can take time to process
@@ -52,7 +53,7 @@ module.exports = async (sns_endpoint_url) => {
 
         // create the notification subscription
         const request_body = { 
-            endpoint: sns_endpoint_url
+            endpoint: config.sns_endpoint_url
         };
         log({
             event: 'creating aws sns subscription'

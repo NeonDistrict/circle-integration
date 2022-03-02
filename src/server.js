@@ -56,7 +56,7 @@ module.exports = async () => {
 
     await setup_pgp_key_pair();
     await new Promise((resolve) => { https_server.listen(config.port, resolve); });
-    await setup_notifications_subscription(config, config.sns_endpoint_url);
+    await setup_notifications_subscription();
     resolve_lingering_purchases.start();
     parking.parking_monitor();
 
