@@ -66,7 +66,8 @@ module.exports = async (sns_endpoint_url) => {
     } catch (error) {
         log({
             event: 'aws sns subscription setup error',
-            error: error
+            error: error.message,
+            stack: error.stack
         }, true);
         throw new Error('Internal Server Error');
     }

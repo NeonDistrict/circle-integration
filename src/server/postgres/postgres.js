@@ -21,22 +21,32 @@ pool.on('error', (error, client) => {
     throw new Error('Internal Server Error');
 });
 
+const clean_whitespace_from_query = (text) => {
+    // todo: optimize crimes
+    text = text.split('\n').join('');
+    while (text.includes('  ')) {
+        text = text.split('  ').join(' ');
+    }
+    return text;
+};
+
 const query = async (text, values) => {
     let result = null;
     try {
         result = await pool.query(text, values);
         log({
             event: 'postgres query', 
-            text: text, 
+            text: clean_whitespace_from_query(text), 
             values: values, 
             result: result
         });
     } catch (error) {
         log({
-            event: 'postgres query', 
-            text: text, 
+            event: 'postgres query error', 
+            text: clean_whitespace_from_query(text), 
             values: values, 
-            error: error
+            error: error.message,
+            stack: error.stack
         }, true);
         throw new Error('Internal Server Error');
     }

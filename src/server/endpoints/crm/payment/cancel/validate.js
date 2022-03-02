@@ -1,4 +1,4 @@
-const validate = require('../../../validation/validate.js');
+const validate = require('../../../../validation/validate.js');
 const type_uuid = require('../../../../validation/type_uuid.js');
 const type_payment_refund_cancel_reason = require('../../../../validation/type_payment_refund_cancel_reason.js');
 

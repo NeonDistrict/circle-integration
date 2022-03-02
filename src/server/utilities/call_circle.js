@@ -26,7 +26,8 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
     log({
         event: 'call circle',
         request: request,
-        response: response,
+        response: response.data,
+        status_code: response.status,
         internal_purchase_id: internal_purchase_id,
         accepted_response_codes: accepted_response_codes
     })

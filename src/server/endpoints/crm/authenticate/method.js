@@ -1,4 +1,4 @@
-const log = require('../../utilities/log.js');
+const log = require('../../../utilities/log.js');
 
 module.exports = async (body) => {
     log({

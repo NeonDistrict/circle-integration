@@ -1,5 +1,5 @@
 const validate = require('../../../../../validation/validate.js');
-const type_uuid = require('../../../../validation/type_uuid.js');
+const type_uuid = require('../../../../../validation/type_uuid.js');
 const type_skip = require('../../../../../validation/type_skip.js');
 const type_limit = require('../../../../../validation/type_limit.js');
 

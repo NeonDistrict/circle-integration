@@ -5,6 +5,9 @@ Contains documentation, demo, and back/front end components required to integrat
 
 ./node_modules/.bin/_mocha -u bdd --timeout 9999999 --colors ./src/test/test.js
 
++ must be run with unhandled rejections strict to crash on broken promises
+--unhandled-rejections=strict
+
 + need a crm table for fraud reasons so when a user calls when we can give tghem a reason as to whyh theve been locked up. that will also give us an ongoing record of all fraud on an account
 
 + there isnt logs on everything that need logs
