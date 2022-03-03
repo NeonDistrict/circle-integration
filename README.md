@@ -105,9 +105,9 @@ The node argument for unhandled rejections allows the server to crash on unhandl
 
 ## Connecting to the Server
 
-1. Inside the `/src/` directory is a file called `circle_integration_client.js` this file should be included on the game server to make calls to the circle integration server. Note that this file should not be given to the client, all purchases must go through a game server which authenticates the user.
+Inside the `/src/` directory is a file called `circle_integration_client.js` this file should be included on the game server to make calls to the circle integration server. Note that this file should not be given to the client, all purchases must go through a game server which authenticates the user.
 
-### /purchase
+### purchase()
 
 Creates a new purchase. Upon success returns an `internal_purchase_id`. If a 3D-Secure redirect is required it will also return a `redirect` field with a url that the player should be sent too. Note that `/purchase_finalize` must be called after being redirected back.
 
@@ -176,7 +176,7 @@ is_retry
 - This is used internally only (not by you) to handle encryption key expiries and refreshes without you needing to regenerate a request properly and worry about idempotency collisions. Just pretend its not here.
 ```
 
-### /purchase_finalize
+### purchase_finalize()
 
 In the event that a card required a 3D-Secure verification which involves a redirect, the server needs to be informed that the user was redirected back and to finalize the purchase and credit the game. This call ONLY needs to be called after a 3D-Secure redirect, a purchase that doesn't use 3D-Secure does not require a finalize call, though if you try the server will not complain and just assume you're dumb. Upon success will return an `internal_purchase_id`.
 
@@ -188,7 +188,7 @@ internal_purchase_id
 - The UUIDv4 returned by the original purchase request.
 ```
 
-### /purchase_history
+### purchase_history()
 
 Provides a paginated list of user purchases.
 
@@ -201,4 +201,128 @@ limit
 
 skip
 - The number of purchases to skip over.
+```
+
+## Connecting to the Server for CRM
+
+Inside the `/src/` directory is a file called `circle_integration_crm_client.js` this file should be included on the CRM client to make calls to the integration server.
+
+### user_get()
+
+Gets a user record.
+
+```
+user_id
+- A UUIDv4 representing the user.
+```
+
+### user_fraud_list()
+
+Get a paginated list of users who are currently marked with the fraud flag.
+
+```
+limit
+- Number of users per page.
+
+skip
+- Number of users to skip.
+```
+
+### purchase_fraud_list()
+
+Get a paginated list of purchases that are marked with the fraud flag.
+
+```
+limit
+- Number of purchases per page.
+
+skip
+- Number of purchases to skip.
+```
+
+### purchase_get()
+
+Gets a specific purchase.
+
+```
+internal_purchase_id
+- A UUIDv4 representing the purchase.
+```
+
+### purchase_user_list()
+
+Gets a paginated list of all purchases made by a specific user.
+
+```
+user_id
+- A UUIDv4 representing the user.
+
+limit
+- Number of purchases per page.
+
+skip
+- Number of purchases to skip.
+```
+
+### payment_get()
+
+Gets the most recent information for a payment directly from Circle. Note that a purchase may have multiple payment attempts and a `payment_id` is not an `internal_purchase_id` although they are both UUIDv4s.
+
+```
+payment_id
+- A UUIDv4 representing a payment.
+```
+
+### payment_refund()
+
+Attempts to refund an entire payment to a user.
+
+```
+internal_purchase_id
+- A UUIDv4 representing the purchase.
+
+payment_id
+- A UUIDv4 representing a payment.
+
+reason
+- An enumerated value that Circle provides to payment processors, one of the following:
+    'duplicate',
+    'fraudulent',
+    'requested_by_customer',
+    'bank_transaction_error',
+    'invalid_account_number',
+    'insufficient_funds',
+    'payment_stopped_by_issuer',
+    'payment_returned',
+    'bank_account_ineligible',
+    'invalid_ach_rtn',
+    'unauthorized_transaction',
+    'payment_failed'
+```
+
+### payment_cancel()
+
+Attempts to cancel a payment by a user.
+
+```
+internal_purchase_id
+- A UUIDv4 representing the purchase.
+
+payment_id
+- A UUIDv4 representing a payment.
+
+reason
+- An enumerated value that Circle provides to payment processors, one of the following:
+    'duplicate',
+    'fraudulent',
+    'requested_by_customer',
+    'bank_transaction_error',
+    'invalid_account_number',
+    'insufficient_funds',
+    'payment_stopped_by_issuer',
+    'payment_returned',
+    'bank_account_ineligible',
+    'invalid_ach_rtn',
+    'unauthorized_transaction',
+    'payment_failed'
 ```
