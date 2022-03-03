@@ -18,7 +18,6 @@ Contains documentation and back/front end components required to integrate circl
 1. Go to elastic IPs and assign the appropriate IP to your new instance, it should already exist and be called `neon-district-circle-integration-dev` or `neon-district-circle-integration-prod`
 1. SSH in
 1. Run the following to prep the machine:
-
 ```
 sudo yum groupinstall 'Development Tools' -y
 sudo curl --silent --location https://rpm.nodesource.com/setup_14.x | sudo bash -
@@ -27,7 +26,6 @@ sudo npm install pm2 -g
 sudo amazon-linux-extras install epel
 sudo yum install certbot-apache -y
 ```
-
 1. Copy all keys to the `./keys` directory at the root of the project, for the love of god make sure you dont put the prod keys in dev, or the dev keys on prod
 
 ## Configuring deployment
@@ -41,19 +39,15 @@ sudo yum install certbot-apache -y
 1. Run `sudo certbot certonly --standalone`
 1. Follow prompts, for dev use `dev.circle-integration.neondistrict.io`
 1. Certs will be placed at:
-
 ```
 /etc/letsencrypt/live/dev.circle-integration.neondistrict.io/fullchain.pem
 /etc/letsencrypt/live/dev.circle-integration.neondistrict.io/privkey.pem
 ```
-
 1. Copy these to the keys directory:
-
 ```
 sudo cp /etc/letsencrypt/live/dev.circle-integration.neondistrict.io/fullchain.pem ~/circle-integration/keys/fullchain.pem
 sudo cp /etc/letsencrypt/live/dev.circle-integration.neondistrict.io/privkey.pem ~/circle-integration/keys/privkey.pem
 ```
-
 1. Restart the server 
 
 ## Setting up your local workspace
@@ -83,25 +77,20 @@ A VS Code `launch.json` is included in the project, simply select `Launch Progra
 ## Running Server with PM2
 
 1. Setup PM2 to recover on reboot by running:
-
 ```
 pm2 startup
 ```
-
 1. Copy and paste the script it provides and run it, this will add PM2 to systemd
 1. Start the server:
-
 ```
 pm2 start ./src/index.js --node-args="--unhandled-rejections=strict"
 ```
-
 1. Run the following to save the PM2 processes which will recover them on reboot:
-
 ```
 pm2 save
 ```
 
-The node argument for unhandled rejections allows the server to crash on unhandled exceptions which is desired behaviour. These types of crashes are representitive of a critical failure, critical bug, or malicious event - all of which should stop the server for human investigation and intervention. No payments are better than fraudulent payments.
+*The node argument for unhandled rejections allows the server to crash on unhandled exceptions which is desired behaviour. These types of crashes are representitive of a critical failure, critical bug, or malicious event - all of which should stop the server for human investigation and intervention. No payments are better than fraudulent payments.*
 
 ## Connecting to the Server
 
