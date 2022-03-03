@@ -5,8 +5,8 @@ Contains documentation and back/front end components required to integrate circl
 
 + [Circle Homepage](https://www.circle.com/en/)
 + [Circle Payments API Documentation](https://developers.circle.com/docs/accept-card-payments-online)
-+ [Neon District Circle Integration Dev Server: 54.211.86.53](54.211.86.53) 54.211.86.53
-+ [Neon District Circle Integration Dev Server By Host: dev.circle-integration.neondistrict.io](dev.circle-integration.neondistrict.io) dev.circle-integration.neondistrict.io
++ [Neon District Circle Integration Dev Server: 54.211.86.53](https://54.211.86.53) 54.211.86.53
++ [Neon District Circle Integration Dev Server By Host: dev.circle-integration.neondistrict.io](https://dev.circle-integration.neondistrict.io) dev.circle-integration.neondistrict.io
 
 ## Setting up an EC2 Instance
 
