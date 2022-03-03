@@ -1,7 +1,7 @@
 const config = require('../../config.js');
 const respond_error = require('../endpoints/respond_error.js');
 
-module.exports = parse_body = (req, res, next) => {
+module.exports = (req, res, next) => {
     let body_length = 0;
     let data_ended = false;
     const body_parts = [];

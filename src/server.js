@@ -7,6 +7,7 @@ const cors = require('cors');
 const log = require('./server/utilities/log.js');
 const config = require('./config.js');
 const parse_body = require('./server/utilities/parse_body.js');
+const log_request = require('./server/utilities/log_request.js');
 const setup_pgp_key_pair = require('./server/utilities/setup_pgp_key_pair.js');
 const setup_notifications_subscription = require('./server/utilities/setup_notification_subscription.js');
 const resolve_lingering_purchases = require('./server/purchase/resolve_lingering_purchases.js');
@@ -22,7 +23,8 @@ module.exports = async () => {
     const app = express();
     
     app.use(cors());
-    app.use(parse_body);        
+    app.use(parse_body);
+    app.use(log_request);        
 
     mount(app, 'post', config.sns_endpoint, path.join(__dirname, '/server/endpoints/sns_notification'));
     mount_wildcard(app, 'post', '/crm/*', path.join(__dirname, '/server/endpoints/crm/authenticate'));

@@ -128,5 +128,15 @@ module.exports = circle_integration_client = {
         }
         const purchase_finalize_result = await circle_integration_client.call_circle_api('/purchase/finalize', request_body);
         return purchase_finalize_result;
+    },
+
+    purchase_history: async (user_id, limit, skip) => {
+        const request_body = {
+            user_id: user_id,
+            limit: limit,
+            skip: skip
+        }
+        const purchase_history_result = await circle_integration_client.call_circle_api('/purchase/history', request_body);
+        return purchase_history_result;
     }
 };

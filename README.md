@@ -78,13 +78,11 @@ sudo yum install certbot-apache -y
 ```
 
 1. Copy all keys to the `./keys` directory at the root of the project, for the love of god make sure you dont put the prod keys in dev, or the dev keys on prod
-1. 
 
 ## Configuring deployment
 
 1. Create an elastic IP and point it at the ec2 instance
 1. In Route53 setup a subdomain and point it at the elastic IP
-
 
 ## Renewing SSL Certificates
 
