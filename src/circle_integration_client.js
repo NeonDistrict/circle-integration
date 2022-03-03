@@ -9,7 +9,7 @@ module.exports = circle_integration_client = {
         return uuidv4();
     },
 
-    call_circle_api: async (endpoint, data) => {
+    call_api: async (endpoint, data) => {
         if (!data) {
             throw new Error('Data Required');
         }
@@ -61,7 +61,7 @@ module.exports = circle_integration_client = {
     },
 
     purchase: async (client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, success_url, failure_url, is_retry = false) => {
-        const public_keys = await circle_integration_client.call_circle_api('/get_public_keys', {
+        const public_keys = await circle_integration_client.call_api('/get_public_keys', {
             user_id: user_id
         });
         if (public_keys.hasOwnProperty('error')) {
@@ -92,7 +92,7 @@ module.exports = circle_integration_client = {
             success_url: success_url,
             failure_url: failure_url
         };
-        const purchase_result = await circle_integration_client.call_circle_api('/purchase/create', request_body);
+        const purchase_result = await circle_integration_client.call_api('/purchase/create', request_body);
 
         // if we recieve a redirect it means we are going through the 3dsecure flow return the redirect url for the implementor to go to
         if (purchase_result.hasOwnProperty('redirect')) {
@@ -126,7 +126,7 @@ module.exports = circle_integration_client = {
             user_id: user_id,
             internal_purchase_id: internal_purchase_id
         }
-        const purchase_finalize_result = await circle_integration_client.call_circle_api('/purchase/finalize', request_body);
+        const purchase_finalize_result = await circle_integration_client.call_api('/purchase/finalize', request_body);
         return purchase_finalize_result;
     },
 
@@ -136,7 +136,7 @@ module.exports = circle_integration_client = {
             limit: limit,
             skip: skip
         }
-        const purchase_history_result = await circle_integration_client.call_circle_api('/purchase/history', request_body);
+        const purchase_history_result = await circle_integration_client.call_api('/purchase/history', request_body);
         return purchase_history_result;
     }
 };

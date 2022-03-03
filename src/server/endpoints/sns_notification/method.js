@@ -67,7 +67,7 @@ module.exports = async (body) => {
                 notification_type: 'settlements', 
                 result: result
             });
-            break;
+            return; // we dont do anything with settlements so dont park these
 
         default:
             log({

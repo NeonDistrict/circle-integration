@@ -67,7 +67,6 @@ const schema = {
             maxLength: 64
         },
         metadata_hash_session_id: {
-            // todo document this is a sha1 hex
             type: 'string',
             minLength: 40,
             maxLength: 40,
