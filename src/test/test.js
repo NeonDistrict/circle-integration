@@ -238,7 +238,6 @@ describe('circle-integration-server', async function () {
                 postal_zip_code: sha512('debug'),
                 expiry_month: sha512('debug'),
                 expiry_year: sha512('debug'),
-                card_number: sha512( ok_purchase.card_number),
                 circle_public_key_id: sha512('debug')
             }
         };
@@ -328,7 +327,6 @@ describe('circle-integration-server', async function () {
                 postal_zip_code: sha512('debug'),
                 expiry_month: sha512('debug'),
                 expiry_year: sha512('debug'),
-                card_number: sha512(ok_purchase.card_number),
                 circle_public_key_id: sha512('debug')
             }
         };
@@ -417,7 +415,6 @@ describe('circle-integration-server', async function () {
                 postal_zip_code: sha512('debug'),
                 expiry_month: sha512('debug'),
                 expiry_year: sha512('debug'),
-                card_number: sha512(ok_purchase.card_number),
                 circle_public_key_id: sha512('debug')
             }
         };
@@ -564,7 +561,7 @@ describe('circle-integration-server', async function () {
 
     it.only('reject malformed json', async function () {
         const malformed_json = '{"key": "value';
-        const result = await circle_integration_client.call_circle_api('/purchase', malformed_json);
+        const result = await circle_integration_client.call_api('/purchase', malformed_json);
         assert(result.hasOwnProperty('error'));
         assert.strictEqual(result.error, 'Malformed Body');
     });
@@ -580,7 +577,7 @@ describe('circle-integration-server', async function () {
             });
         }
         const big_json = JSON.stringify(big_object, null, 2);
-        const result = await circle_integration_client.call_circle_api('/purchase', big_json);
+        const result = await circle_integration_client.call_api('/purchase', big_json);
         assert(result.hasOwnProperty('error'));
         assert.strictEqual(result.error, 'Body Too Large');
     });

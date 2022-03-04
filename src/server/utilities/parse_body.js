@@ -11,7 +11,7 @@ module.exports = (req, res, next) => {
         } 
         if (body_length + chunk.length > config.max_body_length) {
             data_ended = true;
-            return respond_error(res, new Error('Body Too Large'));
+            return respond_error(req, res, new Error('Body Too Large'));
         }
         body_length += chunk.length;
         body_parts.push(chunk);
@@ -26,9 +26,10 @@ module.exports = (req, res, next) => {
         try {
             parsed_body = JSON.parse(raw_body);
         } catch (error) {
-            return respond_error(res, new Error('Malformed Body'));
+            return respond_error(req, res, new Error('Malformed Body'));
         }
         req.body = parsed_body;
+        req.bodyParsedOkay = true;
         return next();
     });
 };

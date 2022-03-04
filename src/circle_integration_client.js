@@ -50,16 +50,6 @@ module.exports = circle_integration_client = {
         return circle_integration_client.btoa(cipher_text);
     },
 
-    integration_encrypt_card_information: async (public_key, to_encrypt) => {
-        const decoded_public_key = await openpgp.readKey({armoredKey: public_key});
-        const message = await openpgp.createMessage({text: JSON.stringify(to_encrypt)});
-        const cipher_text = await openpgp.encrypt({
-            message: message,
-            encryptionKeys: decoded_public_key,
-        });
-        return cipher_text;
-    },
-
     purchase: async (client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, success_url, failure_url, is_retry = false) => {
         const public_keys = await circle_integration_client.call_api('/get_public_keys', {
             user_id: user_id
@@ -68,12 +58,10 @@ module.exports = circle_integration_client = {
             return public_keys;
         }
         const circle_encrypted_card_information = await circle_integration_client.circle_encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
-        const integration_encrypted_card_information = await circle_integration_client.integration_encrypt_card_information(public_keys.integration_public_key, {card_number: card_number});
         const request_body = {
             client_generated_idempotency_key: client_generated_idempotency_key,
             circle_public_key_id: public_keys.circle_public_key.keyId,
             circle_encrypted_card_information: circle_encrypted_card_information,
-            integration_encrypted_card_information: integration_encrypted_card_information,
             user_id: user_id,
             metadata_hash_session_id: metadata_hash_session_id,
             ip_address: ip_address,
@@ -103,7 +91,7 @@ module.exports = circle_integration_client = {
         if (purchase_result.hasOwnProperty('error')) {
 
             // if a public key was bad 
-            if (purchase_result.error === 'Circle Key Failure' || purchase_result.error === 'Integration Key Failure') {
+            if (purchase_result.error === 'Circle Key Failure') {
                 
                 // if we already did a retry to refresh the public keys and it failed, return the error
                 if (is_retry) {

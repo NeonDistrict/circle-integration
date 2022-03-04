@@ -14,10 +14,6 @@ const schema = {
             type: 'string',
             maxLength: 4096
         },
-        integration_encrypted_card_information: {
-            type: 'string',
-            maxLength: 4096
-        },
         name_on_card: {
             type: 'string',
             maxLength: 1024
@@ -96,7 +92,6 @@ const schema = {
         'client_generated_idempotency_key',
         'circle_public_key_id',
         'circle_encrypted_card_information',
-        'integration_encrypted_card_information',
         'name_on_card',
         'city',
         'country',

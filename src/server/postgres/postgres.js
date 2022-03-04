@@ -39,13 +39,15 @@ const clean_result_from_query_for_log = (result) => {
 
 const query = async (text, values) => {
     let result = null;
+    const startTime = new Date().getTime();
     try {
         result = await pool.query(text, values);
         log({
             event: 'postgres query', 
             text: clean_whitespace_from_query_for_log(text), 
             values: values, 
-            result: clean_result_from_query_for_log(result)
+            result: clean_result_from_query_for_log(result),
+            ms: new Date().getTime() - startTime
         });
     } catch (error) {
         log({
@@ -53,7 +55,8 @@ const query = async (text, values) => {
             text: clean_whitespace_from_query_for_log(text), 
             values: values, 
             error: error.message,
-            stack: error.stack
+            stack: error.stack,
+            ms: new Date().getTime() - startTime
         }, true);
         throw new Error('Internal Server Error');
     }

@@ -6,8 +6,9 @@ module.exports = (req, res, next) => {
         method: req.method,
         url: req.originalUrl,
         ips: req.ips,
-        headers: headers,
+        headers: req.headers,
         body: req.body
     });
+    req.startTime = new Date().getTime();
     return next();
 };

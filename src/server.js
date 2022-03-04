@@ -8,7 +8,6 @@ const log = require('./server/utilities/log.js');
 const config = require('./config.js');
 const parse_body = require('./server/utilities/parse_body.js');
 const log_request = require('./server/utilities/log_request.js');
-const setup_pgp_key_pair = require('./server/utilities/setup_pgp_key_pair.js');
 const setup_notifications_subscription = require('./server/utilities/setup_notification_subscription.js');
 const resolve_lingering_purchases = require('./server/purchase/resolve_lingering_purchases.js');
 const parking = require('./server/utilities/parking.js');
@@ -56,7 +55,6 @@ module.exports = async () => {
         throw new Error('Internal Server Error');
     });
 
-    await setup_pgp_key_pair();
     await new Promise((resolve) => { https_server.listen(config.port, resolve); });
     await setup_notifications_subscription();
     resolve_lingering_purchases.start();

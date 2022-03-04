@@ -187,7 +187,6 @@ const create_purchases_table = async () => {
         "metadata_hash_postal_zip_code"      CHAR(128) NOT NULL,                 -- the hashed postal or zip code from the billing address
         "metadata_hash_expiry_month"         CHAR(128) NOT NULL,                 -- the hashed expiry month from the billing address
         "metadata_hash_expiry_year"          CHAR(128) NOT NULL,                 -- the hashed expiry year from the billing address
-        "metadata_hash_card_number"          CHAR(128) NOT NULL,                 -- the hashed payment card number
         "metadata_hash_circle_public_key_id" CHAR(128) NOT NULL,                 -- the hashed circle public key id used in encryption
         PRIMARY KEY ("internal_purchase_id"),
         UNIQUE ("internal_purchase_id"),
@@ -214,7 +213,6 @@ const create_purchases_table = async () => {
         CONSTRAINT "metadata_hash_postal_zip_code_length"      CHECK (char_length("metadata_hash_postal_zip_code")      = 128),
         CONSTRAINT "metadata_hash_expiry_month_length"         CHECK (char_length("metadata_hash_expiry_month")         = 128),
         CONSTRAINT "metadata_hash_expiry_year_length"          CHECK (char_length("metadata_hash_expiry_year")          = 128),
-        CONSTRAINT "metadata_hash_card_number_length"          CHECK (char_length("metadata_hash_card_number")          = 128),
         CONSTRAINT "metadata_hash_circle_public_key_id_length" CHECK (char_length("metadata_hash_circle_public_key_id") = 128)
     );
     `;

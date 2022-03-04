@@ -49,14 +49,13 @@ module.exports = async (purchase) => {
             "metadata_hash_postal_zip_code",
             "metadata_hash_expiry_month",
             "metadata_hash_expiry_year",
-            "metadata_hash_card_number",
             "metadata_hash_circle_public_key_id"
         ) VALUES (
              $1,  $2,  $3,  $4,  $5,  $6,  $7,  $8,  $9, $10, 
             $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, 
             $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, 
-            $41, $42, $43, $44, $45, $46
+            $41, $42, $43, $44, $45
         );
     `;
     const values = [
@@ -104,7 +103,6 @@ module.exports = async (purchase) => {
         purchase.metadata.postal_zip_code,          // "metadata_hash_postal_zip_code",
         purchase.metadata.expiry_month,             // "metadata_hash_expiry_month",
         purchase.metadata.expiry_year,              // "metadata_hash_expiry_year",
-        purchase.metadata.card_number,              // "metadata_hash_card_number",
         purchase.metadata.circle_public_key_id      // "metadata_hash_circle_public_key_id"
     ];
     const result = await postgres.query(text, values);

@@ -16,7 +16,6 @@ module.exports = (existing_purchase, request_purchase, metadata) => {
         existing_purchase.metadata_hash_postal_zip_code      === metadata.postal_zip_code &&
         existing_purchase.metadata_hash_expiry_month         === metadata.expiry_month &&
         existing_purchase.metadata_hash_expiry_year          === metadata.expiry_year &&
-        existing_purchase.metadata_hash_card_number          === metadata.card_number &&
         existing_purchase.metadata_hash_card_cvv             === metadata.card_cvv &&
         existing_purchase.metadata_hash_circle_public_key_id === metadata.circle_public_key_id;
     return is_equal;

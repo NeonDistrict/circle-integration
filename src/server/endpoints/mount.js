@@ -8,9 +8,9 @@ module.exports = (app, http_method, url, endpoint_directory) => {
         try {
             validate(req.body);
             const response = await method(req.body);
-            return respond(res, response);
+            return respond(req, res, response);
         } catch (error) {
-            return respond_error(res, error);
+            return respond_error(req, res, error);
         } 
     });
 };

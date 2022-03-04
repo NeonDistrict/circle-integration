@@ -8,9 +8,7 @@ module.exports = async (body) => {
         body: body
     });
 
-    const public_keys = {
-        integration_public_key: config.pgp_public_key
-    };
+    const public_keys = {};
     
     // circle reccommends caching our public key which changes infrequently for at least 24 hours as per:
     // https://developers.circle.com/reference#getpublickey

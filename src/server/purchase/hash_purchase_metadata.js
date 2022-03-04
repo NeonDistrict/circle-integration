@@ -1,6 +1,6 @@
 const sha512 = require('../utilities/sha512.js');
 
-module.exports = (request_purchase, card_number) => {
+module.exports = (request_purchase) => {
     const metadata = {
         email:                sha512(request_purchase.email),
         phone_number:         sha512(request_purchase.phone_number),
@@ -14,7 +14,6 @@ module.exports = (request_purchase, card_number) => {
         postal_zip_code:      sha512(request_purchase.postal_zip_code),
         expiry_month:         sha512(request_purchase.expiry_month),
         expiry_year:          sha512(request_purchase.expiry_year),
-        card_number:          sha512(card_number),
         circle_public_key_id: sha512(request_purchase.circle_public_key_id)
     };
     return metadata;

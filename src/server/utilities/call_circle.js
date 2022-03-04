@@ -15,6 +15,7 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
         request.data = data;
     }
 
+    const startTime = new Date().getTime();
     let response;
     try {
         response = await axios(request);
@@ -29,8 +30,9 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
         response: response.data,
         status_code: response.status,
         internal_purchase_id: internal_purchase_id,
-        accepted_response_codes: accepted_response_codes
-    })
+        accepted_response_codes: accepted_response_codes,
+        ms: new Date().getTime() - startTime
+    });
 
     // get status code
     const status_code = response.status || (response.data.hasOwnProperty('code') ? response.data.code : 999);
