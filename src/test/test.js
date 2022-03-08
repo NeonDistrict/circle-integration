@@ -13,6 +13,7 @@ const test_cards = require('./test_cards.js');
 const test_cvvs = require('./test_cvvs.js');
 const test_avss = require('./test_avss.js');
 const sha512 = require('../server/utilities/sha512.js');
+const openpgp = require('openpgp');
 
 const default_user_id = uuidv4();
 const ok_purchase = {
@@ -86,7 +87,6 @@ describe('circle-integration-server', async function () {
     let test_server;
 
     before(async function () {
-        
         test_server = await server();
     });
 
@@ -96,9 +96,40 @@ describe('circle-integration-server', async function () {
 
     after(function () {
         test_server.shutdown();
+        setTimeout(() => { process.exit(0); }, 5000);
     });
 
-    it.only('make a normal purchase', async function () {
+    
+    it('generate idempotency key', async function () {
+        const idempotency_key = circle_integration_client.generate_idempotency_key();
+        assert.strictEqual(typeof idempotency_key, 'string');
+        assert.strictEqual(idempotency_key.length, 36);
+    });
+
+    it('reject malformed json', async function () {
+        const malformed_json = '{"key": "value';
+        const result = await circle_integration_client.call_api('/purchase', malformed_json);
+        assert(result.hasOwnProperty('error'));
+        assert.strictEqual(result.error, 'Malformed Body');
+    });
+
+    it('reject body to large', async function () {
+        const big_object = [];
+        for (let i = 0; i < 1000; i++) {
+            big_object.push({
+                lorem: "ipsum",
+                delorem: "desote",
+                insola: "yetsole",
+                vora: "inara"
+            });
+        }
+        const big_json = JSON.stringify(big_object, null, 2);
+        const result = await circle_integration_client.call_api('/purchase', big_json);
+        assert(result.hasOwnProperty('error'));
+        assert.strictEqual(result.error, 'Body Too Large');
+    });
+
+    it('make a normal purchase', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -119,14 +150,14 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key,
             config.three_d_secure_success_url,
-            'https://localhost.com/',//config.three_d_secure_success_url,
-            'https://localhost.com/'//config.three_d_secure_failure_url
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, default_user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
-    it.only('make a normal purchase (force cvv)', async function () {
+    it('make a normal purchase (force cvv)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -153,7 +184,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it.only('make a normal purchase (force unsecure)', async function () {
+    it('make a normal purchase (force unsecure)', async function () {
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
             default_user_id,
@@ -180,7 +211,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
     });
 
-    it.only('test monthly user limit', async function () {
+    it('test monthly user limit', async function () {
         const now = new Date().getTime();
         const two_weeks_ago = now - (604800000 * 2);
         const user_id = uuidv4();
@@ -269,7 +300,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Monthly Limit For User');
     });
 
-    it.only('test weekly user limit', async function () {
+    it('test weekly user limit', async function () {
         const now = new Date().getTime();
         const two_days_ago = now - (86400000 * 2);
         const user_id = uuidv4();
@@ -358,7 +389,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Weekly Limit For User');
     });
 
-    it.only('test daily user limit', async function () {
+    it('test daily user limit', async function () {
         const now = new Date().getTime();
         const user_id = uuidv4();
         await test_create_user({
@@ -446,7 +477,7 @@ describe('circle-integration-server', async function () {
         assert(purchase_result.error, 'Purchase Would Exceed Daily Limit For User');
     });
 
-    it.only('crm refund a payment', async function () {
+    it('crm refund a payment', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -468,8 +499,8 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key,
             config.three_d_secure_success_url,
-            'https://localhost.com/',//config.three_d_secure_success_url,
-            'https://localhost.com/'//config.three_d_secure_failure_url
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -480,9 +511,10 @@ describe('circle-integration-server', async function () {
         assert(refund_result.refunded === 1);
     });
 
-    it.only('crm cancel a payment', async function () {
+    it('crm cancel a payment', async function () {
         // i have yet to find a way to cancel a payment in test since payments are essentially instant in test
         // so we skip over this test, but i will leave it here as illustration how it should work - adrian (mar/2022)
+        console.log('skipped intentionally');
         return;
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
@@ -505,8 +537,8 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key,
             config.three_d_secure_success_url,
-            'https://localhost.com/',//config.three_d_secure_success_url,
-            'https://localhost.com/'//config.three_d_secure_failure_url
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -517,7 +549,7 @@ describe('circle-integration-server', async function () {
         assert(cancel_result.cancelled === 1);
     });
 
-    it.only('crm get payment', async function () {
+    it('crm get payment', async function () {
         const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             circle_integration_client.generate_idempotency_key(),
@@ -539,8 +571,8 @@ describe('circle-integration-server', async function () {
             ok_purchase.phone,
             ok_purchase.sale_item_key,
             config.three_d_secure_success_url,
-            'https://localhost.com/',//config.three_d_secure_success_url,
-            'https://localhost.com/'//config.three_d_secure_failure_url
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -551,45 +583,11 @@ describe('circle-integration-server', async function () {
         assert(payment.id === purchase.payment_3ds_id);
     });
 
-    // todo need to test card limits, but requires crm whitelist first
-    
-    it.only('generate idempotency key', async function () {
-        const idempotency_key = circle_integration_client.generate_idempotency_key();
-        assert.strictEqual(typeof idempotency_key, 'string');
-        assert.strictEqual(idempotency_key.length, 36);
-    });
-
-    it.only('reject malformed json', async function () {
-        const malformed_json = '{"key": "value';
-        const result = await circle_integration_client.call_api('/purchase', malformed_json);
-        assert(result.hasOwnProperty('error'));
-        assert.strictEqual(result.error, 'Malformed Body');
-    });
-
-    it.only('reject body to large', async function () {
-        const big_object = [];
-        for (let i = 0; i < 1000; i++) {
-            big_object.push({
-                lorem: "ipsum",
-                delorem: "desote",
-                insola: "yetsole",
-                vora: "inara"
-            });
-        }
-        const big_json = JSON.stringify(big_object, null, 2);
-        const result = await circle_integration_client.call_api('/purchase', big_json);
-        assert(result.hasOwnProperty('error'));
-        assert.strictEqual(result.error, 'Body Too Large');
-    });
-
-    
-
     it('dont allow duplicate idempotency keys', async function () {
         const idempotency_key = circle_integration_client.generate_idempotency_key();        
-        const user_id = uuidv4();
         const purchase_result = await circle_integration_client.purchase(
             idempotency_key,
-            user_id,
+            default_user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
             ok_purchase.card_number,
@@ -605,30 +603,33 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            'TEST_CVV',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
+        assert(purchase_result.hasOwnProperty('internal_purchase_id') && purchase_result.internal_purchase_id.length === 36);
 
         const purchase_result_2 = await circle_integration_client.purchase(
             idempotency_key,
-            user_id,
+            default_user_id,
             ok_purchase.metadata_hash_session_id,
             ok_purchase.ip_address,
-            test_cards[1].card_number,
-            222,
-            'Different Name',
-            'Different City',
+            ok_purchase.card_number,
+            ok_purchase.cvv,
+            'Gregory Different Name',
+            ok_purchase.city,
             ok_purchase.country,
-            'Different Address',
+            ok_purchase.address_line_1,
             ok_purchase.address_line_2,
             ok_purchase.district,
             ok_purchase.postal,
-            11,
-            2026,
-            'different@email.com',
-            '+16132221234',
-            ok_purchase.sale_item_key
+            ok_purchase.expiry_month,
+            ok_purchase.expiry_year,
+            ok_purchase.email,
+            ok_purchase.phone,
+            'TEST_CVV',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         assert.strictEqual(purchase_result_2.error, 'Idempotency Collision');
     });
@@ -653,7 +654,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_FAILED'
+            'PAYMENT_FAILED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Failed (Unspecified)'); 
@@ -679,7 +682,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_NOT_HONORED'
+            'CARD_NOT_HONORED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Card Not Honored (Contact Card Provider)'); 
@@ -705,7 +710,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_NOT_SUPPORTED_BY_ISSUER'
+            'PAYMENT_NOT_SUPPORTED_BY_ISSUER',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Not Supported (Contact Card Provider)'); 
@@ -731,7 +738,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_NOT_FUNDED'
+            'PAYMENT_NOT_FUNDED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Insufficient Funds (Contact Card Provider)'); 
@@ -757,7 +766,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_INVALID'
+            'CARD_INVALID',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)'); 
@@ -783,7 +794,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_LIMIT_VIOLATED'
+            'CARD_LIMIT_VIOLATED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Limit Exceeded (Circle Limit)'); 
@@ -809,7 +822,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_DENIED'
+            'PAYMENT_DENIED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Denied (Contact Card Provider)'); 
@@ -835,7 +850,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_FRAUD_DETECTED'
+            'PAYMENT_FRAUD_DETECTED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Fraud Detected (Contact Card Provider)'); 
@@ -861,7 +878,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CREDIT_CARD_NOT_ALLOWED'
+            'CREDIT_CARD_NOT_ALLOWED',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         // todo circle sends the wrong response code here, waiting on their response (adrian) dec 27th 2021
         const final_result = await handle_redirect(purchase_result, user_id);
@@ -888,7 +907,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'PAYMENT_STOPPED_BY_ISSUER'
+            'PAYMENT_STOPPED_BY_ISSUER',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Payment Stopped (Contact Card Provider)'); 
@@ -914,7 +935,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'CARD_ACCOUNT_INELIGIBLE'
+            'CARD_ACCOUNT_INELIGIBLE',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Ineligible Account (Contact Card Provider)'); 
@@ -940,20 +963,29 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert.strictEqual(final_result.error, 'Invalid Details (Correct Information)'); 
     });
 
     it('should correct bad public key', async function () {
-        // since other tests come before this one the server has already received and cached a public key
-        // this public key is fetched for each purchase, so we fuck up the cached version which will cause
-        // a public key failure, and force a key refresh. all of this should be handled automatically and
-        // allow a successfull purchase without further intervention
-
-        // fuck up the cached public key
-        server.circle_integration_server.cached_public_key.keyId = 'junk';
+        // we do a fun little switcheroo here to shim in a bad encryption the first call then reset it for the following calls
+        const original_fn = circle_integration_client.circle_encrypt_card_information;
+        circle_integration_client.circle_encrypt_card_information = async (public_key, to_encrypt) => {
+            const decoded_public_key = await openpgp.readKey({armoredKey: circle_integration_client.atob(public_key)});
+            const message = await openpgp.createMessage({text: JSON.stringify(to_encrypt)});
+            const cipher_text = await openpgp.encrypt({
+                message: message,
+                encryptionKeys: decoded_public_key,
+            });
+            const result =  circle_integration_client.btoa(cipher_text);
+            const garbled = result.split('a').join('b').split('0').join('b').split('1').join('b');
+            circle_integration_client.circle_encrypt_card_information = original_fn;
+            return garbled;
+        };
 
         // do a normal purchase which should correct automatically        
         const user_id = uuidv4();
@@ -975,10 +1007,12 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
-        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 40);
+        assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
     });
 
     it('invalid card number', async function () {        
@@ -1001,9 +1035,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid card_number');
+        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
 
     it('invalid cvv string', async function () {        
@@ -1026,7 +1062,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
@@ -1051,7 +1089,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
@@ -1076,7 +1116,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
@@ -1101,9 +1143,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid city', async function () {        
@@ -1126,9 +1170,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid country', async function () {        
@@ -1151,9 +1197,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid address 1', async function () {        
@@ -1176,9 +1224,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid address 2', async function () {        
@@ -1201,9 +1251,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid district', async function () {        
@@ -1226,9 +1278,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid district');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid postal', async function () {        
@@ -1251,9 +1305,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid expiry month', async function () {        
@@ -1276,9 +1332,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid expiry_month');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid expiry year', async function () {        
@@ -1301,9 +1359,11 @@ describe('circle-integration-server', async function () {
             'BOGUS',
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid expiry_year');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid email', async function () {        
@@ -1326,9 +1386,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             'BOGUS',
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid email');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid email (number)', async function () {        
@@ -1351,9 +1413,11 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             42069,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
-        assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
+        assert(purchase_result.error.includes('Validation Error'));
     });
 
     it('invalid phone', async function () {        
@@ -1376,7 +1440,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             'BOGUS',
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         assert.strictEqual(purchase_result.error, 'Invalid Details (Correct Information)');
     });
@@ -1401,7 +1467,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            'BOGUS'
+            'BOGUS',
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         assert.strictEqual(purchase_result.error, 'Sale Item Key Not Found');
     });
@@ -1426,7 +1494,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1452,7 +1522,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1478,7 +1550,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1504,7 +1578,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1530,7 +1606,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1556,7 +1634,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1582,7 +1662,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1608,7 +1690,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1634,7 +1718,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1660,7 +1746,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1686,7 +1774,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1712,7 +1802,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1738,7 +1830,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1764,7 +1858,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1790,7 +1886,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1816,7 +1914,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1842,7 +1942,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1868,7 +1970,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1894,7 +1998,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1920,7 +2026,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1946,7 +2054,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);
@@ -1972,7 +2082,9 @@ describe('circle-integration-server', async function () {
             ok_purchase.expiry_year,
             ok_purchase.email,
             ok_purchase.phone,
-            ok_purchase.sale_item_key
+            ok_purchase.sale_item_key,
+            config.three_d_secure_success_url,
+            config.three_d_secure_failure_url
         );
         const final_result = await handle_redirect(purchase_result, user_id);
         assert(final_result.hasOwnProperty('internal_purchase_id') && final_result.internal_purchase_id.length === 36);

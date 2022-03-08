@@ -101,7 +101,7 @@ module.exports = circle_integration_client = {
                 // we will retry to refresh the public keys, get a new idempotency key for the retry
                 is_retry = true;
                 const retry_client_generated_idempotency_key = circle_integration_client.generate_idempotency_key();
-                return await circle_integration_client.purchase(retry_client_generated_idempotency_key, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, is_retry);
+                return await circle_integration_client.purchase(retry_client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, success_url, failure_url, is_retry);
             }
         }
 

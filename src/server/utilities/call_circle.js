@@ -102,14 +102,14 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
                 // note: some of these may be wire or transfer only, but we report them all with the generic invalid details anyways
                 throw new Error('Invalid Details (Correct Information)');
             case api_error_enum.INVALID_ENTITY:
-                // note: invalid entity comes back for public key failure or just bad fields, but we only get this message for bad pk
+                // note: invalid entity comes back for circle key failure or just bad fields, but we only get this message for bad pk
                 if (response.data.hasOwnProperty('message') && response.data.message === 'Request body contains unprocessable entity.') {
-                    throw new Error('Public Key Failure');
+                    throw new Error('Circle Key Failure');
                 } else {
                     throw new Error('Invalid Details (Correct Information)');
                 }
             case api_error_enum.PUBLIC_KEY_ID_NOT_FOUND:
-                throw new Error('Public Key Failure');
+                throw new Error('Circle Key Failure');
             case api_error_enum.IDEMPOTENCY_KEY_ALREADY_USED: 
                 throw new Error('Idempotency Key Already Used');
             case api_error_enum.PAYMENT_NOT_FOUND:        
@@ -142,7 +142,7 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
         '400': 'Bad Request',
         '401': 'Unauthorized',
         '404': 'Not Found',
-        '422': 'Public Key Failure', // note: technically this is unprocessible entity, but it throws for bad pk encryption
+        '422': 'Circle Key Failure', // note: technically this is unprocessible entity, but it throws for bad circle key encryption
         '429': 'Too Many Requests',
         '500': 'Unexpected Server Error'
     };
