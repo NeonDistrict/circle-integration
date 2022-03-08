@@ -18,6 +18,9 @@ config.purchase_limits = {
     monthly: 500
 };
 
+config.from_email = 'noreply@neondistrict.io';
+config.email_keys = require('../keys/email_keys.js');
+
 config.circle_key = fs.readFileSync('./keys/circle_key_dev', 'utf8');
 config.api_uri_base = 'https://api-sandbox.circle.com/v1';
 config.host = 'dev.circle-integration.neondistrict.io';
