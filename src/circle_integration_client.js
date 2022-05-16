@@ -50,17 +50,10 @@ module.exports = circle_integration_client = {
         return circle_integration_client.btoa(cipher_text);
     },
 
-    purchase: async (client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, card_number, card_cvv, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, success_url, failure_url, is_retry = false) => {
-        const public_keys = await circle_integration_client.call_api('/get_public_keys', {
-            user_id: user_id
-        });
-        if (public_keys.hasOwnProperty('error')) {
-            return public_keys;
-        }
-        const circle_encrypted_card_information = await circle_integration_client.circle_encrypt_card_information(public_keys.circle_public_key.publicKey, {number: card_number, cvv: card_cvv});
+    purchase: async (client_generated_idempotency_key, user_id, metadata_hash_session_id, ip_address, circle_encrypted_card_information, circle_public_key_id, name_on_card, city, country, address_line_1, address_line_2, district, postal_zip_code, expiry_month, expiry_year, email, phone_number, sale_item_key, success_url, failure_url, is_retry = false) => {
         const request_body = {
             client_generated_idempotency_key: client_generated_idempotency_key,
-            circle_public_key_id: public_keys.circle_public_key.keyId,
+            circle_public_key_id: circle_public_key_id,
             circle_encrypted_card_information: circle_encrypted_card_information,
             user_id: user_id,
             metadata_hash_session_id: metadata_hash_session_id,

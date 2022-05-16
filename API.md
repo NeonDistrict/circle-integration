@@ -17,11 +17,11 @@ metadata_hash_session_id
 ip_address
 - The IP Address of the user making the purchase, used both internally and by Circle as part of fraud prevention. Note that if you are getting this IP from express you may actually be getting a load balancer/forwarder IP like an idiot (go ahead ask me how I know).
 
-card_number
-- The plain text card number as a string with no spaces or dividing characters such as hyphens, the circle_integration_client will handle encrypting it using PGP for you and not transmit it in plain text.
+circle_encrypted_card_information
+- The encrypted card infromation provided from the frontend.
 
-card_cvv
-- The 3-5 digit card verification number found on the back of cards as a string with no spaces or dividing characters such as hyphens, the circle_integration_client will handle encrypting it using PGP for you and not transmit it in plain text.
+circle_public_key_id
+- The key id returned from encrypting card information on the frontend.
 
 name_on_card
 - The full name as it appears on the front of the card. 
