@@ -23,7 +23,7 @@ Circle is a payment processor who is cool with blockchain applications, which is
 3. The circle integration server can only run on AWS EC2 because of it's hard requirement to use AWS SNS which does not run locally (without extreme workarounds).
 4. You don't want to create your own development server, you want to use the development server already established on EC2 (which is linked above in useful links and has a hostname setup for it).
 5. All logs go out to paper trail, let adrian know if you need access to it.
-6. Unless you need to mess with the integration itself all you probably want to do is include this repo as a dependency then include `circle_integration_client.js` into your react app then connect the endpoints.
+6. Unless you need to mess with the integration itself all you probably want to do is include this repo as a dependency then include `circle_integration_client.js` into your react app then connect the endpoints. There is a brief api documentation below, but the function in the js file should be very clear.
 
 
 ## Setting up an EC2 Instance
