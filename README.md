@@ -8,9 +8,27 @@ Contains documentation and back/front end components required to integrate circl
 + [Neon District Circle Integration Dev Server: 54.211.86.53](https://54.211.86.53) 54.211.86.53
 + [Neon District Circle Integration Dev Server By Host: dev.circle-integration.neondistrict.io](https://dev.circle-integration.neondistrict.io) dev.circle-integration.neondistrict.io
 
+## What Is This?
+
+Circle is a payment processor who is cool with blockchain applications, which is why we use them. This repository contains:
+
+1. The circle integration server module `server.js` which can be run with `index.js`.
+2. The circle integration client module `circle_integration_client.js` which is included in the game frontend and handles all calls to the circle integration server module.
+3. The circle integration crm module `circle_integration_crm_client.js` (customer relationship management) which is included in the admin panel frontend to access details about purchases and to cancel or refund purchases.
+
+## Important Things
+
+1. You will need keys to make your own server, they go into the root of project in a folder called `keys/`.
+2. You require `circle_key_dev` which contains the key for interacting with circle, `email_keys.js` which contains the keys for aws ses to send emails, `fullchain.pem` `privkey.pem` which together provide SSL/HTTPS support via lets encrypt, and `postgres_dev.js` which contains the user, host, password, port, and database for accessing postgres.
+3. The circle integration server can only run on AWS EC2 because of it's hard requirement to use AWS SNS which does not run locally (without extreme workarounds).
+4. You don't want to create your own development server, you want to use the development server already established on EC2 (which is linked above in useful links and has a hostname setup for it).
+5. All logs go out to paper trail, let adrian know if you need access to it.
+6. Unless you need to mess with the integration itself all you probably want to do is include this repo as a dependency then include `circle_integration_client.js` into your react app then connect the endpoints.
+
+
 ## Setting up an EC2 Instance
 
-1. Create an amazon linux ec2 instance
+1. Create an amazon linux ec2 instance, if you use a micro instance the remote vs code connection will drop a lot, make sure you use a C or M machine type at least.
 1. Add to security group `neon-district-circle-integration-dev` or `neon-district-circle-integration-prod`
 1. Make sure you have access to the appropriate keypair namely `neon-district-circle-integration-dev.pem` or `neon-district-circle-integration-prod.pem`
 1. When the instance is created provide is a meaningful name like `neon-district-circle-integration-dev` (are you sensing the pattern here yet?)
@@ -72,7 +90,7 @@ Contains documentation and back/front end components required to integrate circl
 
 ## Running Tests
 
-A VS Code `launch.json` is included in the project, simply select `Launch Program` or `Mocha Tests` from the `Run and Debug` dropdown to run either with full debug support. 
+A VS Code `launch.json` is included in the project, simply select `Launch Program` or `Mocha Tests` from the `Run and Debug` dropdown to run either with full debug support. Make sure the pm2 instance is stopped before running tests.
 
 ## Running Server with PM2
 
