@@ -2,6 +2,10 @@ const fs = require('fs');
 
 const config = {};
 
+//config.email_keys = require('../keys/email_keys.js');
+//config.circle_key = fs.readFileSync('./keys/circle_key_dev', 'utf8');
+//config.postgres = require('../keys/postgres_dev.js');
+
 config.app_name = 'circle-integration-dev'; // used by logging to papertrail
 config.dangerous = true;
 config.max_body_length = 5000;
@@ -19,17 +23,12 @@ config.purchase_limits = {
 };
 
 config.from_email = 'noreply@neondistrict.io';
-config.email_keys = require('../keys/email_keys.js');
-
-config.circle_key = fs.readFileSync('./keys/circle_key_dev', 'utf8');
 config.api_uri_base = 'https://api-sandbox.circle.com/v1';
 config.host = 'dev.circle-integration.neondistrict.io';
 config.port = 8443;
 config.server_url = `https://${config.host}:${config.port}`;
 config.sns_endpoint = '/aws_sns4';
 config.sns_endpoint_url = `${config.server_url}${config.sns_endpoint}`;
-
-config.postgres = require('../keys/postgres_dev.js');
 
 config.three_d_secure_server_port = 8444;
 config.three_d_secure_server_url = `https://${config.host}:${config.three_d_secure_server_port}`;
