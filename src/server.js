@@ -26,6 +26,7 @@ module.exports = async () => {
     app.use(log_request);        
 
     mount(app, 'post', config.sns_endpoint, path.join(__dirname, '/server/endpoints/sns_notification'));
+    mount(app, 'post', '/get_public_keys', path.join(__dirname, '/server/endpoints/get_public_keys'));
     mount_wildcard(app, 'post', '/crm/*', path.join(__dirname, '/server/endpoints/crm/authenticate'));
     mount(app, 'post', '/crm/user/get', path.join(__dirname, '/server/endpoints/crm/user/get'));
     mount(app, 'post', '/crm/user/fraud/list', path.join(__dirname, '/server/endpoints/crm/user/fraud/list'));
@@ -36,7 +37,6 @@ module.exports = async () => {
     mount(app, 'post', '/crm/payment/refund', path.join(__dirname, '/server/endpoints/crm/payment/refund'));
     mount(app, 'post', '/crm/payment/cancel', path.join(__dirname, '/server/endpoints/crm/payment/cancel'));
     mount_wildcard(app, 'post', '*', path.join(__dirname, '/server/endpoints/authenticate'));
-    mount(app, 'post', '/get_public_keys', path.join(__dirname, '/server/endpoints/get_public_keys'));
     mount(app, 'post', '/get_sale_items',  path.join(__dirname, '/server/endpoints/get_sale_items'));
     mount(app, 'post', '/purchase/create', path.join(__dirname, '/server/endpoints/purchase/create'));
     mount(app, 'post', '/purchase/finalize', path.join(__dirname, '/server/endpoints/purchase/finalize'));

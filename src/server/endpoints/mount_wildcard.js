@@ -9,7 +9,7 @@ module.exports = (app, http_method, url, endpoint_directory) => {
             await method(req.body);
             return next();
         } catch (error) {
-            return respond_error(res, error);
+            return respond_error(req, res, error);
         } 
     });
 };
