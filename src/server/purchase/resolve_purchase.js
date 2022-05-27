@@ -208,18 +208,19 @@ module.exports = async (purchase) => {
     // check the payment 3ds result
     switch (purchase.payment_3ds_result) {
         case 'NONE':
+        case 'REQUESTED':
             await purchase_mark_failed(purchase.internal_purchase_id);
             log({
-                event: 'resolve purchase payment 3ds result was none',
+                event: 'resolve purchase payment 3ds result was ' + purchase.payment_3ds_result,
                 purchase: purchase,
-                note: 'implies a card was created but the payment process was not started, most likely writing the payment start to postgres failed'
+                note: 'implies a card was created but the payment process was not started successfully'
             }, true);
             return {
                 error: 'Purchase Failed',
                 resolved: 1
             };
 
-        case 'REQUESTED':
+
         case 'PENDING':
         case 'REDIRECTED':
         case 'COMPLETED':
@@ -259,21 +260,21 @@ module.exports = async (purchase) => {
     // check the payment cvv result
     switch (purchase.payment_cvv_result) {
         case 'NONE':
+        case 'REQUESTED':
             await purchase_mark_failed(purchase.internal_purchase_id);
             log({
-                event: 'resolve purchase payment cvv result was none',
+                event: 'resolve purchase payment cvv result was ' + purchase.payment_cvv_result,
                 purchase: purchase,
-                note: 'implies a payment 3ds failed but the payment cvv process was not started, most likely writing the payment start to postgres failed'
+                note: 'implies a payment 3ds failed but the payment cvv process was not started successfully'
             }, true);
             return {
                 error: 'Purchase Failed',
                 resolved: 1
             };
 
-        case 'REQUESTED':
         case 'PENDING':
         case 'COMPLETED':
-            return await check_payment_result(purchase.payment_3ds_id, 'cvv');
+            return await check_payment_result(purchase.payment_cvv_id, 'cvv');
             
         case 'FAILED':
             log({
@@ -309,21 +310,21 @@ module.exports = async (purchase) => {
     // check the payment none result
     switch (purchase.payment_unsecure_result) {
         case 'NONE':
+        case 'REQUESTED':
             await purchase_mark_failed(purchase.internal_purchase_id);
             log({
-                event: 'resolve purchase payment cvv result was none',
+                event: 'resolve purchase payment unsecure result was none',
                 purchase: purchase,
-                note: 'implies a payment cvv failed but the payment unsecure process was not started, most likely writing the payment start to postgres failed'
+                note: 'implies a payment cvv failed but the payment unsecure process was not started successfully'
             }, true);
             return {
                 error: 'Purchase Failed',
                 resolved: 1
             };
 
-        case 'REQUESTED':
         case 'PENDING':
         case 'COMPLETED':
-            return await check_payment_result(purchase.payment_3ds_id);
+            return await check_payment_result(purchase.payment_unsecure_id, 'unsecure');
             
         case 'FAILED':
             log({

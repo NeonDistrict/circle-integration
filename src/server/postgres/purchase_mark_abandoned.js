@@ -13,7 +13,7 @@ module.exports = async (internal_purchase_id) => {
     `;
     const values = [
         now,                         // "t_modified_purchase"
-        'ABANDONDED',                // "purchase_result"
+        'ABANDONED',                 // "purchase_result"
         internal_purchase_id         // "internal_purchase_id"
     ];
 
