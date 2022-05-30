@@ -66,13 +66,32 @@ module.exports = async (internal_purchase_id, user_id, payment_result, mark_fail
             };
             break;
         case payment_error_enum.CARD_INVALID:
+            payment_error = {
+                error: 'Invalid Card'
+            };
+            break;
         case payment_error_enum.INVALID_ACCOUNT_NUMBER:
+            payment_error = {
+                error: 'Invalid Account Number'
+            };
+            break;
         case payment_error_enum.CARD_CVV_INVALID:
+            payment_error = {
+                error: 'Invalid CVV Number'
+            };
+            break;
         case payment_error_enum.CARD_ADDRESS_MISMATCH:
+            payment_error = {
+                error: 'Card Address Mismatch'
+            };
+            break;
         case payment_error_enum.CARD_ZIP_MISMATCH:
+            payment_error = {
+                error: 'Card Zip Mismatch'
+            };
         case payment_error_enum.CARD_FAILED:
             payment_error = {
-                error: 'Invalid Details (Correct Information)'
+                error: 'Card Failed, Check Card Information'
             };
             break;
         case payment_error_enum.CARD_EXPIRED:

@@ -42,12 +42,27 @@ module.exports = async (internal_purchase_id, user_id, create_card_result) => {
             };
             break;
         case create_card_failure_enum.CARD_FAILED:
+            create_card_error = {
+                error: 'Card Failed, Check Card Information'
+            };
+            break;
         case create_card_failure_enum.CARD_ADDRESS_MISMATCH:
+            create_card_error = {
+                error: 'Card Address Mismatch'
+            };
+            break;
         case create_card_failure_enum.CARD_ZIP_MISMATCH:
+            create_card_error = {
+                error: 'Card Zip Mismatch'
+            };
         case create_card_failure_enum.CARD_CVV_INVALID:
+            create_card_error = {
+                error: 'Invalid CVV Number'
+            };
+            break;
         case create_card_failure_enum.CARD_INVALID:
             create_card_error = {
-                error: 'Invalid Details (Correct Information)'
+                error: 'Inavlid Card'
             };
             break;
         case create_card_failure_enum.CARD_EXPIRED:
