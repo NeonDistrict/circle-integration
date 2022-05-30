@@ -1,4 +1,5 @@
 const log = require('./log.js');
+const keys = require('../../../keys/keys.js');
 const config = require('../../config.js');
 const api_error_enum = require('../enum/api_error_enum.js');
 const axios = require('axios');
@@ -8,7 +9,7 @@ module.exports = async (internal_purchase_id, accepted_response_codes, method, e
         method: method,
         url: `${config.api_uri_base}${endpoint}`,
         headers: {
-            'Authorization': `Bearer ${config.circle_key}`
+            'Authorization': `Bearer ${keys.circle_key}`
         }
     };
     if (data !== null) {

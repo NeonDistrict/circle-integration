@@ -1,7 +1,8 @@
+const keys = require('../../../keys/keys.js');
 const config = require('../../config.js');
 const log = require('./log.js');
 const ses = require('node-ses');
-const ses_client = ses.createClient(config.email_keys);
+const ses_client = ses.createClient(keys.email_keys);
 
 module.exports = async (to_email, subject, message, alt_text) => {
     return await new Promise((resolve, reject) => {

@@ -1,10 +1,4 @@
-const fs = require('fs');
-
 const config = {};
-
-// config.email_keys = require('../keys/email_keys.js');
-// config.circle_key = fs.readFileSync('./keys/circle_key_dev', 'utf8');
-// config.postgres = require('../keys/postgres_dev.js');
 
 config.app_name = 'circle-integration-dev'; // used by logging to papertrail
 config.dangerous = true;

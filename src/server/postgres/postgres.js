@@ -1,16 +1,17 @@
 const log = require('../utilities/log.js');
 const config = require('../../config.js');
+const keys = require('../../../keys/keys.js');
 const Pool = require('pg').Pool;
 
 log({
     event: 'setting up postgres'
 });
 const pool = new Pool({
-    user: config.postgres.user,
-    host: config.postgres.host,
-    database: config.postgres.database,
-    password: config.postgres.password,
-    port: config.postgres.port
+    user: keys.postgres.user,
+    host: keys.postgres.host,
+    database: keys.postgres.database,
+    password: keys.postgres.password,
+    port: keys.postgres.port
 });
 
 pool.on('error', (error, client) => {
