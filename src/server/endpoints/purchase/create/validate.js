@@ -16,51 +16,62 @@ const schema = {
         },
         name_on_card: {
             type: 'string',
-            maxLength: 1024
+            maxLength: 1024,
+            error: 'Invalid name on card'
         },
         city: {
             type: 'string',
-            maxLength: 1024
+            maxLength: 1024,
+            error: 'City not accepted'
         },
         country: {
             type: 'string',
             minLength: 2,
-            maxLength: 2
+            maxLength: 2,
+            error: 'Invalid country (the country should have only 2 digit)'
         },
         address_line_1: {
             type: 'string',
-            maxLength: 1024
+            maxLength: 1024,
+            error: 'Address not accepted'
         },
         address_line_2: {
             type: 'string',
-            maxLength: 1024
+            maxLength: 1024,
+            error: 'Second address not accepted'
         },
         district: {
             type: 'string',
-            maxLength: 1024
+            maxLength: 1024,
+            error: 'District not accepted'
         },
         postal_zip_code: {
             type: 'string',
-            maxLength: 64
+            maxLength: 64,
+            error: 'Invalid postal code'
         },
         expiry_month: {
             type: 'integer',
             minimum: 1,
-            maximum: 12
+            maximum: 12,
+            error: 'Invalid month expiry (should be from 1 to 12)'
         },
         expiry_year: {
             type: 'integer',
             minimum: 1970,
-            maximum: 9999
+            maximum: 9999,
+            error: 'Invalid year expiry'
         },
         email: {
             type: 'string',
             maxLength: 1024,
-            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            error: 'Invalid email'
         },
         phone_number: {
             type: 'string',
-            maxLength: 64
+            maxLength: 64,
+            error: 'Invalid phonenumber'
         },
         metadata_hash_session_id: {
             type: 'string',
