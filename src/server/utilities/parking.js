@@ -140,7 +140,7 @@ module.exports = parking = {
 
                 log({
                     event: 'parking monitor detected an abandoned notification',
-                    id: race_id,
+                    id: abandoned_notification_id,
                     result: parked_notification.result
                 }, true);
             }
