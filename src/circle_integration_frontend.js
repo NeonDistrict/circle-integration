@@ -29,7 +29,7 @@ module.exports = circle_integration_frontend = {
         try {
             response = await axios(request);
         } catch (request_error) {
-            if (request_error.response.data) {
+            if (request_error.response && request_error.response.data) {
                 return request_error.response.data;
             }
 
@@ -54,19 +54,19 @@ module.exports = circle_integration_frontend = {
             cvv: card_cvv
         };
         
-        const public_keys = await circle_integration_client.call_api('/get_public_keys', {});
+        const public_keys = await circle_integration_frontend.call_api('/get_public_keys', {});
         if (public_keys.hasOwnProperty('error')) {
             return public_keys;
         }
         const public_key = public_keys.circle_public_key.publicKey;
-        const decoded_public_key = await openpgp.readKey({armoredKey: circle_integration_client.atob(public_key)});
+        const decoded_public_key = await openpgp.readKey({armoredKey: circle_integration_frontend.atob(public_key)});
         const message = await openpgp.createMessage({text: JSON.stringify(to_encrypt)});
         const cipher_text = await openpgp.encrypt({
             message: message,
             encryptionKeys: decoded_public_key,
         });
         return {
-            circle_encrypted_card_information: circle_integration_client.btoa(cipher_text),
+            circle_encrypted_card_information: circle_integration_frontend.btoa(cipher_text),
             circle_public_key_id: public_keys.circle_public_key.keyId
         };
     },
