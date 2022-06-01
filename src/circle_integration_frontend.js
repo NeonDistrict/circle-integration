@@ -71,7 +71,3 @@ module.exports = circle_integration_frontend = {
         };
     },
 };
-
-circle_integration_frontend.circle_encrypt_card_information('test', 'test')
-.then(() => {})
-.catch((error) => console.log(error));
