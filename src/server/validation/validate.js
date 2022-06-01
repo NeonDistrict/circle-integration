@@ -11,7 +11,11 @@ module.exports = validate = (value, schema) => {
 
     const validation_errors = jsonschema_validate(value, schema).errors;
 
-    if (validation_errors[0].schema.error) {
+    if (
+        validation_errors.length > 0 && 
+        validation_errors[0].schema && 
+        validation_errors[0].schema.error
+    ) {
         throw new Error('Validation Error: ' + validation_errors[0].schema.error);
     }
 
