@@ -11,6 +11,7 @@ module.exports = circle_integration_crm_client = {
         if (!data) {
             throw new Error('Data Required');
         }
+
         const request = {
             method: 'post',
             url: `${config.server_url}${endpoint}`,
@@ -20,12 +21,19 @@ module.exports = circle_integration_crm_client = {
             mode: 'cors',
             data: data
         };
+
         let response;
+
         try {
             response = await axios(request);
         } catch (request_error) {
-            return request_error.response.data;
+            if (request_error.response.data) {
+                return request_error.response.data;
+            }
+
+            throw new Error("Server Error");
         }
+
         const response_body = response.data;
         return response_body;
     },
