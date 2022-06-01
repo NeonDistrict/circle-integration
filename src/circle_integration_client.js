@@ -33,7 +33,7 @@ module.exports = circle_integration_client = {
                 return request_error.response.data;
             }
 
-            throw new Error("Server Error");
+            throw new Error('Server Error');
         }
         
         const response_body = response.data;
