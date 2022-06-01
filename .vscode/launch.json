@@ -32,5 +32,15 @@
             ],
             "type": "pwa-node"
         },
+
+        {
+            "name": "Launch File",
+            "program": "${file}",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
     ]
 }

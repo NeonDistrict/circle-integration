@@ -29,7 +29,7 @@ module.exports = circle_integration_frontend = {
         try {
             response = await axios(request);
         } catch (request_error) {
-            if (request_error.response.data) {
+            if (request_error.response && request_error.response.data) {
                 return request_error.response.data;
             }
 
@@ -71,3 +71,7 @@ module.exports = circle_integration_frontend = {
         };
     },
 };
+
+circle_integration_frontend.circle_encrypt_card_information('test', 'test')
+.then(() => {})
+.catch((error) => console.log(error));
