@@ -12,7 +12,8 @@ const schema = {
         },
         circle_encrypted_card_information: {
             type: 'string',
-            maxLength: 4096
+            maxLength: 4096,
+            error: 'Invalid credit card infos'
         },
         name_on_card: {
             type: 'string',

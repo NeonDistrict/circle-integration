@@ -27,7 +27,7 @@ module.exports = circle_integration_crm_client = {
         try {
             response = await axios(request);
         } catch (request_error) {
-            if (request_error.response.data) {
+            if (request_error.response && request_error.response.data) {
                 return request_error.response.data;
             }
 
